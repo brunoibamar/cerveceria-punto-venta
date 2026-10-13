@@ -1,0 +1,55 @@
+:root {
+  /* Modern Dark Glassmorphism Palette */
+  --color-bg: #0b0e14; /* Fondo de pantalla: Negro carbón profundo */
+  --color-surface: #161b22; /* Tarjetas y Contenedores */
+  --color-surface-alt: #1c2330; /* Superficie alternativa sutil */
+  --color-surface-glass: rgba(22, 27, 34, 0.7); /* Vidrio translúcido */
+  --color-text: #f5f5f7;
+  --color-text-muted: #9aa0a6;
+
+  /* Colores de acento */
+  --color-primary: #ff9f1c; /* Ámbar Dorado Cerveceiro Neón */
+  --color-primary-dark: #f39c12; /* Tono secundario del ámbar */
+  --color-on-primary: #121212;
+  --color-success: #10b981; /* Verde Esmeralda */
+  --color-danger: #ef4444; /* Rojo Neón */
+  --color-warning: #ff9f1c;
+
+  /* Efectos de vidrio (Glassmorphism) */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --glass-backdrop: blur(12px);
+
+  /* Bordes redondeados modernos */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  /* Espaciado */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+
+  --header-height: 56px;
+  --nav-height: 64px;
+  --tap-target: 44px;
+  --tap-target-lg: 48px;
+
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+
+  --z-header: 100;
+  --z-nav: 100;
+  --z-modal: 200;
+}
