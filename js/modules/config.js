@@ -1,5 +1,6 @@
 import { login, getCurrentUser } from '../auth.js';
 import { navigate } from '../router.js';
+import { db } from '../db.js';
 
 export function renderConfig(container) {
   const user = getCurrentUser();
@@ -48,5 +49,26 @@ export function renderConfig(container) {
       <h3>Roles</h3>
       <p class="muted">Admin: inventario, promociones, reportes y ventas. Cajero: ventas.</p>
     </div>
-  `;
+    <div class="card">
+      <h3>Recargo global por Bebida Fría</h3>
+      <label class="field">
+        <span>Recargo por bebida fría (en moneda local)</span>
+        <input class="input" type="number" min="0" step="0.01" id="cold-drink-surcharge" placeholder="Ej. 5.00">
+      </label>
+      <p class="muted">Este se sumará al precio de venta de todos los productos marcados como Bebida Fría / En Refrigerador.</p>
+      <div class="actions" style="margin-top: var(--spacing-lg);">
+        <button class="btn" id="save-surcharge">Guardar</button>
+      </div>
+     </div>
+   `;
+  // Load current surcharge and set input value
+  const currentSurcharge = db.getSetting('coldDrinkSurcharge', 0);
+  container.querySelector('#cold-drink-surcharge').value = currentSurcharge;
+
+  // Save surcharge when button is clicked
+  container.querySelector('#save-surcharge').addEventListener('click', () => {
+    const value = parseFloat(container.querySelector('#cold-drink-surcharge').value) || 0;
+    db.setSetting('coldDrinkSurcharge', value);
+    alert('Recargo guardado correctamente');
+  });
 }

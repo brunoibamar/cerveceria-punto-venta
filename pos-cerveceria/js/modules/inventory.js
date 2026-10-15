@@ -176,41 +176,143 @@ function getStockProgress(stock) {
   return Math.min(100, Math.max(0, (stock / 100) * 100));
 }
 
+function getColdProducts(products) {
+  return products.filter(p => p.isCold === true && p.maxFridgeCapacity > 0);
+}
+
+function categorizeByCompartment(product) {
+  const packaging = (product.packaging || '').toLowerCase();
+  if (packaging.includes('lata') || packaging.includes('latón')) {
+    return 'top';
+  }
+  if (packaging.includes('six-pack') || packaging.includes('six pack')) {
+    return 'middle';
+  }
+  return 'bottom';
+}
+
+function renderFridgeSlot(product) {
+  const fridgeStock = product.fridgeStock || 0;
+  const maxCapacity = product.maxFridgeCapacity || 0;
+  const missing = Math.max(0, maxCapacity - fridgeStock);
+  const isAlert = missing > 0;
+  const slotClass = isAlert ? 'fridge-slot--alert' : 'fridge-slot--ok';
+  const label = isAlert
+    ? (fridgeStock === 0 ? '¡PEDIR RELLENO!' : '¡BAJO STOCK!')
+    : '';
+  const hasWarehouseStock = product.stock > 0;
+
+  return `
+    <div class="fridge-slot ${slotClass}" data-id="${product.id}">
+      <div class="fridge-slot-name">${escapeHtml(product.name)}</div>
+      <div class="fridge-slot-capacity">
+        <span>${fridgeStock} / ${maxCapacity}</span>
+        <span class="fridge-slot-remaining ${isAlert ? 'fridge-slot-remaining--alert' : ''}">
+          ${missing} ${missing === 1 ? 'falta' : 'faltan'}
+        </span>
+      </div>
+      ${label ? `<div class="fridge-slot-label">${label}</div>` : ''}
+      ${isAlert && hasWarehouseStock ? `
+        <div class="fridge-slot-actions">
+          <button class="btn btn--sm btn--secondary fridge-restock" data-id="${product.id}" data-qty="${missing}" type="button">Surttir</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderFridgePanel() {
+  const products = db.getProducts();
+  const coldProducts = getColdProducts(products);
+
+  if (coldProducts.length === 0) {
+    return `
+      <div class="fridge-diagram">
+        <div class="fridge-diagram-title">🧊 Refrigerador Digital</div>
+        <div class="fridge-panel-empty">
+          <p>No hay productos fríos configurados</p>
+          <span class="muted">Agrega productos con "Bebida Fría" para verlos aquí</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const compartments = { top: [], middle: [], bottom: [] };
+  coldProducts.forEach((product) => {
+    compartments[categorizeByCompartment(product)].push(product);
+  });
+
+  const compartmentLabels = {
+    top: 'Latas',
+    middle: 'Six-Packs',
+    bottom: 'Caguamas / Botellas',
+  };
+  const compartmentOrder = ['top', 'middle', 'bottom'];
+
+  let html = `
+    <div class="fridge-diagram">
+      <h3 class="fridge-diagram-title">🧊 Refrigerador Digital</h3>
+  `;
+
+  compartmentOrder.forEach((comp, index) => {
+    if (compartments[comp].length === 0) return;
+    html += `
+      ${index > 0 ? '<div class="fridge-compartment-divider"></div>' : ''}
+      <div class="fridge-compartment fridge-compartment--${comp}">
+        <div class="fridge-compartment-title">${compartmentLabels[comp]}</div>
+        <div class="fridge-compartment-grid">
+          ${compartments[comp].map((product) => renderFridgeSlot(product)).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
 export function renderInventory(container) {
   const products = db.getProducts();
 
   container.innerHTML = `
     <h2 class="view-title">Inventario</h2>
-    <form class="inventory-form-card" id="product-form">
-      <h3 class="form-title">Nuevo producto</h3>
-      <div class="form-group">
-        <label class="form-label">Nombre</label>
-        <input type="text" class="form-input" name="name" required maxlength="60" autocomplete="off" placeholder="Ej. Cerveza Artesanal">
+    <div class="inventory-layout">
+      <div class="inventory-main">
+        <form class="inventory-form-card" id="product-form">
+          <h3 class="form-title">Nuevo producto</h3>
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-input" name="name" required maxlength="60" autocomplete="off" placeholder="Ej. Cerveza Artesanal">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Código</label>
+            <input type="text" class="form-input" name="code" maxlength="30" autocomplete="off" placeholder="Ej. 750123456789">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <input type="text" class="form-input" name="category" maxlength="30" autocomplete="off" placeholder="General">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio de Venta</label>
+            <input type="number" class="form-input" name="price" min="0" step="0.01" required placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Costo de Compra</label>
+            <input type="number" class="form-input" name="costPrice" min="0" step="0.01" value="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock Inicial</label>
+            <input type="number" class="form-input" name="stock" min="0" step="1" required value="0" placeholder="0">
+          </div>
+          <button class="btn btn--block" type="submit">Agregar producto</button>
+        </form>
+        <div class="inventory-grid" id="inventory-grid">
+          ${products.map((product) => renderInventoryCard(product)).join('')}
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Código</label>
-        <input type="text" class="form-input" name="code" maxlength="30" autocomplete="off" placeholder="Ej. 750123456789">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Categoría</label>
-        <input type="text" class="form-input" name="category" maxlength="30" autocomplete="off" placeholder="General">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Precio de Venta</label>
-        <input type="number" class="form-input" name="price" min="0" step="0.01" required placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Costo de Compra</label>
-        <input type="number" class="form-input" name="costPrice" min="0" step="0.01" value="0" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Stock Inicial</label>
-        <input type="number" class="form-input" name="stock" min="0" step="1" required value="0" placeholder="0">
-      </div>
-      <button class="btn btn--block" type="submit">Agregar producto</button>
-    </form>
-    <div class="inventory-grid" id="inventory-grid">
-      ${products.map((product) => renderInventoryCard(product)).join('')}
+      <aside class="inventory-sidebar">
+        ${renderFridgePanel()}
+      </aside>
     </div>
   `;
 
@@ -260,6 +362,15 @@ export function renderInventory(container) {
         renderInventory(container);
       });
     }
+  });
+
+  // Fridge panel restock buttons
+  container.querySelectorAll('.fridge-restock').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = btn.dataset.id;
+      db.fillFridge(id);
+      renderInventory(container);
+    });
   });
 }
 

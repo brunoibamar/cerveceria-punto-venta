@@ -1,9 +1,9 @@
 :root {
-  /* Paleta de Colores Corporativa Sobria */
-  --bg-main: #0b0f17;
-  --bg-card: #131b2e;
-  --bg-card-hover: #1e293b;
-  --border-color: rgba(255, 255, 255, 0.08);
+  /* Paleta de Colores Corporativa Sobria - Tema Slate/Bronze */
+  --bg-main: #121212;
+  --bg-card: #1e1e1e;
+  --bg-card-hover: #2a2a2a;
+  --border-color: rgba(255, 255, 255, 0.15);
 
   --primary: #d97706;
   --primary-hover: #b45309;
@@ -13,6 +13,14 @@
 
   --success: #059669;
   --danger: #dc2626;
+  --warning: #f59e0b;
+
+  /* Cold/Frozen Colors for Refrigerated Products */
+  --color-cold-accent: #06b6d4;      /* Cyan/Ice blue */
+  --color-cold-glow: #38bdf8;        /* Light cyan glow */
+  --color-cold-border: rgba(6, 182, 212, 0.4);
+  --color-cold-bg: rgba(6, 182, 212, 0.12);
+  --color-cold-text: #22d3ee;        /* Bright cyan text */
 
   /* Bordes redondeados sutiles */
   --radius-sm: 8px;
@@ -30,6 +38,7 @@
   /* Tipografía limpia */
   --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-size-sm: 0.875rem;
+  --font-size-xs: 0.75rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.25rem;
   --font-size-xl: 1.5rem;
@@ -54,7 +63,7 @@
   --z-nav: 100;
   --z-modal: 200;
 
-  /* Aliases for component stylesheet */
+  /* Alias for component stylesheet */
   --color-surface: var(--bg-card);
   --color-surface-alt: var(--bg-card-hover);
   --color-primary: var(--primary);
@@ -64,5 +73,26 @@
   --color-text-muted: var(--text-muted);
   --color-success: var(--success);
   --color-danger: var(--danger);
-  --color-warning: #f59e0b;
+  --color-warning: var(--warning);
+
+  /* RGB values for shadows and glows */
+  --primary-rgb: 217, 119, 6;
+  --success-rgb: 5, 150, 105;
+  --danger-rgb: 220, 38, 38;
+  --warning-rgb: 245, 158, 11;
+
+  /* ===== NEON BLUEPRINT / CYBERPUNK THEME ===== */
+  --neon-blue: #06b6d8;          /* Cyan neon - normal/full state */
+  --neon-blue-glow: #38bdf8;     /* Light cyan glow */
+  --neon-blue-bg: rgba(6, 182, 216, 0.08);
+  --neon-blue-border: rgba(6, 182, 216, 0.4);
+  --neon-blue-shadow: rgba(6, 182, 216, 0.25);
+
+  --neon-red: #ef4444;           /* Neon red - alert/low stock state */
+  --neon-red-glow: #f87171;     /* Light red glow */
+  --neon-red-bg: rgba(239, 68, 68, 0.08);
+  --neon-red-border: rgba(239, 68, 68, 0.4);
+  --neon-red-shadow: rgba(239, 68, 68, 0.25);
+
+  --blueprint-grid: rgba(6, 182, 216, 0.04);
 }

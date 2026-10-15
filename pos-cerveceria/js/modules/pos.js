@@ -1,6 +1,25 @@
 import { db } from '../db.js';
 
 let cart = [];
+let html5Qrcode = null;
+
+async function loadHtml5Qrcode() {
+  if (html5Qrcode) return html5Qrcode;
+  if (window.Html5Qrcode) {
+    html5Qrcode = window.Html5Qrcode;
+    return html5Qrcode;
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    script.onload = () => {
+      html5Qrcode = window.Html5Qrcode;
+      resolve(html5Qrcode);
+    };
+    script.onerror = () => reject(new Error('No se pudo cargar html5-qrcode'));
+    document.head.appendChild(script);
+  });
+}
 
 export function render(container) {
   const products = db.getProducts();
@@ -12,8 +31,8 @@ export function render(container) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="search" id="product-search" placeholder="Buscar por nombre o código de barras..." autocomplete="off" enterkeyhint="search" aria-label="Buscar producto por nombre o código de barras">
       </div>
-      <button class="btn btn--amber" id="scan-btn" type="button">
-        📷 Activar Cámara / Lector de Código
+      <button class="btn btn--amber" id="btn-escanear-camara" type="button" aria-label="Escanear código de barras con cámara">
+        📷 Escanear con Cámara
       </button>
     </div>
     <div class="pos-header">
@@ -73,7 +92,7 @@ export function render(container) {
     });
   });
 
-  container.querySelector('#scan-btn').addEventListener('click', () => {
+  container.querySelector('#btn-escanear-camara').addEventListener('click', () => {
     openScannerModal(products);
   });
 
@@ -166,8 +185,8 @@ function openScannerModal(products) {
     <div class="card scanner-modal" role="dialog" aria-modal="true" aria-label="Escáner de código de barras">
       <h3 class="scanner-title">📷 Lector de Código de Barras</h3>
       <div class="scanner-viewport">
-        <video class="scanner-video" id="scanner-video" autoplay playsinline muted></video>
-        <p class="scanner-status" id="scanner-status">Iniciando cámara…</p>
+        <div id="scanner-viewport" style="width:100%;"></div>
+        <p class="scanner-status" id="scanner-status">Cargando lector…</p>
       </div>
       <label class="field">
         <span>O ingresa el código / nombre manualmente</span>
@@ -182,35 +201,15 @@ function openScannerModal(products) {
   `;
   document.body.appendChild(overlay);
 
-  const video = overlay.querySelector('#scanner-video');
   const statusEl = overlay.querySelector('#scanner-status');
   const manual = overlay.querySelector('#scanner-manual');
-  let stream = null;
-  let detectTimer = null;
+  const viewport = overlay.querySelector('#scanner-viewport');
+  let scanner = null;
   let closed = false;
-
-  function stopCamera() {
-    if (detectTimer) {
-      clearInterval(detectTimer);
-      detectTimer = null;
-    }
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      stream = null;
-    }
-  }
-
-  function close() {
-    closed = true;
-    stopCamera();
-    overlay.remove();
-  }
 
   function findProduct(query) {
     const q = query.trim().toLowerCase();
-    if (!q) {
-      return null;
-    }
+    if (!q) return null;
     return (
       products.find((p) => (p.code || '').toLowerCase() === q) ||
       products.find((p) => (p.code || '').toLowerCase().includes(q)) ||
@@ -229,46 +228,42 @@ function openScannerModal(products) {
     return false;
   }
 
-  async function startCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      statusEl.textContent = 'Cámara no disponible. Ingresa el código manualmente.';
-      return;
-    }
+  async function startScanner() {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: false,
-      });
-      if (closed) {
-        stopCamera();
-        return;
-      }
-      video.srcObject = stream;
-      if ('BarcodeDetector' in window) {
-        const detector = new BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'],
-        });
-        statusEl.textContent = 'Cámara activa: apunta al código de barras';
-        detectTimer = setInterval(async () => {
-          if (closed || !stream) {
-            return;
-          }
-          try {
-            const barcodes = await detector.detect(video);
-            if (barcodes && barcodes.length && barcodes[0].rawValue) {
-              handleScan(barcodes[0].rawValue);
-            }
-          } catch {
-          }
-        }, 400);
-      } else {
-        statusEl.textContent =
-          'Este navegador no soporta detección automática. Ingresa el código manualmente.';
-      }
-    } catch {
-      statusEl.textContent =
-        'Sin acceso a la cámara (permiso denegado o cámara inexistente). Ingresa el código manualmente.';
+      await loadHtml5Qrcode();
+      scanner = new window.Html5Qrcode('scanner-viewport');
+      statusEl.textContent = 'Iniciando cámara…';
+      await scanner.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 150 },
+          aspectRatio: 1.77,
+          disableFlip: true,
+        },
+        (decodedText, decodedResult) => {
+          if (closed) return;
+          handleScan(decodedText);
+        },
+        (error) => {
+          // Ignore scan errors (no barcode found, etc.)
+        }
+      );
+      statusEl.textContent = 'Cámara activa: apunta al código de barras';
+    } catch (err) {
+      console.error('Scanner error:', err);
+      statusEl.textContent = 'Error al iniciar cámara. Ingresa el código manualmente.';
+      viewport.innerHTML = '<p style="padding:1rem;text-align:center;color:var(--color-text-muted);">No se pudo acceder a la cámara.<br>Usa el campo manual abajo.</p>';
     }
+  }
+
+  function close() {
+    closed = true;
+    if (scanner) {
+      scanner.stop().catch(() => {});
+      scanner = null;
+    }
+    overlay.remove();
   }
 
   overlay.querySelector('#scanner-close').addEventListener('click', close);
@@ -287,7 +282,7 @@ function openScannerModal(products) {
     }
   });
 
-  startCamera();
+  startScanner();
 }
 
 function addToCart(product, qty = 1) {

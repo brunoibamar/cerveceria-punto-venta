@@ -12,6 +12,9 @@ export function renderPOS(container) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="search" id="product-search" placeholder="Buscar por nombre o código..." autocomplete="off" aria-label="Buscar producto">
       </div>
+      <button id="btn-escanear" class="btn-escanear-camara" style="background-color: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;" type="button">
+        📷 Escanear con Cámara
+      </button>
       <button class="btn btn--promo" id="promo-toggle" type="button" aria-expanded="false" aria-controls="promo-panel">
         🏷️ Promociones Activas
         <span class="promo-count">${activePromos.length}</span>
@@ -73,6 +76,7 @@ export function renderPOS(container) {
   });
 
   container.querySelector('#checkout-btn').addEventListener('click', checkout);
+  container.querySelector('#btn-escanear').addEventListener('click', iniciarEscannerCamara);
   renderGrid(container, products, '');
   renderCart();
 }
@@ -147,20 +151,28 @@ function renderGrid(container, products, query) {
     ? products.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          (p.code || '').toLowerCase().includes(q),
+          (p.code || '').toLowerCase().includes(q) ||
+          (p.brand || '').toLowerCase().includes(q) ||
+          (p.packaging || '').toLowerCase().includes(q),
       )
     : products;
   grid.innerHTML = visible.length
     ? visible
         .map(
-          (p) => `
-        <button class="product-tile" data-id="${p.id}">
-          <span class="product-name">${escapeHtml(p.name)}</span>
-          <span class="price">$${p.price.toFixed(2)}</span>
-          <span class="stock">Stock: ${p.stock}</span>
-          ${p.code ? `<span class="badge">${escapeHtml(p.code)}</span>` : ''}
-        </button>
-      `,
+          (p) => {
+            const isCold = p.isCold === true;
+            const coldClass = isCold ? 'product-tile--cold' : '';
+            const coldIcon = isCold ? '❄️ ' : '';
+            return `
+          <button class="product-tile ${coldClass}" data-id="${p.id}">
+            <span class="product-name">${coldIcon}${escapeHtml(p.name)}</span>
+            <span class="price">$${p.price.toFixed(2)}</span>
+            <span class="stock">Stock: ${p.stock}</span>
+            ${p.code ? `<span class="badge">${escapeHtml(p.code)}</span>` : ''}
+            ${isCold ? `<span class="badge badge--cold">Fría</span>` : ''}
+          </button>
+        `;
+          },
         )
         .join('')
     : `<p class="muted pos-empty">Sin resultados para "${escapeHtml(query.trim())}"</p>`;
@@ -188,7 +200,12 @@ function addToCart(product, qty = 1) {
   if (line) {
     line.qty += qty;
   } else {
-    cart.push({ id: product.id, name: product.name, price: product.price, qty });
+    let basePrice = product.price;
+    if (product.isCold) {
+      const surcharge = db.getSetting('coldDrinkSurcharge', 0);
+      basePrice += surcharge;
+    }
+    cart.push({ id: product.id, name: product.name, price: basePrice, qty });
   }
   renderCart();
 }
@@ -235,13 +252,73 @@ function checkout() {
   cart.forEach((item) => {
     if (!item.isCombo) {
       db.updateStock(item.id, -item.qty);
+      const product = db.getProducts().find(p => p.id === item.id);
+      if (product && product.isCold) {
+        db.updateProduct(item.id, { fridgeStock: Math.max(0, product.fridgeStock - item.qty) });
+      }
     } else if (item.comboItems) {
       item.comboItems.forEach(productId => {
         db.updateStock(productId, -item.qty);
+        const product = db.getProducts().find(p => p.id === productId);
+        if (product && product.isCold) {
+          db.updateProduct(productId, { fridgeStock: Math.max(0, product.fridgeStock - item.qty) });
+        }
       });
     }
   });
   cart = [];
   renderCart();
   alert(`Venta registrada: $${total.toFixed(2)}`);
+}
+
+function iniciarEscannerCamara() {
+  if (typeof Html5Qrcode === 'undefined') {
+    alert('La librería de escaneo no está disponible. Recarga la página e intenta nuevamente.');
+    return;
+  }
+
+  let oldModal = document.getElementById('modal-escaner-camara');
+  if (oldModal) oldModal.remove();
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="modal-escaner-camara" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; z-index:9999;">
+      <div style="background:#1e293b; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center;">
+        <h3 style="color:white; margin-bottom:15px;">Escanea el código de barras</h3>
+        <div id="reader" style="width:100%;"></div>
+        <button id="cerrar-camara" style="margin-top:15px; background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Cancelar</button>
+      </div>
+    </div>
+  `);
+
+  const html5QrCode = new Html5Qrcode("reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    (decodedText) => {
+      html5QrCode.stop().then(() => {
+        const modal = document.getElementById('modal-escaner-camara');
+        if (modal) modal.remove();
+        const inputBusqueda = document.getElementById('product-search');
+        if (inputBusqueda) {
+          inputBusqueda.value = decodedText;
+          inputBusqueda.dispatchEvent(new Event('input'));
+        }
+      }).catch(err => console.error("Error al detener cámara", err));
+    },
+    () => {}
+  ).catch(err => {
+    alert("No se pudo acceder a la cámara. Revisa los permisos.");
+    const modal = document.getElementById('modal-escaner-camara');
+    if (modal) modal.remove();
+  });
+
+  document.getElementById('cerrar-camara').addEventListener('click', () => {
+    html5QrCode.stop().then(() => {
+      const modal = document.getElementById('modal-escaner-camara');
+      if (modal) modal.remove();
+    }).catch(() => {
+      const modal = document.getElementById('modal-escaner-camara');
+      if (modal) modal.remove();
+    });
+  });
 }

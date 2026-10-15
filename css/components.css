@@ -113,11 +113,24 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   touch-action: manipulation;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .product-tile:active {
   border-color: var(--color-primary);
+  transform: scale(0.98);
+}
+
+/* Cold product tile variant */
+.product-tile--cold {
+  border-color: var(--color-cold-border);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(6, 182, 212, 0.03) 100%);
+  box-shadow: var(--shadow), 0 0 0 1px var(--color-cold-border), 0 0 15px rgba(6, 182, 212, 0.06);
+}
+
+.product-tile--cold:active {
+  border-color: var(--color-cold-accent);
+  box-shadow: var(--shadow), 0 0 0 2px var(--color-cold-accent), 0 0 20px rgba(6, 182, 212, 0.15);
   transform: scale(0.98);
 }
 
@@ -245,7 +258,7 @@
 
 .badge--ok {
   color: var(--color-success);
-  background-color: rgba(46, 204, 113, 0.15);
+  background-color: rgba(var(--success-rgb), 0.15);
 }
 
 .stats {
@@ -432,17 +445,17 @@
 
 .badge--in-stock {
   color: var(--color-success);
-  background-color: rgba(46, 204, 113, 0.15);
+  background-color: rgba(var(--success-rgb), 0.15);
 }
 
 .badge--low-stock {
   color: var(--color-warning);
-  background-color: rgba(243, 156, 18, 0.15);
+  background-color: rgba(var(--warning-rgb), 0.15);
 }
 
 .badge--out-of-stock {
   color: var(--color-danger);
-  background-color: rgba(231, 76, 60, 0.15);
+  background-color: rgba(var(--danger-rgb), 0.15);
 }
 
 .inventory-stock-progress {
@@ -517,10 +530,25 @@
   border-top: 1px solid var(--color-surface-alt);
 }
 
-.inventory-card-actions .btn {
-  flex: 1;
-  min-width: 0;
-}
+  .inventory-card-actions .btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Fridge status indicator in inventory cards */
+  .inventory-fridge-status {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .inventory-fridge-status.low {
+    color: var(--neon-red-glow);
+    text-shadow: 0 0 8px var(--neon-red-shadow);
+  }
 
 .inventory-card-actions .btn--icon-only {
   flex: 0 0 48px;
@@ -738,12 +766,12 @@
 }
 
 .promo-type-badge.discount {
-  background-color: rgba(46, 204, 113, 0.15);
+  background-color: rgba(var(--success-rgb), 0.15);
   color: var(--color-success);
 }
 
 .promo-type-badge.combo {
-  background-color: rgba(243, 156, 18, 0.15);
+  background-color: rgba(var(--warning-rgb), 0.15);
   color: var(--color-primary);
 }
 
@@ -772,7 +800,7 @@
 
 .discount-badge {
   display: inline-block;
-  background-color: rgba(46, 204, 113, 0.15);
+  background-color: rgba(var(--success-rgb), 0.15);
   color: var(--color-success);
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -1101,12 +1129,12 @@
 
 .badge--supplier {
   color: var(--color-primary);
-  background-color: rgba(243, 156, 18, 0.15);
+  background-color: rgba(var(--warning-rgb), 0.15);
 }
 
 .badge--expired {
   color: var(--color-danger);
-  background-color: rgba(231, 76, 60, 0.15);
+  background-color: rgba(var(--danger-rgb), 0.15);
 }
 
 .promo-offer-items {
@@ -1201,25 +1229,37 @@
   .promo-offer {
     flex-direction: column;
     align-items: stretch;
-  }
 
+}
+
+/* Fridge item alert animation - neon red blink */
+@keyframes fridgeAlert {
+  0%, 100% {
+    border-color: var(--neon-red);
+    box-shadow: 0 0 8px 2px var(--neon-red-shadow);
+  }
+  50% {
+    border-color: var(--neon-red-glow);
+    box-shadow: 0 0 16px 6px var(--neon-red-shadow);
+  }
+}
   .promo-offer-actions {
     justify-content: flex-end;
   }
 }
 
-/* ===== FORMULARIO DE INVENTARIO - NUEVA ESTRUCTURA ===== */
+/* ===== INVENTORY FORM - NEW STRUCTURE ===== */
 
-/* Tarjeta contenedora del formulario */
+/* Form card container */
 .inventory-form-card {
-  background-color: #161f30 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px !important;
   padding: 20px !important;
   margin-bottom: 24px !important;
 }
 
-/* Grupo de campo */
+/* Field group */
 .form-group {
   display: flex !important;
   flex-direction: column !important;
@@ -1227,14 +1267,14 @@
   margin-bottom: 16px !important;
 }
 
-/* Etiquetas de texto */
+/* Text labels */
 .form-label {
   color: #d1d5db !important;
   font-size: 0.9rem !important;
   font-weight: 600 !important;
 }
 
-/* Campos para escribir (INPUTS) */
+/* Input fields */
 .form-input,
 input[type="text"],
 input[type="number"],
@@ -1250,7 +1290,7 @@ select {
   transition: all 0.2s ease !important;
 }
 
-/* Resaltado cuando el usuario hace clic o escribe dentro */
+/* Focus highlight */
 .form-input:focus,
 input:focus,
 select:focus {
@@ -1258,6 +1298,100 @@ select:focus {
   background-color: #111827 !important;
   box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3) !important;
   outline: none !important;
+}
+
+/* ===== COLD/FROZEN PRODUCT VISUAL EFFECTS ===== */
+
+/* Cold product card variant */
+.inventory-card--cold {
+  border-color: var(--color-cold-border);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(6, 182, 212, 0.03) 100%);
+  box-shadow: var(--shadow), 0 0 0 1px var(--color-cold-border), 0 0 20px rgba(6, 182, 212, 0.08);
+}
+
+.inventory-card--cold:hover {
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--color-cold-border), 0 0 30px rgba(6, 182, 212, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Cold badge */
+.badge--cold {
+  color: var(--color-cold-text);
+  background-color: var(--color-cold-bg);
+  border: 1px solid var(--color-cold-border);
+  font-weight: 600;
+  animation: cold-pulse 3s ease-in-out infinite;
+}
+
+@keyframes cold-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.5), 0 0 24px rgba(56, 189, 248, 0.3);
+  }
+}
+
+/* Frosted accent bar at top of cold cards */
+.inventory-card--cold::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--color-cold-accent) 25%, 
+    var(--color-cold-glow) 50%, 
+    var(--color-cold-accent) 75%, 
+    transparent 100%
+  );
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  opacity: 0.8;
+  animation: frost-flow 4s ease-in-out infinite;
+}
+
+@keyframes frost-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 0.7;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 1;
+  }
+}
+
+/* Ensure cold card has relative positioning for ::before */
+.inventory-card {
+  position: relative;
+}
+
+/* Cold product icon in title */
+.inventory-card--cold .inventory-card-title::before {
+  content: '❄️ ';
+  font-size: 0.9em;
+  margin-right: 4px;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.6));
+}
+
+/* Datalist styling for suggestions */
+input[list] {
+  position: relative;
+}
+
+input[list]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+/* Custom dropdown arrow for inputs with datalist */
+.field:has(input[list]) .input {
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
 }
 
 /* ===== REPORTES ===== */
@@ -1367,7 +1501,7 @@ select:focus {
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
-
+ 
 .kpi-editable:hover {
   opacity: 0.8;
 }
@@ -1375,5 +1509,305 @@ select:focus {
 .kpi-card .stat-label {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+/* ===== FRIDGE DIAGRAM - CYBERPUNK BLUEPRINT ===== */
+
+.fridge-diagram-title {
+  color: var(--neon-blue);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-shadow: 0 0 10px var(--neon-blue-shadow);
+}
+
+.fridge-diagram {
+  background: var(--bg-card);
+  border: 2px solid var(--neon-blue);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+  position: relative;
+  box-shadow: 0 0 20px var(--neon-blue-shadow), inset 0 0 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.fridge-diagram::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--blueprint-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--blueprint-grid) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+}
+
+.fridge-diagram > * {
+  position: relative;
+  z-index: 2;
+}
+
+.fridge-compartment-divider {
+  height: 1px;
+  background: var(--neon-blue-border);
+  box-shadow: 0 0 6px var(--neon-blue);
+  margin: var(--spacing-md) 0;
+}
+
+.fridge-compartment-title {
+  color: var(--neon-blue);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px var(--neon-blue-shadow);
+}
+
+.fridge-compartment {
+  margin-bottom: var(--spacing-lg);
+}
+
+.fridge-compartment:last-child {
+  margin-bottom: 0;
+}
+
+.fridge-compartment--top .fridge-compartment-title::before {
+  content: '🥫 ';
+}
+
+.fridge-compartment--middle .fridge-compartment-title::before {
+  content: '📦 ';
+}
+
+.fridge-compartment--bottom .fridge-compartment-title::before {
+  content: '🍼 ';
+}
+
+.fridge-compartment-grid {
+  display: grid;
+  gap: var(--spacing-sm);
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+@media (max-width: 600px) {
+  .fridge-compartment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fridge-slot {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--neon-blue);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px var(--neon-blue-shadow);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.fridge-slot:hover {
+  border-color: var(--neon-blue-glow);
+  box-shadow: 0 0 12px var(--neon-blue-shadow), 0 0 20px var(--neon-blue-shadow);
+}
+
+.fridge-slot--ok {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 8px var(--neon-blue-shadow), 0 0 16px var(--neon-blue-shadow);
+  background: var(--neon-blue-bg);
+}
+
+.fridge-slot--alert {
+  border-color: var(--neon-red);
+  box-shadow: 0 0 8px var(--neon-red-shadow), 0 0 16px var(--neon-red-shadow);
+  background: var(--neon-red-bg);
+  animation: fridgeAlert 1.5s ease-in-out infinite;
+}
+
+.fridge-slot-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fridge-slot-capacity {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.fridge-slot-remaining {
+  font-weight: 600;
+  color: var(--neon-blue);
+}
+
+.fridge-slot-remaining--alert {
+  color: var(--neon-red-glow);
+}
+
+.fridge-slot-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--neon-red-glow);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px var(--neon-red-shadow);
+  animation: fridgeAlert 1.5s ease-in-out infinite;
+}
+
+.fridge-slot-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.fridge-slot-actions .btn--sm {
+  flex: 1;
+}
+
+/* ===== INVENTORY 2-COLUMN LAYOUT ===== */
+
+.inventory-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .inventory-layout {
+    grid-template-columns: 1fr;
+  }
+  .inventory-sidebar {
+    position: sticky;
+    top: calc(var(--header-height) + var(--spacing-md));
+  }
+}
+
+.inventory-main {
+  min-width: 0;
+}
+
+.inventory-sidebar {
+  position: sticky;
+  top: calc(var(--header-height) + var(--spacing-md));
+  height: fit-content;
+  max-height: calc(100vh - var(--header-height) - var(--spacing-xl));
+  overflow-y: auto;
+}
+
+/* ===== FRIDGE PANEL (sidebar summary) ===== */
+
+.fridge-panel {
+  background: var(--color-cold-bg);
+  border: 1px solid var(--color-cold-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow), 0 0 20px rgba(6, 182, 212, 0.08);
+}
+
+.fridge-panel-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.fridge-panel-title {
+  color: var(--color-cold-text);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.fridge-panel-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.fridge-summary-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--color-cold-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.fridge-summary-item--low {
+  border-color: var(--danger);
+  background: rgba(220, 38, 38, 0.05);
+}
+
+.fridge-summary-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fridge-summary-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-surface-alt);
+  border-radius: 999px;
+  overflow: hidden;
+  max-width: 80px;
+}
+
+.fridge-summary-fill {
+  height: 100%;
+  background: var(--color-cold-accent);
+  border-radius: 999px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.fridge-summary-fill--low {
+  background: var(--danger);
+}
+
+.fridge-summary-stock {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.fridge-panel-empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-muted);
+}
+
+.fridge-panel-empty p {
+  margin: 0 0 var(--spacing-xs);
+  font-weight: 600;
+}
+
+.btn--sm {
+  min-height: 36px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
 }
 

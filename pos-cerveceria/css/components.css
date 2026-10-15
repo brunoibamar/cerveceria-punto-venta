@@ -645,6 +645,25 @@
   object-fit: cover;
 }
 
+#scanner-viewport {
+  width: 100%;
+  min-height: 180px;
+  background-color: #000;
+  border-radius: var(--radius-sm);
+}
+
+#scanner-viewport > div {
+  width: 100% !important;
+}
+
+#scanner-viewport video {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
 .scanner-status {
   position: absolute;
   inset-inline: var(--spacing-sm);
@@ -897,13 +916,194 @@ select {
   transition: all 0.2s ease !important;
 }
 
-/* Resaltado cuando el usuario hace clic o escribe dentro */
-.form-input:focus,
-input:focus,
-select:focus {
-  border-color: #d97706 !important;
-  background-color: #111827 !important;
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3) !important;
-  outline: none !important;
-}
+  /* Resaltado cuando el usuario hace clic o escribe dentro */
+  .form-input:focus,
+  input:focus,
+  select:focus {
+    border-color: #d97706 !important;
+    background-color: #111827 !important;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3) !important;
+    outline: none !important;
+  }
+
+  /* ===== FRIDGE DIAGRAM - CYBERPUNK BLUEPRINT ===== */
+  
+  .fridge-diagram-title {
+    color: var(--neon-blue);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin: 0 0 var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-shadow: 0 0 10px var(--neon-blue-shadow);
+  }
+  
+  .fridge-diagram {
+    background: var(--bg-card);
+    border: 2px solid var(--neon-blue);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-md) 0;
+    position: relative;
+    box-shadow: 0 0 20px var(--neon-blue-shadow), inset 0 0 30px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+  
+  .fridge-diagram::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--blueprint-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--blueprint-grid) 1px, transparent 1px);
+    background-size: 16px 16px;
+    pointer-events: none;
+  }
+  
+  .fridge-diagram > * {
+    position: relative;
+    z-index: 2;
+  }
+  
+  .fridge-compartment-divider {
+    height: 1px;
+    background: var(--neon-blue-border);
+    box-shadow: 0 0 6px var(--neon-blue);
+    margin: var(--spacing-md) 0;
+  }
+  
+  .fridge-compartment-title {
+    color: var(--neon-blue);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px var(--neon-blue-shadow);
+  }
+  
+  .fridge-compartment {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .fridge-compartment:last-child {
+    margin-bottom: 0;
+  }
+  
+  .fridge-compartment--top .fridge-compartment-title::before {
+    content: '🥫 ';
+  }
+  
+  .fridge-compartment--middle .fridge-compartment-title::before {
+    content: '📦 ';
+  }
+  
+  .fridge-compartment--bottom .fridge-compartment-title::before {
+    content: '🍼 ';
+  }
+  
+  .fridge-compartment-grid {
+    display: grid;
+    gap: var(--spacing-sm);
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  
+  @media (max-width: 600px) {
+    .fridge-compartment-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .fridge-slot {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--neon-blue);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    transition: all 0.2s ease;
+    box-shadow: 0 0 8px var(--neon-blue-shadow);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  
+  .fridge-slot:hover {
+    border-color: var(--neon-blue-glow);
+    box-shadow: 0 0 12px var(--neon-blue-shadow), 0 0 20px var(--neon-blue-shadow);
+  }
+  
+  .fridge-slot--ok {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 8px var(--neon-blue-shadow), 0 0 16px var(--neon-blue-shadow);
+    background: var(--neon-blue-bg);
+  }
+  
+  .fridge-slot--alert {
+    border-color: var(--neon-red);
+    box-shadow: 0 0 8px var(--neon-red-shadow), 0 0 16px var(--neon-red-shadow);
+    background: var(--neon-red-bg);
+    animation: fridgeAlert 1.5s ease-in-out infinite;
+  }
+  
+  .fridge-slot-name {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .fridge-slot-capacity {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+  
+  .fridge-slot-remaining {
+    font-weight: 600;
+    color: var(--neon-blue);
+  }
+  
+  .fridge-slot-remaining--alert {
+    color: var(--neon-red-glow);
+  }
+  
+  .fridge-slot-label {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--neon-red-glow);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px var(--neon-red-shadow);
+    animation: fridgeAlert 1.5s ease-in-out infinite;
+  }
+  
+  .fridge-panel-empty {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+  }
+  
+  .fridge-panel-empty p {
+    margin: 0 0 var(--spacing-xs);
+    font-weight: 600;
+  }
+  
+  /* Fridge item alert animation - neon red blink */
+  @keyframes fridgeAlert {
+    0%, 100% {
+      border-color: var(--neon-red);
+      box-shadow: 0 0 8px 2px var(--neon-red-shadow);
+    }
+    50% {
+      border-color: var(--neon-red-glow);
+      box-shadow: 0 0 16px 6px var(--neon-red-shadow);
+    }
+  }
 

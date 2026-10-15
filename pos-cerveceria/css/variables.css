@@ -1,30 +1,32 @@
 :root {
-  /* Modern Dark Glassmorphism Palette */
-  --color-bg: #0b0e14; /* Fondo de pantalla: Negro carbón profundo */
-  --color-surface: #161b22; /* Tarjetas y Contenedores */
-  --color-surface-alt: #1c2330; /* Superficie alternativa sutil */
-  --color-surface-glass: rgba(22, 27, 34, 0.7); /* Vidrio translúcido */
-  --color-text: #f5f5f7;
-  --color-text-muted: #9aa0a6;
+  /* Paleta de Colores Corporativa Sobria - Tema Slate/Bronze */
+  --bg-main: #121212;
+  --bg-card: #1e1e1e;
+  --bg-card-hover: #2a2a2a;
+  --border-color: rgba(255, 255, 255, 0.15);
 
-  /* Colores de acento */
-  --color-primary: #ff9f1c; /* Ámbar Dorado Cerveceiro Neón */
-  --color-primary-dark: #f39c12; /* Tono secundario del ámbar */
-  --color-on-primary: #121212;
-  --color-success: #10b981; /* Verde Esmeralda */
-  --color-danger: #ef4444; /* Rojo Neón */
-  --color-warning: #ff9f1c;
+  --primary: #d97706;
+  --primary-hover: #b45309;
 
-  /* Efectos de vidrio (Glassmorphism) */
-  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --glass-backdrop: blur(12px);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
 
-  /* Bordes redondeados modernos */
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #f59e0b;
+
+  /* Cold/Frozen Colors for Refrigerated Products */
+  --color-cold-accent: #06b6d4;      /* Cyan/Ice blue */
+  --color-cold-glow: #38bdf8;        /* Light cyan glow */
+  --color-cold-border: rgba(6, 182, 212, 0.4);
+  --color-cold-bg: rgba(6, 182, 212, 0.12);
+  --color-cold-text: #22d3ee;        /* Bright cyan text */
+
+  /* Bordes redondeados sutiles */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 
   /* Espaciado */
   --spacing-xs: 4px;
@@ -33,23 +35,64 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
 
+  /* Tipografía limpia */
   --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.25rem;
   --font-size-xl: 1.5rem;
   --font-size-2xl: 2rem;
 
+  /* Layout */
   --header-height: 56px;
   --nav-height: 64px;
   --tap-target: 44px;
   --tap-target-lg: 48px;
 
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+  /* Sombras suaves y difuminadas */
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.35);
 
+  /* Transiciones suaves */
+  --transition: all 0.2s ease-in-out;
+
+  /* Z-index */
   --z-header: 100;
   --z-nav: 100;
   --z-modal: 200;
+
+  /* Alias for component stylesheet */
+  --color-surface: var(--bg-card);
+  --color-surface-alt: var(--bg-card-hover);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-hover);
+  --color-on-primary: #fff;
+  --color-text: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  /* RGB values for shadows and glows */
+  --primary-rgb: 217, 119, 6;
+  --success-rgb: 5, 150, 105;
+  --danger-rgb: 220, 38, 38;
+  --warning-rgb: 245, 158, 11;
+
+  /* ===== NEON BLUEPRINT / CYBERPUNK THEME ===== */
+  --neon-blue: #06b6d8;          /* Cyan neon - normal/full state */
+  --neon-blue-glow: #38bdf8;     /* Light cyan glow */
+  --neon-blue-bg: rgba(6, 182, 216, 0.08);
+  --neon-blue-border: rgba(6, 182, 212, 0.4);
+  --neon-blue-shadow: rgba(6, 182, 216, 0.25);
+
+  --neon-red: #ef4444;           /* Neon red - alert/low stock state */
+  --neon-red-glow: #f87171;     /* Light red glow */
+  --neon-red-bg: rgba(239, 68, 68, 0.08);
+  --neon-red-border: rgba(239, 68, 68, 0.4);
+  --neon-red-shadow: rgba(239, 68, 68, 0.25);
+
+  --blueprint-grid: rgba(6, 182, 212, 0.04);
 }
