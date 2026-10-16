@@ -92,12 +92,12 @@ export function render(container) {
 
   function createComboItemRow(productId = '', qty = 1, index = 0) {
     return `
-      <div class="combo-item-row" data-product-id="${productId}" data-index="${index}" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
-        <select class="input" name="productId" style="flex: 1;" required>
+      <div class="combo-item-row" data-product-id="${productId}" data-index="${index}" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; align-items: stretch;">
+        <select class="input" name="productId" style="width: 100%;" required>
           <option value="">Seleccionar producto</option>
           ${products.map(p => `<option value="${p.id}" ${p.id === productId ? 'selected' : ''}>${p.name} ($${p.price.toFixed(2)})</option>`).join('')}
         </select>
-        <input class="input" name="qty" type="number" min="1" value="${qty}" style="width: 70px;" required>
+        <input class="input" name="qty" type="number" min="1" value="${qty}" style="width: 100%;" required>
         <button type="button" class="btn-icon btn-icon--danger" data-action="remove-combo-item" title="Quitar">✕</button>
       </div>
     `;

@@ -97,6 +97,27 @@ export const db = {
     }
   },
 
+  fillAllFridges() {
+    const data = read();
+    let changed = false;
+    for (const product of data.products) {
+      if (!product.isCold || !(product.maxFridgeCapacity > 0)) {
+        continue;
+      }
+      const missing = Math.max(0, (product.maxFridgeCapacity || 0) - (product.fridgeStock || 0));
+      const availableFromWarehouse = Math.min(missing, product.stock);
+      if (availableFromWarehouse > 0) {
+        product.fridgeStock = Math.min(product.maxFridgeCapacity || 0, (product.fridgeStock || 0) + availableFromWarehouse);
+        product.stock = Math.max(0, product.stock - availableFromWarehouse);
+        changed = true;
+      }
+    }
+    if (changed) {
+      write(data);
+    }
+    return changed;
+  },
+
   getSales() {
     return read().sales;
   },

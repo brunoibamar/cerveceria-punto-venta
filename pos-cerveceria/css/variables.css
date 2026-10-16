@@ -47,8 +47,8 @@
   /* Layout */
   --header-height: 56px;
   --nav-height: 64px;
-  --tap-target: 44px;
-  --tap-target-lg: 48px;
+  --tap-target: 48px;
+  --tap-target-lg: 56px;
 
   /* Sombras suaves y difuminadas */
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.25);

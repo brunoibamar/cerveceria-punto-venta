@@ -49,7 +49,7 @@ export function render(container) {
       ${products
         .map(
           (p) => `
-        <button class="product-tile" data-id="${p.id}">
+        <button class="product-tile" data-id="${p.id}" type="button">
           <span class="product-name">${p.name}</span>
           <span class="price">$${p.price.toFixed(2)}</span>
           <span class="stock">Stock: ${p.stock}</span>

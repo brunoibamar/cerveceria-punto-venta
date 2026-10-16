@@ -47,15 +47,19 @@ function openEditModal(product, onSave) {
       <form id="edit-form" class="form">
         <label class="field">
           <span>Nombre</span>
-          <input class="input" name="name" required maxlength="60" value="${product.name}">
+          <input class="input" name="name" required maxlength="60" value="${escapeHtml(product.name)}">
         </label>
         <label class="field">
           <span>Código</span>
-          <input class="input" name="code" maxlength="30" value="${product.code || ''}">
+          <input class="input" name="code" maxlength="30" value="${escapeHtml(product.code || '')}">
         </label>
         <label class="field">
           <span>Categoría</span>
-          <input class="input" name="category" maxlength="30" value="${product.category || 'General'}">
+          <input class="input" name="category" maxlength="30" value="${escapeHtml(product.category || 'General')}">
+        </label>
+        <label class="field">
+          <span>Presentación</span>
+          <input class="input" name="packaging" maxlength="40" value="${escapeHtml(product.packaging || '')}">
         </label>
         <div class="form-row">
           <label class="field">
@@ -70,6 +74,17 @@ function openEditModal(product, onSave) {
         <label class="field">
           <span>Stock Actual</span>
           <input class="input" name="stock" type="number" min="0" step="1" required value="${product.stock}">
+        </label>
+        <label class="field switch-field">
+          <label class="switch">
+            <input type="checkbox" name="isCold" ${product.isCold ? 'checked' : ''}>
+            <span class="switch-slider"></span>
+            Bebida fría / En refrigerador
+          </label>
+        </label>
+        <label class="field">
+          <span>Capacidad de Refrigerador</span>
+          <input class="input" name="maxFridgeCapacity" type="number" min="0" step="1" value="${product.maxFridgeCapacity || 0}">
         </label>
         <div class="actions">
           <button type="button" class="btn btn--ghost" data-action="cancel">Cancelar</button>
@@ -88,13 +103,17 @@ function openEditModal(product, onSave) {
   overlay.querySelector('#edit-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const form = e.target;
+    const isCold = form.isCold.checked;
     onSave({
       name: form.name.value.trim(),
       code: form.code.value.trim(),
       category: form.category.value.trim() || 'General',
+      packaging: form.packaging.value.trim(),
       price: Number(form.price.value),
       costPrice: Number(form.costPrice.value) || 0,
       stock: Number(form.stock.value),
+      isCold,
+      maxFridgeCapacity: isCold ? Number(form.maxFridgeCapacity.value) || 0 : 0,
     });
     overlay.remove();
   });
@@ -180,43 +199,53 @@ function getColdProducts(products) {
   return products.filter(p => p.isCold === true && p.maxFridgeCapacity > 0);
 }
 
-function categorizeByCompartment(product) {
-  const packaging = (product.packaging || '').toLowerCase();
-  if (packaging.includes('lata') || packaging.includes('latón')) {
-    return 'top';
-  }
-  if (packaging.includes('six-pack') || packaging.includes('six pack')) {
-    return 'middle';
-  }
-  return 'bottom';
-}
-
 function renderFridgeSlot(product) {
   const fridgeStock = product.fridgeStock || 0;
   const maxCapacity = product.maxFridgeCapacity || 0;
   const missing = Math.max(0, maxCapacity - fridgeStock);
   const isAlert = missing > 0;
-  const slotClass = isAlert ? 'fridge-slot--alert' : 'fridge-slot--ok';
-  const label = isAlert
-    ? (fridgeStock === 0 ? '¡PEDIR RELLENO!' : '¡BAJO STOCK!')
-    : '';
-  const hasWarehouseStock = product.stock > 0;
 
   return `
-    <div class="fridge-slot ${slotClass}" data-id="${product.id}">
-      <div class="fridge-slot-name">${escapeHtml(product.name)}</div>
-      <div class="fridge-slot-capacity">
-        <span>${fridgeStock} / ${maxCapacity}</span>
-        <span class="fridge-slot-remaining ${isAlert ? 'fridge-slot-remaining--alert' : ''}">
-          ${missing} ${missing === 1 ? 'falta' : 'faltan'}
+    <li class="fridge-item" data-id="${product.id}">
+      <div class="fridge-item-main">
+        <div>
+          <span class="fridge-item-name">${escapeHtml(product.name)}</span>
+          <span class="fridge-item-stock">${fridgeStock} / ${maxCapacity} en refrigerador</span>
+        </div>
+        <span class="fridge-item-badge ${isAlert ? 'badge--low-stock' : 'badge--in-stock'}">
+          ${isAlert ? (fridgeStock === 0 ? '🔴 Vacío' : '🟠 Bajo') : '🟢 OK'}
         </span>
       </div>
-      ${label ? `<div class="fridge-slot-label">${label}</div>` : ''}
-      ${isAlert && hasWarehouseStock ? `
-        <div class="fridge-slot-actions">
-          <button class="btn btn--sm btn--secondary fridge-restock" data-id="${product.id}" data-qty="${missing}" type="button">Surttir</button>
-        </div>
+      ${isAlert ? `
+        <button class="btn btn--amber btn--block" data-action="fill-fridge" data-id="${product.id}" type="button">
+          Surtir refrigerador (+${missing})
+        </button>
       ` : ''}
+    </li>
+  `;
+}
+
+function renderFridgeAlert(coldProducts) {
+  const needsRestock = coldProducts.some((p) => (p.fridgeStock || 0) < (p.maxFridgeCapacity || 0));
+  const fullCount = coldProducts.filter((p) => (p.fridgeStock || 0) >= (p.maxFridgeCapacity || 0)).length;
+
+  if (needsRestock) {
+    return `
+      <div class="fridge-alert fridge-alert--needs-restock" role="alert" aria-live="polite">
+        <span class="fridge-alert-icon">⚠️</span>
+        <span class="fridge-alert-text">El refrigerador necesita reabastecimiento</span>
+        <button class="btn btn--neon-red btn--block" data-action="fill-all-fridges" type="button">
+          🧊 Llenar Refrigerador
+        </button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="fridge-alert fridge-alert--full">
+      <span class="fridge-alert-icon">✅</span>
+      <span class="fridge-alert-text">Refrigerador lleno</span>
+      <span class="fridge-alert-count">${fullCount} / ${coldProducts.length} productos al límite</span>
     </div>
   `;
 }
@@ -227,48 +256,24 @@ function renderFridgePanel() {
 
   if (coldProducts.length === 0) {
     return `
-      <div class="fridge-diagram">
-        <div class="fridge-diagram-title">🧊 Refrigerador Digital</div>
-        <div class="fridge-panel-empty">
-          <p>No hay productos fríos configurados</p>
-          <span class="muted">Agrega productos con "Bebida Fría" para verlos aquí</span>
-        </div>
+      <div class="card fridge-empty">
+        <h3 class="fridge-title">🧊 Refrigerador Digital</h3>
+        <p class="muted">No hay productos fríos configurados. Marca un producto como "Bebida Fría" para gestionarlo aquí.</p>
       </div>
     `;
   }
 
-  const compartments = { top: [], middle: [], bottom: [] };
-  coldProducts.forEach((product) => {
-    compartments[categorizeByCompartment(product)].push(product);
-  });
+  const ordered = [...coldProducts].sort((a, b) => a.name.localeCompare(b.name));
 
-  const compartmentLabels = {
-    top: 'Latas',
-    middle: 'Six-Packs',
-    bottom: 'Caguamas / Botellas',
-  };
-  const compartmentOrder = ['top', 'middle', 'bottom'];
-
-  let html = `
-    <div class="fridge-diagram">
-      <h3 class="fridge-diagram-title">🧊 Refrigerador Digital</h3>
+  return `
+    <div class="card fridge-panel">
+      <h3 class="fridge-title">🧊 Refrigerador Digital</h3>
+      ${renderFridgeAlert(coldProducts)}
+      <ul class="list fridge-list">
+        ${ordered.map(renderFridgeSlot).join('')}
+      </ul>
+    </div>
   `;
-
-  compartmentOrder.forEach((comp, index) => {
-    if (compartments[comp].length === 0) return;
-    html += `
-      ${index > 0 ? '<div class="fridge-compartment-divider"></div>' : ''}
-      <div class="fridge-compartment fridge-compartment--${comp}">
-        <div class="fridge-compartment-title">${compartmentLabels[comp]}</div>
-        <div class="fridge-compartment-grid">
-          ${compartments[comp].map((product) => renderFridgeSlot(product)).join('')}
-        </div>
-      </div>
-    `;
-  });
-
-  html += `</div>`;
-  return html;
 }
 
 export function renderInventory(container) {
@@ -276,56 +281,72 @@ export function renderInventory(container) {
 
   container.innerHTML = `
     <h2 class="view-title">Inventario</h2>
-    <div class="inventory-layout">
-      <div class="inventory-main">
-        <form class="inventory-form-card" id="product-form">
-          <h3 class="form-title">Nuevo producto</h3>
-          <div class="form-group">
-            <label class="form-label">Nombre</label>
-            <input type="text" class="form-input" name="name" required maxlength="60" autocomplete="off" placeholder="Ej. Cerveza Artesanal">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Código</label>
-            <input type="text" class="form-input" name="code" maxlength="30" autocomplete="off" placeholder="Ej. 750123456789">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Categoría</label>
-            <input type="text" class="form-input" name="category" maxlength="30" autocomplete="off" placeholder="General">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Precio de Venta</label>
-            <input type="number" class="form-input" name="price" min="0" step="0.01" required placeholder="0.00">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Costo de Compra</label>
-            <input type="number" class="form-input" name="costPrice" min="0" step="0.01" value="0" placeholder="0.00">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Stock Inicial</label>
-            <input type="number" class="form-input" name="stock" min="0" step="1" required value="0" placeholder="0">
-          </div>
-          <button class="btn btn--block" type="submit">Agregar producto</button>
-        </form>
-        <div class="inventory-grid" id="inventory-grid">
-          ${products.map((product) => renderInventoryCard(product)).join('')}
-        </div>
+    <form class="inventory-form-card" id="product-form">
+      <h3 class="form-title">Nuevo producto</h3>
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" class="form-input" name="name" required maxlength="60" autocomplete="off" placeholder="Ej. Cerveza Artesanal">
       </div>
-      <aside class="inventory-sidebar">
-        ${renderFridgePanel()}
-      </aside>
+      <div class="form-group">
+        <label class="form-label">Código</label>
+        <input type="text" class="form-input" name="code" maxlength="30" autocomplete="off" placeholder="Ej. 750123456789">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <input type="text" class="form-input" name="category" maxlength="30" autocomplete="off" placeholder="General">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Presentación</label>
+        <input type="text" class="form-input" name="packaging" maxlength="40" autocomplete="off" placeholder="Ej. Caguama 1L (Pieza)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Precio de Venta</label>
+        <input type="number" class="form-input" name="price" min="0" step="0.01" required placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Costo de Compra</label>
+        <input type="number" class="form-input" name="costPrice" min="0" step="0.01" value="0" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Stock Inicial</label>
+        <input type="number" class="form-input" name="stock" min="0" step="1" required value="0" placeholder="0">
+      </div>
+      <div class="form-group switch-field">
+        <label class="switch">
+          <input type="checkbox" name="isCold">
+          <span class="switch-slider"></span>
+          Bebida fría / En refrigerador
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Capacidad de Refrigerador</label>
+        <input type="number" class="form-input" name="maxFridgeCapacity" min="0" step="1" value="0" placeholder="0">
+      </div>
+      <button class="btn btn--block" type="submit">Agregar producto</button>
+    </form>
+    <section class="fridge-panel">
+      ${renderFridgePanel()}
+    </section>
+    <div class="inventory-grid" id="inventory-grid">
+      ${products.map((product) => renderInventoryCard(product)).join('')}
     </div>
   `;
 
   container.querySelector('#product-form').addEventListener('submit', (event) => {
     event.preventDefault();
     const form = event.target;
+    const isCold = form.isCold.checked;
     db.addProduct({
       name: form.name.value.trim(),
       code: form.code.value.trim(),
       category: form.category.value.trim() || 'General',
+      packaging: form.packaging.value.trim(),
       price: Number(form.price.value),
       costPrice: Number(form.costPrice.value) || 0,
       stock: Number(form.stock.value),
+      isCold,
+      maxFridgeCapacity: isCold ? Number(form.maxFridgeCapacity.value) || 0 : 0,
+      fridgeStock: 0,
     });
     renderInventory(container);
   });
@@ -365,12 +386,27 @@ export function renderInventory(container) {
   });
 
   // Fridge panel restock buttons
-  container.querySelectorAll('.fridge-restock').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  const fridgeList = container.querySelector('.fridge-list');
+  if (fridgeList) {
+    fridgeList.addEventListener('click', (event) => {
+      const btn = event.target.closest('button[data-action="fill-fridge"]');
+      if (!btn) {
+        return;
+      }
       const id = btn.dataset.id;
       db.fillFridge(id);
       renderInventory(container);
     });
+  }
+
+  // General one-click fridge restock (alert banner -> all cold products to capacity)
+  container.addEventListener('click', (event) => {
+    const btn = event.target.closest('button[data-action="fill-all-fridges"]');
+    if (!btn) {
+      return;
+    }
+    db.fillAllFridges();
+    renderInventory(container);
   });
 }
 
