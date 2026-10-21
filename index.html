@@ -2,8 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <!--
+    Etiquetas móviles: viewport con cobertura total de la pantalla (viewport-fit),
+    bloqueo del zoom por gestos y "interactive-widget" para que el layout se
+    reduzca cuando el teclado numérico se abre (el botón de cobro nunca queda
+    tapado por el teclado).
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#12100E" />
+  <meta name="color-scheme" content="dark" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -13,6 +20,8 @@
   <title>Cervecería</title>
   <link rel="icon" type="image/png" href="assets/icon-96x96.png" />
   <link rel="apple-touch-icon" href="assets/icon-192x192.png" />
+  <!-- Manifiesto PWA: al instalarse en el celular la app se abre a pantalla
+       completa, sin barra de direcciones ni controles del navegador. -->
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -204,6 +213,31 @@
   <script src="js/settings.js"></script>
   <script src="js/app.js"></script>
   <script>if('serviceWorker'in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
+  <script>
+    /*
+      Teclado numérico en celular: publica en --kb-inset la altura tapada por
+      el teclado (window.visualViewport). El modal de cobro usa esa variable
+      para elevarse y dejar siempre visible su botón final de cobro.
+    */
+    (function () {
+      var root = document.documentElement;
+      var viewport = window.visualViewport;
+      function sync() {
+        var inset = 0;
+        if (viewport) {
+          inset = Math.max(0, (window.innerHeight || 0) - viewport.height - viewport.offsetTop);
+        }
+        root.style.setProperty('--kb-inset', Math.round(inset) + 'px');
+      }
+      if (viewport) {
+        viewport.addEventListener('resize', sync);
+        viewport.addEventListener('scroll', sync);
+        window.addEventListener('orientationchange', sync);
+      }
+      window.addEventListener('focus', sync);
+      sync();
+    })();
+  </script>
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </body>
