@@ -1043,17 +1043,6 @@ if (other) {
                 <input type="number" id="pos-pay-cash" class="payment-input" inputmode="decimal" step="0.01" min="0" placeholder="0.00" autocomplete="off" />
               </label>
 
-              <div class="payment-quick-grid">
-                <button type="button" class="payment-quick" data-quick-add="10">+$10</button>
-                <button type="button" class="payment-quick" data-quick-add="20">+$20</button>
-                <button type="button" class="payment-quick" data-quick-add="50">+$50</button>
-                <button type="button" class="payment-quick" data-quick-add="100">+$100</button>
-                <button type="button" class="payment-quick" data-quick-add="200">+$200</button>
-                <button type="button" class="payment-quick" data-quick-add="500">+$500</button>
-                <button type="button" class="payment-quick is-exact" data-quick-exact="true">Monto Exacto</button>
-                <button type="button" class="payment-quick is-clear" data-quick-clear="true">Limpiar</button>
-              </div>
-
               <div class="payment-summary">
                 <div class="payment-summary-row"><span>Total</span><span id="pos-pay-sum-total">$0.00</span></div>
                 <div class="payment-summary-row"><span>Recibido</span><span id="pos-pay-sum-received">$0.00</span></div>
@@ -1098,15 +1087,6 @@ if (other) {
               <div class="payment-chip-group" id="pos-pay-mix-types">
                 <button type="button" class="payment-chip is-active" data-mix-type="tarjeta">💳 Tarjeta</button>
                 <button type="button" class="payment-chip" data-mix-type="transferencia">🏦 Transferencia</button>
-              </div>
-
-              <div class="payment-quick-grid">
-                <button type="button" class="payment-quick" data-mix-quick="10">+$10</button>
-                <button type="button" class="payment-quick" data-mix-quick="20">+$20</button>
-                <button type="button" class="payment-quick" data-mix-quick="50">+$50</button>
-                <button type="button" class="payment-quick" data-mix-quick="100">+$100</button>
-                <button type="button" class="payment-quick" data-mix-quick="200">+$200</button>
-                <button type="button" class="payment-quick" data-mix-quick="500">+$500</button>
               </div>
 
               <div class="payment-summary">
@@ -1192,28 +1172,6 @@ if (other) {
       const methodBtn = target.closest('[data-payment-method]');
       if (methodBtn) {
         this.setPaymentMethod(methodBtn.dataset.paymentMethod);
-        return;
-      }
-
-      const quickAdd = target.closest('[data-quick-add]');
-      if (quickAdd) {
-        this.addQuickCash(Number(quickAdd.dataset.quickAdd));
-        return;
-      }
-
-      if (target.closest('[data-quick-exact]')) {
-        this.setExactCash();
-        return;
-      }
-
-      if (target.closest('[data-quick-clear]')) {
-        this.setCashReceived(0);
-        return;
-      }
-
-      const mixQuick = target.closest('[data-mix-quick]');
-      if (mixQuick) {
-        this.addMixCash(Number(mixQuick.dataset.mixQuick));
         return;
       }
 
@@ -1364,30 +1322,12 @@ if (other) {
     this.renderPaymentModal();
   },
 
-  addQuickCash(amount) {
-    const add = Number(amount) || 0;
-    if (add <= 0) return;
-    this.payment.cashReceived = Math.max(0, this.payment.cashReceived + add);
-    this.renderPaymentModal();
-  },
-
-  setExactCash() {
-    this.payment.cashReceived = this.getTotal();
-    this.renderPaymentModal();
-  },
-
   setMixCash(value) {
     const total = this.getTotal();
     const cash = Math.max(0, Number(value) || 0);
     this.payment.mixCash = cash;
     this.payment.mixElectronic = Math.min(total, Math.max(0, total - cash));
     this.renderPaymentModal();
-  },
-
-  addMixCash(amount) {
-    const add = Number(amount) || 0;
-    if (add <= 0) return;
-    this.setMixCash(this.payment.mixCash + add);
   },
 
   setMixElectronic(value) {
