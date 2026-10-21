@@ -1,66 +1,16 @@
 {
   "name": "Cervecería",
   "short_name": "Cervecería",
-  "description": "Punto de venta y gestión de inventario para cervecería. Funciona offline.",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#12100E",
   "background_color": "#12100E",
-  "lang": "es",
-  "dir": "ltr",
+  "theme_color": "#12100E",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "assets/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "assets/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "assets/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "assets/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "assets/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "categories": ["productivity", "finance", "business"],
-  "prefer_related_links": false,
-  "screenshots": [
-    {
-      "src": "assets/screenshot-wide.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "assets/screenshot-narrow.png",
-      "sizes": "720x1280",
-      "type": "image/png",
-      "form_factor": "narrow"
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     }
   ]
 }
