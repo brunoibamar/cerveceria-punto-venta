@@ -3051,6 +3051,7 @@ body {
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
 }
 
 .cart-table-wrap {
@@ -3224,6 +3225,9 @@ body {
   flex-direction: column;
   gap: 12px;
   flex: 0 0 auto;
+  width: 100%;
+  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
 }
 
 .pos-totals {
@@ -3246,6 +3250,14 @@ body {
   font-size: 13.5px;
   color: var(--text-secondary);
 }
+
+/* El atributo [hidden] debe ganarle a "display: flex" de las filas:
+   sin esto, "Cargo bebida fría" y "Descuento promo" se muestran
+   siempre, aunque no tengan importe. */
+.pos-totals-row[hidden] {
+  display: none !important;
+}
+
 
 .pos-totals-row .pos-totals-label {
   color: var(--text-secondary);
@@ -3486,7 +3498,20 @@ body {
   .pos-view {
     grid-template-columns: 1fr;
     padding: 12px;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
     gap: 12px;
+  }
+
+  /* Scroll independiente en la columna del carrito + totales */
+  .pos-main {
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* El botón de Cobrar siempre queda al final, por encima de la nav bar */
+  .pos-summary-bar {
+    flex-shrink: 0;
   }
 }
 
@@ -5149,5 +5174,344 @@ body {
 
   .cuts-card-panel {
     margin-left: 12px;
+  }
+}
+
+/* =========================================================
+   AJUSTES MÓVIL: header compacto, vista de ventas compacta
+   y anclaje seguro del botón COBRAR
+   ========================================================= */
+@media (max-width: 600px) {
+  /* Encabezado superior más compacto: no recorta "Cervecería" */
+  .app-header {
+    padding: 8px 12px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  }
+
+  .header-brand h1 {
+    font-size: 14px;
+    letter-spacing: 0.2px;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* ---------- Vista de ventas: un único scroll vertical ----------
+     La tarjeta de totales y el botón COBRAR salen del flujo y quedan
+     fijados por encima de la barra de navegación; el resto del contenido
+     fluye en el scroll principal, con 120px de aire al final para que
+     ningún producto quede oculto bajo la barra fija. */
+  .pos-view {
+    height: auto;
+    min-height: 100%;
+    align-items: start;
+    align-content: start;
+    gap: 8px;
+    padding: 10px 12px;
+    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Sin scrolls anidados: el catálogo, el historial y el ticket fluyen
+     en el mismo contenedor con scroll. */
+  .pos-sidebar,
+  .pos-main {
+    max-height: none;
+    overflow: visible;
+    gap: 8px;
+  }
+
+  /* ---------- Buscador ---------- */
+  .pos-search-bar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .pos-search-bar input {
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+
+  .btn-camera {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .btn-camera .btn-text {
+    display: none;
+  }
+
+  .btn-camera::before {
+    content: '📷';
+    font-size: 16px;
+  }
+
+  /* Palomita "Pieza Fría": cabe en la misma línea que el buscador */
+  .cold-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .cold-toggle input[type="checkbox"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cold-toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .cold-palomita {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid var(--border-soft);
+    background: #1a1613;
+    color: transparent;
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .cold-toggle.is-active .cold-palomita {
+    border-color: rgba(147, 197, 253, 0.6);
+    background: rgba(96, 165, 250, 0.22);
+    color: #eaf4ff;
+  }
+
+  .toggle-label {
+    font-size: 11px;
+  }
+
+  .fridge-counter {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* ---------- Fichas de productos ---------- */
+  .product-list-wrap {
+    gap: 6px;
+  }
+
+  .product-list-wrap h2 {
+    font-size: 14px;
+    margin: 0 0 2px;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .product-card {
+    padding: 8px;
+    gap: 3px;
+  }
+
+  .product-name {
+    font-size: 12.5px;
+  }
+
+  .product-price {
+    font-size: 13px;
+  }
+
+  .product-stock {
+    font-size: 10px;
+  }
+
+  .product-cold-badge {
+    margin-top: 3px;
+    padding: 1px 6px;
+    font-size: 8.5px;
+  }
+
+  /* ---------- Historial de ventas (acordeón) ---------- */
+  .live-sales {
+    border-radius: 12px;
+  }
+
+  .live-sales-header {
+    padding: 8px 12px;
+  }
+
+  .live-sales-title {
+    font-size: 13px;
+  }
+
+  .live-sales-sub {
+    font-size: 10.5px;
+  }
+
+  .live-sales-count {
+    min-width: 24px;
+    padding: 1px 7px;
+    font-size: 11px;
+  }
+
+  .live-sales-list {
+    gap: 6px;
+  }
+
+  .live-sales-list.expanded {
+    max-height: 240px;
+    padding: 0 10px 10px;
+  }
+
+  .live-ticket {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .live-ticket-items {
+    font-size: 12px;
+  }
+
+  .live-ticket-total {
+    font-size: 13px;
+  }
+
+  /* ---------- Carrito (tabla del ticket) ---------- */
+  #pos-cart {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    /* Colchón extra: la última fila del ticket nunca queda bajo la barra fija */
+    padding-bottom: 36px;
+  }
+
+  #pos-cart h2 {
+    font-size: 14px;
+    margin: 0 0 4px;
+  }
+
+  .cart-table {
+    font-size: 12px;
+  }
+
+  .cart-table th {
+    padding: 5px 6px;
+    font-size: 9px;
+    letter-spacing: 0.4px;
+  }
+
+  .cart-table td {
+    padding: 6px;
+  }
+
+  .cart-empty {
+    padding: 18px 12px;
+    font-size: 12px;
+  }
+
+  .cart-promo {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* ---------- Tarjeta de resumen: desgloces en una sola línea ---------- */
+  .pos-totals {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 10px;
+    padding: 8px 12px;
+    border-radius: 12px;
+  }
+
+  .pos-totals-row {
+    flex: 0 0 auto;
+    gap: 5px;
+    font-size: 11px;
+  }
+
+  .pos-totals-row .pos-totals-label {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+
+  .pos-totals-row .pos-totals-value {
+    font-size: 12px;
+  }
+
+  /* Los desgloces opcionales (cargo frío / descuento promo) se alinean en
+     la misma línea horizontal, sin bordes ni saltos de línea propios. */
+  .pos-totals-row.pos-totals-cold,
+  .pos-totals-row.pos-totals-promo {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  .pos-totals-row.pos-totals-cold::before,
+  .pos-totals-row.pos-totals-promo::before {
+    content: '·';
+    margin-right: 3px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+  }
+
+  /* El total ocupa su propia línea, con tipografía reducida */
+  .pos-totals-row.pos-totals-grand {
+    flex: 0 0 100%;
+    order: 10;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 6px;
+    margin-top: 2px;
+    font-size: 13px;
+  }
+
+  .pos-totals-grand .pos-totals-label {
+    font-size: 11px;
+  }
+
+  .pos-totals-grand .pos-totals-value {
+    font-size: 17px;
+  }
+
+  /* ---------- Anclaje seguro: totales + COBRAR sobre la nav inferior ---------- */
+  .pos-summary-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+    width: 100%;
+    margin: 0;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(180deg, rgba(18, 16, 14, 0.94) 0%, rgba(18, 16, 14, 0.98) 30%, #12100E 100%);
+    border-top: 1px solid var(--border-soft);
+    box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.65);
+  }
+
+  .pos-summary-actions {
+    gap: 8px;
+  }
+
+  /* Botón de cobrar: alto, táctil y siempre accesible */
+  .pos-charge-btn {
+    padding: 16px 20px;
+    min-height: 52px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 0;
+    border-radius: 12px;
   }
 }
