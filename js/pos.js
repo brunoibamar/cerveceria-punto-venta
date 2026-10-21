@@ -78,13 +78,26 @@ const SalesLog = {
     return Math.round(amount * 100) / 100;
   },
 
-  // Versión ligera del ticket para archivarlo dentro del corte de caja
+  // Versión ligera del ticket para archivarlo dentro del corte de caja.
+  // Incluye los ítems completos (nombre, cantidad, subtotal, cargo frío)
+  // para que el corte pueda renderizar el desglose de productos vendidos.
   compactTicket(ticket) {
     if (!ticket) return null;
+    const items = Array.isArray(ticket.items) ? ticket.items.map(item => ({
+      productId: item.productId || null,
+      nombre: item.nombre || item.productName || 'Producto',
+      marca: item.marca || '',
+      cantidad: Number(item.cantidad !== undefined ? item.cantidad : item.quantity) || 0,
+      precio: Number(item.precio !== undefined ? item.precio : item.price) || 0,
+      cold: Boolean(item.cold === true || item.piezaFria === true || item.piezaFria === 'true'),
+      cargoFrio: Number(item.cargoFrio) || 0,
+      subtotal: Number(item.subtotal) || 0
+    })) : [];
     return {
       id: ticket.id,
       fecha: ticket.fecha,
       hora: ticket.hora,
+      items: items,
       detalle: ticket.detalle,
       unidades: ticket.unidades,
       cold: ticket.cold,

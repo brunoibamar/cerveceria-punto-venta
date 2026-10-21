@@ -59,7 +59,13 @@ const PromosManager = {
   },
 
   getActivePromos() {
-    return this.getPromos().filter(promo => promo && promo.activo !== false);
+    const today = new Date().toISOString().slice(0, 10);
+    return this.getPromos().filter(promo => {
+      if (!promo || promo.activo === false) return false;
+      if (promo.startDate && today < promo.startDate) return false;
+      if (promo.endDate && today > promo.endDate) return false;
+      return true;
+    });
   },
 
   getComboItems(promo) {
@@ -375,8 +381,12 @@ const PromosManager = {
               <input id="promo-valor" name="valor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="15" value="${this.escapeHtml(valorActual)}">
             </div>
             <div class="promo-field">
-              <label for="promo-duracion">Vigencia</label>
-              <input id="promo-duracion" name="duracion" type="text" placeholder="Ej. Viernes a domingo" value="${this.escapeHtml(promo ? promo.duracion || '' : '')}">
+              <label for="promo-start-date">Fecha de inicio</label>
+              <input id="promo-start-date" name="startDate" type="date" value="${this.escapeHtml(promo ? promo.startDate || '' : '')}">
+            </div>
+            <div class="promo-field">
+              <label for="promo-end-date">Fecha de fin</label>
+              <input id="promo-end-date" name="endDate" type="date" value="${this.escapeHtml(promo ? promo.endDate || '' : '')}">
             </div>
             <div class="promo-field">
               <label for="promo-incluye">DESCRIPCIÓN / NOTA DE LA PROMOCIÓN</label>
@@ -625,7 +635,8 @@ const PromosManager = {
       nombre: nombre,
       tipo: String(data.get('tipo') || 'porcentaje'),
       valor: Number.isFinite(valor) ? valor : 0,
-      duracion: String(data.get('duracion') || '').trim(),
+      startDate: String(data.get('startDate') || '').trim(),
+      endDate: String(data.get('endDate') || '').trim(),
       incluye: String(data.get('incluye') || '').trim(),
       items: items,
       activo: this.editingPromo ? (this.editingPromo.activo !== false) : true
