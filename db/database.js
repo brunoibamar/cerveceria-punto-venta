@@ -152,7 +152,9 @@ const DEFAULT_SETTINGS = {
   backupEmail: '',
   currencySymbol: '$',
   coldCharge: 0,
-  fridgeCapacity: 24
+  fridgeCapacity: 24,
+  // Link o plantilla del cobro con Mercado Pago (admite {amount}, {currency}, {reference} y {folio})
+  mercadoPagoCobroUrl: ''
 };
 
 const Database = {

@@ -40,19 +40,34 @@ const SalesLog = {
     return list.length ? list.join(', ') : 'Sin productos';
   },
 
+  // Etiqueta corta de la forma de cobro con tarjeta (NFC, QR o Terminal)
+  paymentChannelLabel(sale) {
+    const detail = (sale && sale.paymentDetail) || {};
+    const channel = detail.channel;
+    if (!channel) return '';
+    if (typeof SalesPayment !== 'undefined' && SalesPayment.getChannelLabel) {
+      return SalesPayment.getChannelLabel(channel);
+    }
+    return String(channel).toUpperCase();
+  },
+
   // Etiqueta del método de pago: Efectivo, Tarjeta, Transferencia o Mixto
   paymentLabel(sale) {
     if (!sale) return 'Efectivo';
     const breakdown = sale.paymentBreakdown || {};
+    const channel = this.paymentChannelLabel(sale);
+    const suffix = channel ? ' · ' + channel : '';
+
     if (sale.paymentMethod === 'mixto') {
       const parts = [];
       if (Number(breakdown.efectivo) > 0) parts.push('Efectivo');
       if (Number(breakdown.tarjeta) > 0) parts.push('Tarjeta');
       if (Number(breakdown.transferencia) > 0) parts.push('Transferencia');
-      return parts.length ? parts.join(' + ') : 'Mixto';
+      const base = parts.length ? parts.join(' + ') : 'Mixto';
+      return channel ? base + suffix : base;
     }
-    if (sale.paymentMethod === 'tarjeta') return 'Tarjeta';
-    if (sale.paymentMethod === 'transferencia') return 'Transferencia';
+    if (sale.paymentMethod === 'tarjeta') return 'Tarjeta' + suffix;
+    if (sale.paymentMethod === 'transferencia') return 'Transferencia' + suffix;
     return 'Efectivo';
   },
 
@@ -107,6 +122,7 @@ const SalesLog = {
       total: ticket.total,
       paymentMethod: ticket.paymentMethod,
       paymentLabel: ticket.paymentLabel,
+      paymentDetail: ticket.paymentDetail,
       breakdown: ticket.breakdown,
       turnoId: ticket.turnoId,
       turnoNumero: ticket.turnoNumero,
@@ -165,6 +181,7 @@ const SalesLog = {
       total: Number(source.total) || 0,
       paymentMethod: source.paymentMethod || 'efectivo',
       paymentLabel: this.paymentLabel(source),
+      paymentDetail: source.paymentDetail || null,
       breakdown: {
         efectivo: Number(breakdown.efectivo) || 0,
         tarjeta: Number(breakdown.tarjeta) || 0,
@@ -197,6 +214,7 @@ const POS = {
     method: 'efectivo',
     electronicType: 'tarjeta',
     mixType: 'tarjeta',
+    cardChannel: null, // forma de cobro con tarjeta: nfc, qr o terminal
     cashReceived: 0,
     mixCash: 0,
     mixElectronic: 0,
@@ -1062,13 +1080,16 @@ if (other) {
                 <span class="payment-total-detail">Se carga el monto exacto del total, sin cambio.</span>
               </div>
 
+              <!-- Opciones de cobro con tarjeta (Mercado Pago): NFC, QR y terminal física -->
+              <div class="pay-card-options" id="pos-pay-card-options"></div>
+
               <div class="payment-summary">
                 <div class="payment-summary-row"><span>Total</span><span id="pos-pay-card-total">$0.00</span></div>
                 <div class="payment-summary-row"><span>Método</span><span id="pos-pay-card-method">Tarjeta</span></div>
                 <div class="payment-summary-row is-change"><span>Cambio</span><span>$0.00</span></div>
               </div>
 
-              <p class="payment-hint">Confirma el cobro en el lector o en la app bancaria y continua con "Confirmar Pago".</p>
+              <p class="payment-hint" id="pos-pay-card-hint">Confirma el cobro en el lector o en la app bancaria y continua con "Confirmar Pago".</p>
             </section>
 
             <!-- Mixto -->
@@ -1179,6 +1200,19 @@ if (other) {
       if (mixType) {
         this.payment.mixType = mixType.dataset.mixType;
         this.renderPaymentModal();
+        return;
+      }
+
+      // Sub-opciones de cobro con tarjeta (NFC / QR / terminal física)
+      const cardOption = target.closest('[data-card-option]');
+      if (cardOption) {
+        this.setCardChannel(cardOption.dataset.cardOption);
+        return;
+      }
+
+      const cardAction = target.closest('[data-card-action]');
+      if (cardAction) {
+        this.handleCardAction(cardAction.dataset.cardAction);
       }
     });
 
@@ -1270,6 +1304,7 @@ if (other) {
       modal.classList.remove('is-active');
       modal.classList.remove('is-success');
     }
+    if (typeof SalesPayment !== 'undefined' && SalesPayment.stopNfc) SalesPayment.stopNfc();
     this.payment.isOpen = false;
   },
 
@@ -1278,10 +1313,13 @@ if (other) {
     this.payment.method = 'efectivo';
     this.payment.electronicType = 'tarjeta';
     this.payment.mixType = 'tarjeta';
+    this.payment.cardChannel = null;
+    this.payment.cardReference = (typeof SalesPayment !== 'undefined') ? SalesPayment.buildReference() : '';
     this.payment.cashReceived = 0;
     this.payment.mixCash = 0;
     this.payment.mixElectronic = total;
     this.payment.lastSale = null;
+    if (typeof SalesPayment !== 'undefined' && SalesPayment.reset) SalesPayment.reset();
   },
 
   setPaymentMethod(method) {
@@ -1306,6 +1344,38 @@ if (other) {
     }
 
     this.renderPaymentModal();
+  },
+
+  // Elige la forma de cobro con tarjeta: nfc, qr o terminal física
+  setCardChannel(channel) {
+    if (typeof SalesPayment === 'undefined') return;
+    this.payment.cardChannel = SalesPayment.normalizeChannel(channel);
+    this.renderPaymentModal();
+  },
+
+  // Canal de cobro con tarjeta seleccionado (por defecto: terminal física)
+  getCardChannel() {
+    if (typeof SalesPayment === 'undefined') return 'terminal';
+    return SalesPayment.normalizeChannel(this.payment.cardChannel);
+  },
+
+  // Ejecuta las acciones del panel de cobro con tarjeta (leer NFC, abrir la app)
+  handleCardAction(action) {
+    if (typeof SalesPayment === 'undefined') return;
+    SalesPayment.handleAction(action, this.getCardContext());
+  },
+
+  // Datos del cobro actual que necesita el módulo de opciones de tarjeta
+  getCardContext() {
+    const session = this.getSessionInfo();
+    return {
+      total: this.getTotal(),
+      currency: this.getCurrencySymbol(),
+      method: this.payment.electronicType,
+      reference: this.payment.cardReference || '',
+      folio: session ? this.formatTurno(session.turnoNumero) : '',
+      channel: this.getCardChannel()
+    };
   },
 
   // Pestana activa del selector de metodo de pago
@@ -1456,6 +1526,9 @@ if (other) {
   },
 
   renderElectronicSection(total) {
+    // El bloque de opciones con tarjeta solo se prepara en la sección electrónica
+    if (this.payment.method !== 'electronico') return;
+
     const type = this.payment.electronicType;
     const isTransfer = type === 'transferencia';
 
@@ -1470,6 +1543,25 @@ if (other) {
 
     const cardMethod = document.getElementById('pos-pay-card-method');
     if (cardMethod) cardMethod.textContent = isTransfer ? 'Transferencia' : 'Tarjeta';
+
+    // Sub-opciones de cobro con tarjeta de Mercado Pago (NFC, QR o terminal física)
+    if (typeof SalesPayment !== 'undefined') {
+      const context = this.getCardContext();
+      context.total = total;
+      SalesPayment.render(context);
+    }
+
+    const hint = document.getElementById('pos-pay-card-hint');
+    if (hint) {
+      const channel = this.getCardChannel();
+      if (channel === 'nfc') {
+        hint.textContent = 'Acerca el teléfono a la etiqueta NFC o usa Tap to Pay en la app de Mercado Pago y confirma el cobro.';
+      } else if (channel === 'qr') {
+        hint.textContent = 'Muestra el código QR y confirma el cobro cuando el cliente lo escanee en la app de Mercado Pago.';
+      } else {
+        hint.textContent = 'Cobra en la terminal de Mercado Pago, verifica el voucher y confirma el pago.';
+      }
+    }
   },
 
   renderMixSection(total) {
@@ -1562,6 +1654,7 @@ if (other) {
     const total = this.getTotal();
     let paymentMethod = 'efectivo';
     let breakdown = { efectivo: 0, tarjeta: 0, transferencia: 0, recibido: 0, cambio: 0 };
+    let paymentDetail = null;
 
     if (this.payment.method === 'efectivo') {
       const change = this.payment.cashReceived - total;
@@ -1579,6 +1672,7 @@ if (other) {
       breakdown[type] = total;
       breakdown.recibido = total;
       breakdown.cambio = 0;
+      paymentDetail = this.getPaymentDetail(type, total);
     } else {
       const electronic = this.payment.mixElectronic;
       const applied = total - electronic;
@@ -1593,11 +1687,13 @@ if (other) {
       breakdown[type] = Math.max(0, electronic);
       breakdown.recibido = this.payment.mixCash;
       breakdown.cambio = Math.max(0, change);
+      paymentDetail = electronic > 0 ? this.getPaymentDetail(type, electronic) : null;
     }
 
     const result = this.completeSale({
       paymentMethod: paymentMethod,
       breakdown: breakdown,
+      paymentDetail: paymentDetail,
       cashReceived: breakdown.recibido,
       change: breakdown.cambio
     });
@@ -1609,6 +1705,19 @@ if (other) {
 
     this.payment.lastSale = result.sale;
     this.showPaymentSuccess(result.sale);
+  },
+
+  // Detalle del cobro con tarjeta: forma de cobro (NFC, QR o terminal) y referencia
+  getPaymentDetail(type, amount) {
+    if (type !== 'tarjeta' && type !== 'transferencia') return null;
+    const channel = this.getCardChannel();
+    const label = (typeof SalesPayment !== 'undefined') ? SalesPayment.getChannelLabel(channel) : '';
+    return {
+      channel: channel,
+      label: label,
+      reference: this.payment.cardReference || '',
+      amount: this.round2(Number(amount) || 0)
+    };
   },
 
   // Registra la venta, descuenta inventario (incluye piezas frías) y limpia el ticket
@@ -1655,6 +1764,7 @@ if (other) {
         })),
         paymentMethod: details.paymentMethod,
         paymentBreakdown: details.breakdown,
+        paymentDetail: details.paymentDetail || null,
         cashReceived: details.cashReceived,
         change: details.change,
         turnoId: session ? session.turnoId : null,
@@ -2011,6 +2121,26 @@ if (other) {
     };
   },
 
+  // Reparte el importe cobrado con tarjeta por forma de cobro (NFC, QR o terminal)
+  sumCardChannels(sales) {
+    const channels = { nfc: 0, qr: 0, terminal: 0 };
+
+    (sales || []).forEach(sale => {
+      if (!sale) return;
+      const detail = sale.paymentDetail || {};
+      const channel = detail.channel;
+      if (!channel || channels[channel] === undefined) return;
+
+      const breakdown = sale.paymentBreakdown || {};
+      const amount = (Number(breakdown.tarjeta) || 0) + (Number(breakdown.transferencia) || 0);
+      if (amount <= 0) return;
+
+      channels[channel] = this.round2(channels[channel] + amount);
+    });
+
+    return channels;
+  },
+
   // Resumen completo del turno activo (base del modal de corte)
   getTurnSummary() {
     const session = this.getSessionInfo() || {
@@ -2028,6 +2158,7 @@ if (other) {
     const fondoInicial = Number(session.cashOpening) || 0;
     const totalVentas = ventas.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
     const promociones = this.getTurnPromotions(ventas);
+    const canales = this.sumCardChannels(ventas);
     const totalEsperado = this.round2(fondoInicial + pagos.efectivo);
 
     return {
@@ -2036,6 +2167,7 @@ if (other) {
       ventasEfectivo: this.round2(pagos.efectivo),
       ventasTarjeta: this.round2(pagos.tarjeta),
       ventasTransferencia: this.round2(pagos.transferencia),
+      ventasPorCanal: canales,
       descuentosPromociones: promociones.total,
       promocionesAplicadas: promociones.aplicadas,
       totalVentas: this.round2(totalVentas),
@@ -2106,6 +2238,11 @@ if (other) {
               <div class="payment-summary-row"><span>Ventas en efectivo</span><span id="pos-cut-efectivo">$0.00</span></div>
               <div class="payment-summary-row"><span>Ventas con tarjeta</span><span id="pos-cut-tarjeta">$0.00</span></div>
               <div class="payment-summary-row"><span>Ventas por transferencia</span><span id="pos-cut-transferencia">$0.00</span></div>
+              <div class="cut-channels" id="pos-cut-channels" hidden>
+                <div class="payment-summary-row"><span>Cobro NFC / Contactless</span><span id="pos-cut-nfc">$0.00</span></div>
+                <div class="payment-summary-row"><span>Cobro con código QR</span><span id="pos-cut-qr">$0.00</span></div>
+                <div class="payment-summary-row"><span>Cobro en terminal física</span><span id="pos-cut-terminal">$0.00</span></div>
+              </div>
               <div class="payment-summary-row"><span>Promociones (descuento)</span><span id="pos-cut-promociones">$0.00</span></div>
               <div class="payment-summary-row"><span>Total de ventas del turno</span><span id="pos-cut-ventas">$0.00</span></div>
               <div class="payment-summary-row is-change"><span>Total en caja</span><span id="pos-cut-total-caja">$0.00</span></div>
@@ -2254,6 +2391,16 @@ if (other) {
     setText('pos-cut-efectivo', currency + summary.ventasEfectivo.toFixed(2));
     setText('pos-cut-tarjeta', currency + summary.ventasTarjeta.toFixed(2));
     setText('pos-cut-transferencia', currency + summary.ventasTransferencia.toFixed(2));
+
+    // Desglose por forma de cobro con tarjeta (solo si se usó alguna)
+    const canales = summary.ventasPorCanal || { nfc: 0, qr: 0, terminal: 0 };
+    setText('pos-cut-nfc', currency + canales.nfc.toFixed(2));
+    setText('pos-cut-qr', currency + canales.qr.toFixed(2));
+    setText('pos-cut-terminal', currency + canales.terminal.toFixed(2));
+    const channelsBox = document.getElementById('pos-cut-channels');
+    if (channelsBox) {
+      channelsBox.hidden = !(canales.nfc > 0 || canales.qr > 0 || canales.terminal > 0);
+    }
     setText('pos-cut-promociones', summary.descuentosPromociones > 0
       ? '-' + currency + summary.descuentosPromociones.toFixed(2)
       : currency + '0.00');
@@ -2440,6 +2587,11 @@ if (other) {
       ventasEfectivo: summary.ventasEfectivo,
       ventasTarjeta: summary.ventasTarjeta,
       ventasTransferencia: summary.ventasTransferencia,
+      ventasPorCanal: {
+        nfc: summary.ventasPorCanal.nfc,
+        qr: summary.ventasPorCanal.qr,
+        terminal: summary.ventasPorCanal.terminal
+      },
       descuentosPromociones: summary.descuentosPromociones,
       promocionesAplicadas: summary.promocionesAplicadas,
       totalVentas: summary.totalVentas,
@@ -2459,6 +2611,11 @@ if (other) {
         ventasEfectivo: summary.ventasEfectivo,
         ventasTarjeta: summary.ventasTarjeta,
         ventasTransferencia: summary.ventasTransferencia,
+        ventasPorCanal: {
+          nfc: summary.ventasPorCanal.nfc,
+          qr: summary.ventasPorCanal.qr,
+          terminal: summary.ventasPorCanal.terminal
+        },
         promociones: summary.descuentosPromociones,
         totalVentas: summary.totalVentas,
         totalEnCaja: esperado,
@@ -2622,6 +2779,12 @@ if (other) {
     ticket += linea('Ventas en efectivo', monto(desglose.ventasEfectivo !== undefined ? desglose.ventasEfectivo : data.ventasEfectivo)) + '\n';
     ticket += linea('Ventas con tarjeta', monto(desglose.ventasTarjeta !== undefined ? desglose.ventasTarjeta : data.ventasTarjeta)) + '\n';
     ticket += linea('Ventas por transferencia', monto(desglose.ventasTransferencia !== undefined ? desglose.ventasTransferencia : data.ventasTransferencia)) + '\n';
+    const canales = desglose.ventasPorCanal || data.ventasPorCanal || null;
+    if (canales && (Number(canales.nfc) > 0 || Number(canales.qr) > 0 || Number(canales.terminal) > 0)) {
+      ticket += linea('  Cobro NFC', monto(canales.nfc)) + '\n';
+      ticket += linea('  Cobro con QR', monto(canales.qr)) + '\n';
+      ticket += linea('  Cobro en terminal', monto(canales.terminal)) + '\n';
+    }
     ticket += linea('Promociones (descuento)', '-' + monto(desglose.promociones !== undefined ? desglose.promociones : data.descuentosPromociones)) + '\n';
     ticket += linea('Total de ventas', monto(desglose.totalVentas !== undefined ? desglose.totalVentas : data.totalVentas)) + '\n';
     ticket += '----------------------------------------\n';
@@ -2891,16 +3054,31 @@ if (other) {
   getPaymentLabel(sale) {
     if (!sale) return 'Efectivo';
     const breakdown = sale.paymentBreakdown || {};
+    const channel = this.getPaymentChannelLabel(sale);
+    const suffix = channel ? ' · ' + channel : '';
+
     if (sale.paymentMethod === 'mixto') {
       const parts = [];
       if (Number(breakdown.efectivo) > 0) parts.push('Efectivo');
       if (Number(breakdown.tarjeta) > 0) parts.push('Tarjeta');
       if (Number(breakdown.transferencia) > 0) parts.push('Transferencia');
-      return parts.length ? parts.join(' + ') : 'Mixto';
+      const base = parts.length ? parts.join(' + ') : 'Mixto';
+      return channel ? base + suffix : base;
     }
-    if (sale.paymentMethod === 'tarjeta') return 'Tarjeta';
-    if (sale.paymentMethod === 'transferencia') return 'Transferencia';
+    if (sale.paymentMethod === 'tarjeta') return 'Tarjeta' + suffix;
+    if (sale.paymentMethod === 'transferencia') return 'Transferencia' + suffix;
     return 'Efectivo';
+  },
+
+  // Etiqueta corta de la forma de cobro con tarjeta (NFC, QR o Terminal)
+  getPaymentChannelLabel(sale) {
+    const detail = (sale && sale.paymentDetail) || {};
+    const channel = detail.channel;
+    if (!channel) return '';
+    if (typeof SalesPayment !== 'undefined' && SalesPayment.getChannelLabel) {
+      return SalesPayment.getChannelLabel(channel);
+    }
+    return String(channel).toUpperCase();
   },
 
   checkColdAlerts(items) {
@@ -3010,6 +3188,10 @@ Productos:
       }
       if (Number(breakdown.transferencia) > 0) {
         ticket += `  Transfer.:  ${currency}${Number(breakdown.transferencia).toFixed(2)}\n`;
+      }
+      const channelLabel = this.getPaymentChannelLabel(sale);
+      if (channelLabel) {
+        ticket += `  Cobro:      ${channelLabel}\n`;
       }
       if (sale.paymentMethod === 'mixto') {
         ticket += `  Recibido:   ${currency}${Number(breakdown.recibido || 0).toFixed(2)}\n`;

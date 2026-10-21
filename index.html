@@ -199,6 +199,8 @@
   <!--
     Orden de carga obligatorio:
       js/login.js  → define CashSession (autoridad del turno activo) y Login.
+      js/sales.js  → define QrCode y SalesPayment (opciones de cobro con
+                     tarjeta de Mercado Pago: NFC, QR y terminal física).
       js/app.js    → al iniciar verifica la sesión y, si no hay caja abierta,
                      muestra la pantalla de login / apertura de caja.
   -->
@@ -206,6 +208,7 @@
   <script src="services/emailService.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/login.js"></script>
+  <script src="js/sales.js"></script>
   <script src="js/pos.js"></script>
   <script src="js/inventory.js"></script>
   <script src="js/promos.js"></script>

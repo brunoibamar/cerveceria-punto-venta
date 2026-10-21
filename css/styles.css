@@ -4041,6 +4041,275 @@ body {
   gap: 12px;
 }
 
+/* =========================================================
+   COBRO CON TARJETA · OPCIONES DE MERCADO PAGO
+   Selector compacto con las tres formas de cobro: NFC /
+   Contactless (Tap to Pay), cobro con código QR y terminal
+   física. Paleta "Midnight & Amber".
+   ========================================================= */
+.pay-card-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-card-options-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.pay-card-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pay-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 74px;
+  padding: 9px 4px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pay-channel:hover {
+  border-color: var(--border);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.14) 0%, var(--bg-card) 100%);
+}
+
+.pay-channel:active {
+  transform: scale(0.97);
+}
+
+.pay-channel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pay-channel.is-active {
+  border-color: rgba(224, 169, 109, 0.75);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.24) 0%, rgba(224, 169, 109, 0.07) 100%);
+  box-shadow: var(--shadow-gold);
+}
+
+.pay-channel-icon {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.pay-channel-name {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.pay-channel-desc {
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.pay-channel.is-active .pay-channel-desc {
+  color: var(--accent-hover);
+}
+
+/* --- Panel del canal elegido --- */
+.pay-card-panel {
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: rgba(12, 10, 9, 0.42);
+  padding: 10px 12px;
+}
+
+.pay-card-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-card-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.pay-card-text strong {
+  color: var(--accent);
+}
+
+.pay-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pay-card-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pay-card-btn:hover {
+  border-color: var(--border);
+  color: var(--accent-hover);
+}
+
+.pay-card-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pay-card-btn.primary {
+  border-color: rgba(224, 169, 109, 0.7);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.26) 0%, rgba(224, 169, 109, 0.08) 100%);
+  color: var(--text-primary);
+}
+
+.pay-card-status {
+  margin: 0;
+  min-height: 15px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.pay-card-status.is-error {
+  color: #fca5a5;
+}
+
+.pay-card-status.is-ok {
+  color: #86efac;
+}
+
+.pay-card-status a {
+  color: var(--accent);
+}
+
+.pay-card-fallback {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.pay-card-fallback a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(224, 169, 109, 0.45);
+}
+
+.pay-card-fallback a:hover {
+  color: var(--accent-hover);
+}
+
+.pay-card-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.pay-card-steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* --- Contenedor del código QR de cobro --- */
+.pay-qr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pay-qr-frame {
+  flex: 0 0 auto;
+  width: 128px;
+  height: 128px;
+  padding: 7px;
+  border-radius: 12px;
+  background: #faf4ee;
+  box-shadow: var(--shadow-elegant);
+}
+
+.pay-qr-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pay-qr-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pay-qr-amount {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.pay-qr-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pay-qr-note {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+
+/* --- Desglose por forma de cobro en el corte de caja --- */
+.cut-channels {
+  display: flex;
+  flex-direction: column;
+}
+
+.cut-channels .payment-summary-row {
+  font-size: 12.5px;
+}
+
+.cut-channels .payment-summary-row span:first-child {
+  padding-left: 10px;
+}
+
 /* --- Pie con las acciones --- */
 .payment-footer {
   flex: 0 0 auto;
@@ -5690,6 +5959,92 @@ body {
   .payment-tab-label {
     font-size: 9px;
     letter-spacing: 0.1px;
+  }
+
+  /* --- Opciones de cobro con tarjeta (NFC / QR / terminal) --- */
+  .pay-card-options {
+    gap: 5px;
+  }
+
+  .pay-card-options-title {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .pay-card-options-grid {
+    gap: 4px;
+  }
+
+  .pay-channel {
+    min-height: 58px;
+    padding: 6px 2px;
+    border-radius: 11px;
+    gap: 1px;
+  }
+
+  .pay-channel-icon {
+    font-size: 16px;
+  }
+
+  .pay-channel-name {
+    font-size: 9.5px;
+  }
+
+  .pay-channel-desc {
+    font-size: 7.5px;
+  }
+
+  .pay-card-panel {
+    padding: 7px 9px;
+    border-radius: 11px;
+  }
+
+  .pay-card-panel-body {
+    gap: 6px;
+  }
+
+  .pay-card-text {
+    font-size: 11.5px;
+  }
+
+  .pay-card-btn {
+    padding: 9px 8px;
+    font-size: 11.5px;
+  }
+
+  .pay-card-status {
+    font-size: 10.5px;
+  }
+
+  .pay-card-fallback {
+    font-size: 9.5px;
+  }
+
+  .pay-card-steps {
+    font-size: 11px;
+  }
+
+  .pay-qr {
+    gap: 9px;
+  }
+
+  .pay-qr-frame {
+    width: 96px;
+    height: 96px;
+    padding: 5px;
+    border-radius: 9px;
+  }
+
+  .pay-qr-amount {
+    font-size: 16px;
+  }
+
+  .pay-qr-label {
+    font-size: 10.5px;
+  }
+
+  .pay-qr-note {
+    font-size: 9px;
   }
 
   /* --- Campos de cobro --- */

@@ -31,6 +31,11 @@ const SettingsManager = {
       subtitle: 'Credenciales usadas por “Corte de Caja → Enviar a correo”.',
       icon: '📧'
     },
+    mp: {
+      title: 'Mercado Pago',
+      subtitle: 'Link de cobro que se codifica en el QR y se usa con NFC o terminal.',
+      icon: '💳'
+    },
     backup: {
       title: 'Respaldo de Seguridad (JSON)',
       subtitle: 'Descarga o restaura el respaldo completo del punto de venta.',
@@ -54,7 +59,7 @@ const SettingsManager = {
       <header class="settings-header">
         <div>
           <h2 class="settings-title">⚙️ Ajustes</h2>
-          <p class="settings-subtitle">Configura el negocio, la nevera, los correos y los respaldos del punto de venta.</p>
+          <p class="settings-subtitle">Configura el negocio, la nevera, los cobros con tarjeta, los correos y los respaldos del punto de venta.</p>
         </div>
       </header>
       <div class="settings-grid">
@@ -78,6 +83,12 @@ const SettingsManager = {
         <button class="settings-card" data-modal="email">
           <span class="settings-card-icon">📧</span>
           <span class="settings-card-title">Correo de Respaldo (EmailJS)</span>
+          <span class="settings-card-arrow">▸</span>
+        </button>
+        <button class="settings-card" data-modal="mp">
+          <span class="settings-card-icon">💳</span>
+          <span class="settings-card-title">Mercado Pago</span>
+          <span class="settings-card-sub">${settings.mercadoPagoCobroUrl ? 'QR · NFC · Terminal' : 'Sin link de cobro'}</span>
           <span class="settings-card-arrow">▸</span>
         </button>
         <button class="settings-card" data-modal="backup">
@@ -187,6 +198,16 @@ const SettingsManager = {
       `;
     }
 
+    if (type === 'mp') {
+      return `
+        <div class="modal-field">
+          <label for="m-mercadoPagoCobroUrl">Link o plantilla del cobro</label>
+          <input type="text" id="m-mercadoPagoCobroUrl" value="${this.escapeAttr(settings.mercadoPagoCobroUrl || '')}" placeholder="https://www.mercadopago.com.mx/..." />
+          <p class="form-hint">Es el link de cobro de tu cuenta de Mercado Pago. Admite las variables {amount}, {currency}, {reference} y {folio}. Si lo dejas vacío, el QR del modal de venta muestra una referencia local del cobro.</p>
+        </div>
+      `;
+    }
+
     if (type === 'backup') {
       const today = new Date().toISOString().split('T')[0];
       return `
@@ -259,6 +280,8 @@ const SettingsManager = {
       settings.emailServiceId = document.getElementById('m-serviceId').value;
       settings.emailTemplateId = document.getElementById('m-templateId').value;
       settings.emailPublicKey = document.getElementById('m-publicKey').value;
+    } else if (type === 'mp') {
+      settings.mercadoPagoCobroUrl = document.getElementById('m-mercadoPagoCobroUrl').value.trim();
     }
     Database.saveSettings(settings);
     this.closeModal();
