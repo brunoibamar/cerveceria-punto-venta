@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#12100E" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cervecería" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="description" content="Punto de venta y gestión de inventario de la cervecería. Funciona offline." />
+  <title>Cervecería</title>
+  <link rel="icon" type="image/png" href="assets/icon-96x96.png" />
+  <link rel="apple-touch-icon" href="assets/icon-192x192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!--
+    Simbolo del logotipo de la marca (copa dorada).
+    Se declara una sola vez y se reutiliza en la cabecera y en la pantalla de
+    login mediante <use href="#brand-logo-symbol">, de modo que ambas pantallas
+    comparten exactamente el mismo icono y el mismo color dorado.
+  -->
+  <svg class="brand-logo-sprite" width="0" height="0" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="brand-logo-symbol" viewBox="0 0 64 64">
+      <path d="M18 14h28v6c0 12-6 20-14 22-8-2-14-10-14-22v-6z" stroke="currentColor" stroke-width="1.5" fill="none" />
+      <path d="M18 20h-4a4 4 0 0 0 0 8h4" stroke="currentColor" stroke-width="1.5" fill="none" />
+      <path d="M46 20h4a4 4 0 0 0 0 8h-4" stroke="currentColor" stroke-width="1.5" fill="none" />
+      <rect x="26" y="42" width="12" height="4" rx="1" fill="currentColor" />
+      <rect x="20" y="46" width="24" height="4" rx="2" fill="currentColor" />
+    </symbol>
+  </svg>
+
+  <div id="app" class="app-container">
+    <header class="app-header">
+      <div class="header-brand">
+        <svg class="brand-logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><use href="#brand-logo-symbol"></use></svg>
+        <h1>Cervecería</h1>
+      </div>
+      <!--
+        Las acciones de cabecera (incluido "Corte de Caja") permanecen ocultas
+        hasta que exista una caja/turno activo. js/login.js las habilita al
+        completar la apertura de caja y js/app.js las vuelve a ocultar al cerrar.
+      -->
+      <div class="header-actions" style="display:none;">
+        <button id="btn-corte-caja" class="btn-corte-caja" data-view="reports">
+          <span class="btn-icon">🔒</span>
+          <span class="btn-text">Corte de Caja</span>
+        </button>
+        <span id="connection-status" class="status-dot offline" title="Offline"></span>
+        <!--
+          El cierre de sesión quedó unificado en el botón "Corte de Caja":
+          la única vía para finalizar el turno y volver al login es el corte.
+        -->
+        <div id="header-user" class="header-user">
+          <span id="user-name" class="user-name">Usuario</span>
+        </div>
+      </div>
+    </header>
+
+    <!--
+      La navegación inferior se muestra únicamente con una caja abierta:
+      sin sesión activa la app arranca en la pantalla de login / apertura de caja.
+    -->
+    <nav class="tab-bar bottom-nav" id="tab-bar" role="tablist" aria-label="Navegación principal" style="display:none;">
+      <button class="tab-btn" data-view="pos" role="tab" aria-current="page"><span class="tab-icon">🛒</span><span class="tab-label">Ventas</span></button>
+      <button class="tab-btn" data-view="inventory" role="tab" aria-current="false"><span class="tab-icon">📦</span><span class="tab-label">Inventario</span></button>
+      <button class="tab-btn" data-view="promos" role="tab" aria-current="false"><span class="tab-icon">🎁</span><span class="tab-label">Promos</span></button>
+      <button class="tab-btn" data-view="reports" role="tab" aria-current="false"><span class="tab-icon">📊</span><span class="tab-label">Reportes</span></button>
+      <button class="tab-btn" data-view="settings" role="tab" aria-current="false"><span class="tab-icon">⚙️</span><span class="tab-label">Ajustes</span></button>
+    </nav>
+    <main class="app-main" id="app-main">
+      <div class="login-screen" style="color:#B8A89A;font-size:13px;letter-spacing:2px;text-transform:uppercase;">
+        Verificando sesión de caja…
+      </div>
+      <noscript>
+        <div style="padding:24px;color:#FAF4EE;text-align:center;">
+          El punto de venta necesita JavaScript habilitado para abrir caja y operar.
+        </div>
+      </noscript>
+    </main>
+  </div>
+
+  <!--
+    Palomita "Pieza Fría" usada en la vista de Ventas.
+    Vive fuera de #app-main para que sobreviva al redibujado de cada vista.
+    js/pos.js clona este template y lo inserta junto al buscador / escáner.
+  -->
+  <template id="pos-cold-template">
+    <div class="cold-toggle" id="pos-cold-toggle" role="checkbox" aria-checked="false">
+      <input type="checkbox" id="pos-cold-checkbox" />
+      <label for="pos-cold-checkbox" class="cold-toggle-label">
+        <span class="cold-palomita" aria-hidden="true"><span class="cold-palomita-check">✓</span></span>
+        <span class="toggle-label">❄️ Marcar como Frío</span>
+      </label>
+      <span class="fridge-counter" id="pos-fridge-counter" title="Piezas disponibles en la nevera fría">❄️ <span id="pos-fridge-count">0</span>/<span id="pos-fridge-max">24</span></span>
+    </div>
+  </template>
+
+
+  <!--
+    Historial de Ventas en Vivo del turno activo.
+    Vive fuera de #app-main para que sobreviva al redibujado de cada vista.
+    js/pos.js clona este template y lo inserta en la vista de Ventas; el feed
+    muestra cada ticket cobrado (hora, productos, bebida fría, pago y total).
+  -->
+  <template id="sales-history-template">
+    <section class="live-sales" id="pos-live-sales">
+      <header class="live-sales-header" id="pos-live-sales-header" role="button" tabindex="0" aria-expanded="false" aria-controls="pos-live-sales-list" aria-label="Historial de ventas en vivo">
+        <div class="live-sales-headings">
+          <h3 class="live-sales-title">📋 Historial de Ventas</h3>
+          <span class="live-sales-sub" id="pos-live-sales-sub">0 ventas • $0.00</span>
+        </div>
+        <span class="live-sales-toggle" aria-label="Expandir o colapsar historial de ventas">
+          <span class="live-sales-arrow">▼</span>
+        </span>
+        <span class="live-sales-count" id="pos-live-sales-count">0</span>
+      </header>
+      <div class="live-sales-list" id="pos-live-sales-list"></div>
+    </section>
+  </template>
+
+  <!--
+    Tarjeta de Fondo Inicial / Apertura de Caja para la vista de Reportes.
+  -->
+  <template id="reports-metric-fondo-inicial-template">
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Fondo Inicial</span>
+        <span class="metric-icon">💵</span>
+      </div>
+      <div class="metric-value" id="metric-fondo-inicial">$0.00</div>
+      <div class="metric-sub">Apertura de caja</div>
+    </div>
+  </template>
+
+  <!--
+    Escáner de código de barras para Inventario (Nuevo/Editar Producto)
+  -->
+  <div id="inventory-scanner-modal" class="scanner-modal" role="dialog" aria-modal="true">
+    <div class="scanner-modal-backdrop" data-inv-scan-close="true"></div>
+    <div class="scanner-modal-content">
+      <header class="scanner-modal-header">
+        <h2>Escanear código de barras</h2>
+        <button type="button" class="scanner-close" data-inv-scan-close="true" aria-label="Cerrar">×</button>
+      </header>
+      <div class="scanner-modal-body">
+        <div class="scanner-video-wrapper">
+          <video id="inv-scanner-video" playsinline autoplay muted></video>
+          <canvas id="inv-scanner-canvas" style="display:none;"></canvas>
+          <div class="scanner-guide"></div>
+          <div class="scanner-overlay">
+            <span class="scanner-hint">Alinea el código de barras dentro del recuadro</span>
+          </div>
+        </div>
+        <div class="scanner-controls">
+          <button type="button" id="inv-scan-flash" class="scanner-flash-btn">🔦 Activar Flash</button>
+        </div>
+        <div class="scanner-status" id="inv-scanner-status">Preparando cámara...</div>
+      </div>
+      <footer class="scanner-modal-footer">
+        <button type="button" class="btn secondary" data-inv-scan-close="true">Cancelar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!--
+    Escáner de código de barras para Inventario (Nuevo/Editar Producto)
+  -->
+  <!--
+    Selector de productos del inventario para construir combos y promociones.
+    Vive fuera de #app-main para que sobreviva al redibujado de cada vista.
+    js/promos.js clona este template e inserta el buscador dentro del modal de promociones.
+  -->
+  <template id="promo-picker-template">
+    <div class="promo-picker" id="promo-picker" hidden>
+      <div class="promo-picker-search">
+        <input type="search" id="promo-picker-search" class="promo-picker-input" placeholder="Buscar producto del inventario..." autocomplete="off" />
+        <button type="button" class="promo-picker-close" id="promo-picker-close" aria-label="Cerrar buscador de productos">✕</button>
+      </div>
+      <div class="promo-picker-list" id="promo-picker-list"></div>
+    </div>
+  </template>
+
+  <!--
+    Orden de carga obligatorio:
+      js/login.js  → define CashSession (autoridad del turno activo) y Login.
+      js/app.js    → al iniciar verifica la sesión y, si no hay caja abierta,
+                     muestra la pantalla de login / apertura de caja.
+  -->
+  <script src="db/database.js"></script>
+  <script src="services/emailService.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/login.js"></script>
+  <script src="js/pos.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/promos.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
+  <script>if('serviceWorker'in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
+  <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</body>
+</html>

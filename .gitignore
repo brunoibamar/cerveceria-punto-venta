@@ -1,0 +1,22 @@
+# Archivos de respaldo
+*.bak
+*.bak.*
+*.orig
+*.swp
+*.swo
+
+# Archivos de editor
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+package-lock.json
+
+# Logs
+*.log
