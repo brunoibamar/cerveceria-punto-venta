@@ -307,7 +307,7 @@ const ReportsManager = {
       const qty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
       const method = (s.paymentMethod || '').toLowerCase();
       let metodo = 'Efectivo';
-      if (method.includes('tarjeta') || method.includes('transfer')) metodo = 'Tarjeta/Transferencia';
+      if (method.includes('tarjeta') || method.includes('transfer')) metodo = 'Tarjeta';
       else if (method.includes('mixto') || method.includes('electronico')) metodo = 'Mixto';
       html += `<tr><td>${this.formatDateTime(s.fecha)}</td><td>${qty} ${qty === 1 ? 'pieza' : 'piezas'}</td><td><span class="reports-chip">${this.escapeHtml(metodo)}</span></td><td class="num">${this.formatCurrency(s.total || 0)}</td></tr>`;
     });
