@@ -1,4 +1,6 @@
 // Reportes: métricas compactas en cuadrícula, acordeones por botón y gráficas controladas
+// Los acordeones se despliegan en el lugar que ocupan (botón + panel en el mismo bloque)
+// y se animan con la altura real del contenido: nada de saltos ni huecos vacíos.
 const ReportsManager = {
   containerId: 'reports-content',
   chartHours: null,
@@ -9,6 +11,11 @@ const ReportsManager = {
   cutsModalOpen: false,
   cutsModalFilter: 'dia',
   cutsModalExpanded: [],
+  chartLibState: 'idle',
+  chartCallbacks: [],
+  chartLibRetryAt: 0,
+  panelToken: 0,
+  currencySymbol: '',
   monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
   dayNames: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
 
@@ -17,12 +24,14 @@ const ReportsManager = {
     this.containerId = containerId || this.containerId;
     this.chartHours = null;
     this.chartProducts = null;
+    this.currencySymbol = '';
     if (!this.cutDate) this.cutDate = this.dateKey(new Date());
     if (!this.salesDate) this.salesDate = this.dateKey(new Date());
     this.bindLiveSales();
     this.bindModalKeys();
+    this.bindContainerEvents();
     this.render();
-    this.loadChartLib(() => {});
+    this.ensureChartLib();
   },
 
   bindLiveSales() {
@@ -30,7 +39,7 @@ const ReportsManager = {
     this.liveBound = true;
     window.addEventListener('sales:updated', () => {
       const container = document.getElementById(this.containerId);
-      if (!container) return;
+      if (!container || !container.isConnected) return;
       this.render();
     });
   },
@@ -47,19 +56,118 @@ const ReportsManager = {
     });
   },
 
-  loadChartLib(callback) {
+  // Carga Chart.js una sola vez. Si la librería llega tarde (o no llega por
+  // falta de internet) se reintenta al abrir una pestaña de gráficas para que
+  // la vista nunca se quede en blanco.
+  ensureChartLib(callback) {
+    const done = typeof callback === 'function' ? callback : () => {};
     if (window.Chart) {
-      callback();
+      this.chartLibState = 'ready';
+      done();
       return;
     }
+    if (this.chartLibState === 'ready') {
+      done();
+      return;
+    }
+    if (this.chartLibState === 'loading') {
+      this.chartCallbacks.push(done);
+      return;
+    }
+    if (this.chartLibState === 'failed') {
+      // Reintento espaciado: evita llenar el documento de scripts cuando
+      // el dispositivo está sin internet.
+      const now = Date.now();
+      if (now - (this.chartLibRetryAt || 0) < 10000) {
+        done();
+        return;
+      }
+      this.chartLibRetryAt = now;
+    }
+    this.chartLibState = 'loading';
+    this.chartCallbacks.push(done);
+
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js';
-    script.onload = callback;
+    script.async = true;
+    script.onload = () => {
+      this.chartLibState = 'ready';
+      this.flushChartCallbacks();
+      this.refreshCharts();
+    };
     script.onerror = () => {
+      this.chartLibState = 'failed';
       console.warn('[Reports] No se pudo cargar Chart.js');
-      callback();
+      this.flushChartCallbacks();
+      this.refreshCharts();
     };
     document.head.appendChild(script);
+  },
+
+  flushChartCallbacks() {
+    const list = this.chartCallbacks || [];
+    this.chartCallbacks = [];
+    list.forEach(cb => {
+      try { cb(); } catch (e) {}
+    });
+  },
+
+  // Un solo listener delegado en el contenedor: sobrevive a cada redibujado
+  // de la vista y responde al instante al toque.
+  bindContainerEvents() {
+    const container = document.getElementById(this.containerId);
+    if (!container) return;
+    if (container.dataset.reportsBound === '1') return;
+    container.dataset.reportsBound = '1';
+
+    container.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!target || typeof target.closest !== 'function') return;
+
+      const periodBtn = target.closest('.period-btn');
+      if (periodBtn) {
+        event.preventDefault();
+        this.setFilter(periodBtn.dataset.filter);
+        return;
+      }
+
+      const accBtn = target.closest('.reports-acc-btn');
+      if (accBtn) {
+        event.preventDefault();
+        this.toggleAccordion(accBtn.dataset.acc);
+        return;
+      }
+
+      const cutsCard = target.closest('.metric-card-clickable');
+      if (cutsCard) {
+        event.preventDefault();
+        this.cutsModalOpen = true;
+        this.render();
+        return;
+      }
+
+      const modalClose = target.closest('[data-cuts-modal-close="true"]');
+      if (modalClose) {
+        event.preventDefault();
+        this.cutsModalOpen = false;
+        this.render();
+        return;
+      }
+
+      const cutsFilter = target.closest('[data-cuts-filter]');
+      if (cutsFilter) {
+        event.preventDefault();
+        this.cutsModalFilter = cutsFilter.dataset.cutsFilter;
+        this.render();
+        return;
+      }
+
+      const cutsToggle = target.closest('[data-cuts-toggle]');
+      if (cutsToggle) {
+        event.preventDefault();
+        this.toggleCutsModalExpanded(cutsToggle.dataset.cutsToggle);
+      }
+    });
   },
 
   getDateRange(filter) {
@@ -191,9 +299,20 @@ const ReportsManager = {
   },
 
   formatCurrency(amount) {
-    const settings = Database.getSettings() || {};
-    const symbol = settings.currencySymbol || '$';
-    return `${symbol}${Number(amount || 0).toFixed(2)}`;
+    return `${this.getCurrencySymbol()}${Number(amount || 0).toFixed(2)}`;
+  },
+
+  // El símbolo se lee una sola vez por vista: antes se consultaba en cada
+  // celda de las tablas y ralentizaba el redibujado.
+  getCurrencySymbol() {
+    if (this.currencySymbol) return this.currencySymbol;
+    let symbol = '$';
+    try {
+      const settings = Database.getSettings() || {};
+      symbol = settings.currencySymbol || '$';
+    } catch (e) {}
+    this.currencySymbol = symbol;
+    return symbol;
   },
 
   getOpeningAmount() {
@@ -297,6 +416,179 @@ const ReportsManager = {
   },
 
   // ---------- Paneles de acordeón ----------
+
+  // Bloque de acordeón: el botón y su panel viven en el mismo contenedor,
+  // así el panel se despliega justo debajo de su botón y empuja hacia abajo
+  // a los elementos siguientes de forma continua.
+  renderAccordionItem(key, icon, label, content) {
+    const open = this.openAcc === key;
+    return `
+      <div class="reports-acc-item" data-acc-item="${key}">
+        <button type="button" id="reports-acc-btn-${key}" class="reports-acc-btn ${open ? 'active' : ''}" data-acc="${key}" aria-expanded="${open}" aria-controls="reports-acc-panel-${key}">
+          <span class="reports-acc-row"><span class="reports-acc-icon">${icon}</span><span class="reports-acc-label">${label}</span></span>
+          <span class="reports-acc-chevron">▾</span>
+        </button>
+        <div class="reports-acc-panel ${open ? 'is-open' : ''}" id="reports-acc-panel-${key}" data-acc-panel="${key}" role="region" aria-labelledby="reports-acc-btn-${key}">
+          <div class="reports-acc-panel-clip" data-acc-clip="${key}" ${open ? '' : 'inert aria-hidden="true"'}>
+            <div class="reports-acc-panel-card">${content}</div>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  // Despliega o contrae un acordeón sin rehacer la vista completa: así el
+  // toque responde de inmediato y las gráficas no se pierden.
+  toggleAccordion(key) {
+    if (!key) return;
+    const open = this.openAcc !== key;
+    this.openAcc = open ? key : null;
+    this.syncAccordionState(true);
+
+    if (open && (key === 'hours' || key === 'products')) {
+      this.drawChartFor(key);
+      this.whenPanelSettled(key, () => this.drawChartFor(key));
+    }
+  },
+
+  // Sincroniza el estado visual de los acordeones con this.openAcc
+  syncAccordionState(animate = true) {
+    const container = document.getElementById(this.containerId);
+    if (!container) return;
+    const openKey = this.openAcc;
+
+    container.querySelectorAll('.reports-acc-btn[data-acc]').forEach(btn => {
+      const isOpen = btn.dataset.acc === openKey;
+      btn.setAttribute('aria-expanded', String(isOpen));
+      btn.classList.toggle('active', isOpen);
+    });
+
+    container.querySelectorAll('[data-acc-panel]').forEach(panel => {
+      const key = panel.dataset.accPanel;
+      const clip = panel.querySelector('[data-acc-clip]');
+      if (!clip) return;
+      if (key === openKey) this.expandClip(clip, animate);
+      else this.collapseClip(clip);
+    });
+  },
+
+  // Abre un panel animando su altura real (0 -> contenido) sin huecos vacíos
+  expandClip(clip, animate = true) {
+    clip.classList.add('is-open');
+    clip.removeAttribute('inert');
+    clip.setAttribute('aria-hidden', 'false');
+
+    const token = String(++this.panelToken);
+    clip.dataset.panelToken = token;
+
+    const height = clip.scrollHeight;
+    if (!animate) {
+      const previous = clip.style.transition;
+      clip.style.transition = 'none';
+      clip.style.maxHeight = height + 'px';
+      void clip.offsetHeight;
+      clip.style.transition = previous;
+      return;
+    }
+
+    clip.style.maxHeight = '0px';
+    void clip.offsetHeight;
+    clip.style.maxHeight = height + 'px';
+    this.afterTransition(clip, () => {
+      if (clip.dataset.panelToken !== token) return;
+      if (clip.classList.contains('is-open')) clip.style.maxHeight = 'none';
+    });
+  },
+
+  // Cierra un panel contrayéndolo hasta 0
+  collapseClip(clip) {
+    clip.classList.remove('is-open');
+    clip.setAttribute('inert', '');
+    clip.setAttribute('aria-hidden', 'true');
+
+    const token = String(++this.panelToken);
+    clip.dataset.panelToken = token;
+
+    const current = Math.round(clip.getBoundingClientRect().height);
+    clip.style.maxHeight = current + 'px';
+    void clip.offsetHeight;
+    clip.style.maxHeight = '0px';
+
+    // Red de seguridad: si la transición se interrumpe, el panel termina
+    // cerrado de todos modos.
+    this.afterTransition(clip, () => {
+      if (clip.dataset.panelToken !== token) return;
+      if (clip.classList.contains('is-open')) return;
+      const previous = clip.style.transition;
+      clip.style.transition = 'none';
+      clip.style.maxHeight = '0px';
+      void clip.offsetHeight;
+      clip.style.transition = previous;
+    });
+  },
+
+  // Ejecuta la función cuando termina la transición (o tras un tiempo máximo)
+  afterTransition(el, fn) {
+    let done = false;
+    const run = () => {
+      if (done) return;
+      done = true;
+      el.removeEventListener('transitionend', onEnd);
+      clearTimeout(timer);
+      try { fn(); } catch (e) {}
+    };
+    const onEnd = (event) => {
+      if (event.target !== el) return;
+      if (event.propertyName && event.propertyName !== 'max-height') return;
+      run();
+    };
+    el.addEventListener('transitionend', onEnd);
+    const timer = setTimeout(run, 600);
+  },
+
+  // Avisa cuando el panel terminó de desplegarse
+  whenPanelSettled(key, fn) {
+    const container = document.getElementById(this.containerId);
+    if (!container) { fn(); return; }
+    const panel = container.querySelector('[data-acc-panel="' + key + '"]');
+    const clip = panel && panel.querySelector('[data-acc-clip]');
+    if (!clip) { fn(); return; }
+    this.afterTransition(clip, fn);
+  },
+
+  // Dibuja la gráfica de la pestaña indicada (y reintenta la librería si falta)
+  drawChartFor(key) {
+    if (!window.Chart) {
+      this.ensureChartLib(() => this.refreshCharts());
+      return;
+    }
+    if (key === 'hours') this.renderPeriodChart();
+    else if (key === 'products') this.renderProductsChart();
+  },
+
+  // Redibuja la gráfica de la pestaña abierta y muestra el aviso si no hay internet
+  refreshCharts() {
+    const container = document.getElementById(this.containerId);
+    if (!container) return;
+    const hasChart = !!window.Chart;
+    container.querySelectorAll('[data-chart-note]').forEach(note => {
+      note.hidden = hasChart;
+      const wrap = note.closest('.reports-chart-wrap');
+      const canvas = wrap && wrap.querySelector('canvas');
+      if (canvas) canvas.style.display = hasChart ? '' : 'none';
+    });
+    if (!hasChart) return;
+    if (this.openAcc === 'hours') this.renderPeriodChart();
+    else if (this.openAcc === 'products') this.renderProductsChart();
+  },
+
+  // Cambia el periodo y refresca métricas, resúmenes y gráficas
+  setFilter(filter) {
+    if (!filter || filter === this.currentFilter) return;
+    this.currentFilter = filter;
+    if (filter !== 'dia' && this.openAcc === 'sales') this.openAcc = null;
+    this.render();
+  },
+
   renderSalesPanel(filtered) {
     if (!filtered.length) {
       return '<div class="reports-empty">No hay ventas en el periodo seleccionado.</div>';
@@ -591,8 +883,10 @@ const ReportsManager = {
             <span class="cuts-card-caret">▾</span>
           </span>
         </button>
-        <div class="cuts-card-panel" data-cuts-panel="${group.key}" ${open ? '' : 'hidden'}>
-          ${this.renderCutsPanelContent(group)}
+        <div class="cuts-card-clip ${open ? 'is-open' : ''}" data-cuts-clip="${group.key}" ${open ? '' : 'inert aria-hidden="true"'}>
+          <div class="cuts-card-panel" data-cuts-panel="${group.key}">
+            ${this.renderCutsPanelContent(group)}
+          </div>
         </div>
       </div>`;
   },
@@ -628,8 +922,10 @@ const ReportsManager = {
             <span class="cuts-card-caret">▾</span>
           </span>
         </button>
-        <div class="cuts-cut-panel" data-cuts-panel="${entry.key}" ${open ? '' : 'hidden'}>
-          ${this.renderCutDetail(cut)}
+        <div class="cuts-cut-clip ${open ? 'is-open' : ''}" data-cuts-clip="${entry.key}" ${open ? '' : 'inert aria-hidden="true"'}>
+          <div class="cuts-cut-panel" data-cuts-panel="${entry.key}">
+            ${this.renderCutDetail(cut)}
+          </div>
         </div>
       </div>`;
   },
@@ -784,15 +1080,38 @@ const ReportsManager = {
     if (!container) return;
     const trigger = container.querySelector('[data-cuts-toggle="' + key + '"]');
     const panel = container.querySelector('[data-cuts-panel="' + key + '"]');
+    const clip = container.querySelector('[data-cuts-clip="' + key + '"]');
     if (trigger) trigger.setAttribute('aria-expanded', String(open));
-    if (panel) panel.hidden = !open;
+    if (clip) {
+      if (open) this.expandClip(clip, true);
+      else this.collapseClip(clip);
+    } else if (panel) {
+      panel.hidden = !open;
+    }
     const wrap = trigger && trigger.closest('.cuts-cut');
     if (wrap) wrap.classList.toggle('is-open', open);
+  },
+
+  // Coloca los paneles del modal en su estado (abierto/cerrado) sin animación
+  syncCutsModalState(animate = true) {
+    const container = document.getElementById(this.containerId);
+    if (!container) return;
+    container.querySelectorAll('[data-cuts-clip]').forEach(clip => {
+      const key = clip.dataset.cutsClip;
+      const open = this.cutsModalExpanded.indexOf(key) !== -1;
+      if (open) this.expandClip(clip, animate);
+      else this.collapseClip(clip);
+    });
   },
 
    render() {
      const container = document.getElementById(this.containerId);
      if (!container) return;
+
+    // Se conserva la posición del scroll para que el cambio de periodo no
+    // mande al usuario de golpe hasta arriba de la vista.
+    const scroller = document.getElementById('app-main');
+    const scrollTop = scroller ? scroller.scrollTop : 0;
 
     const filtered = this.getFilteredSales();
     const { efectivo, electronico } = this.paymentTotals(filtered);
@@ -816,8 +1135,6 @@ const ReportsManager = {
       if (!hasPromoItem) return sum;
       return sum + pd;
     }, 0);
-
-    const isOpen = acc => this.openAcc === acc;
 
     let html = `
       <div class="reports-view">
@@ -871,85 +1188,54 @@ const ReportsManager = {
           <button class="period-btn ${this.currentFilter === 'año' ? 'active' : ''}" data-filter="año">Año</button>
         </div>
 
-        <div class="reports-accordion-bar">
-          ${this.currentFilter === 'dia' ? `<button type="button" class="reports-acc-btn ${isOpen('sales') ? 'active' : ''}" data-acc="sales" aria-expanded="${isOpen('sales')}">
-            <div class="reports-acc-row"><span class="reports-acc-icon">📋</span><span class="reports-acc-label">Historial de Turno</span></div>
-            <span class="reports-acc-chevron">▾</span>
-          </button>` : ''}
-
-          <button type="button" class="reports-acc-btn ${isOpen('hours') ? 'active' : ''}" data-acc="hours" aria-expanded="${isOpen('hours')}">
-            <div class="reports-acc-row"><span class="reports-acc-icon">🕒</span><span class="reports-acc-label">${this.currentFilter === 'dia' ? 'Horarios Pico' : (this.currentFilter === 'semana' ? 'Ventas por Día' : (this.currentFilter === 'mes' ? 'Ventas por Semana' : 'Ventas por Mes'))}</span></div>
-            <span class="reports-acc-chevron">▾</span>
-          </button>
-          <button type="button" class="reports-acc-btn ${isOpen('products') ? 'active' : ''}" data-acc="products" aria-expanded="${isOpen('products')}">
-            <div class="reports-acc-row"><span class="reports-acc-icon">🏆</span><span class="reports-acc-label">Productos Más Vendidos</span></div>
-            <span class="reports-acc-chevron">▾</span>
-          </button>
+        <div class="reports-accordion">
+          ${this.renderAccordionItems(filtered)}
         </div>
-
-        <div class="reports-accordion-panels">
-          ${this.currentFilter === 'dia' ? `<div class="reports-acc-panel" id="reports-acc-panel-sales" data-acc-panel="sales" ${!isOpen('sales') ? 'hidden' : ''}>
-            ${this.renderSalesPanel(filtered)}
-          </div>` : ''}
-
-          <div class="reports-acc-panel" id="reports-acc-panel-hours" data-acc-panel="hours" ${!isOpen('hours') ? 'hidden' : ''}>
-            <div class="reports-chart-wrap"><canvas id="reports-chart-hours" height="250"></canvas></div>
-          </div>
-          <div class="reports-acc-panel" id="reports-acc-panel-products" data-acc-panel="products" ${!isOpen('products') ? 'hidden' : ''}>
-            <div class="reports-chart-wrap"><canvas id="reports-chart-products" height="250"></canvas></div>
-          </div>
-         </div>
        </div>
        ${this.cutsModalOpen ? this.renderCutsModal() : ''}
      `;
 
 
     container.innerHTML = html;
-    this.bindEvents();
-    if (isOpen('hours')) this.renderPeriodChart();
-    if (isOpen('products')) this.renderProductsChart();
+    // Los paneles se posicionan sin animación: el redibujado completo no debe
+    // provocar saltos, solo la interacción del usuario anima el despliegue.
+    this.syncAccordionState(false);
+    this.syncCutsModalState(false);
+    this.refreshCharts();
+    if (scroller) scroller.scrollTop = scrollTop;
   },
 
-  bindEvents() {
-    const container = document.getElementById(this.containerId);
-    if (!container) return;
+  // Arma los bloques del acordeón con su contenido ya calculado
+  renderAccordionItems(filtered) {
+    const hoursLabel = this.currentFilter === 'dia'
+      ? 'Horarios Pico'
+      : (this.currentFilter === 'semana' ? 'Ventas por Día' : (this.currentFilter === 'mes' ? 'Ventas por Semana' : 'Ventas por Mes'));
 
-    container.querySelectorAll('.period-btn').forEach(btn => {
-      btn.onclick = () => {
-        this.currentFilter = btn.dataset.filter;
-        this.render();
-      };
-    });
+    const items = [];
+    if (this.currentFilter === 'dia') {
+      items.push(this.renderAccordionItem('sales', '📋', 'Historial de Turno', this.renderSalesPanel(filtered)));
+    }
+    items.push(this.renderAccordionItem('hours', '🕒', hoursLabel,
+      `<div class="reports-chart-wrap"><canvas id="reports-chart-hours" height="250"></canvas>${this.renderChartNote('hours')}</div>`));
+    items.push(this.renderAccordionItem('products', '🏆', 'Productos Más Vendidos',
+      `<div class="reports-chart-wrap"><canvas id="reports-chart-products" height="250"></canvas>${this.renderChartNote('products')}</div>`));
+    return items.join('');
+  },
 
-     container.querySelectorAll('.reports-acc-btn').forEach(btn => {
-       btn.onclick = () => {
-         const acc = btn.dataset.acc;
-         this.openAcc = this.openAcc === acc ? null : acc;
-         this.render();
-       };
-     });
-
-     container.querySelectorAll('.metric-card-clickable').forEach(card => {
-       card.onclick = () => { this.cutsModalOpen = true; this.render(); };
-     });
-     container.querySelectorAll('[data-cuts-modal-close="true"]').forEach(el => {
-       el.onclick = () => { this.cutsModalOpen = false; this.render(); };
-     });
-     container.querySelectorAll('[data-cuts-filter]').forEach(btn => {
-       btn.onclick = () => { this.cutsModalFilter = btn.dataset.cutsFilter; this.render(); };
-     });
-     container.querySelectorAll('[data-cuts-toggle]').forEach(el => {
-       el.onclick = () => { this.toggleCutsModalExpanded(el.dataset.cutsToggle); };
-     });
-   },
+  // Aviso mostrado cuando la librería de gráficas no está disponible
+  renderChartNote(key) {
+    return `<p class="reports-chart-note" data-chart-note="${key}" hidden>No se pudo cargar la gráfica. Revisa la conexión a internet e inténtalo de nuevo.</p>`;
+  },
 
 
   renderPeriodChart() {
     const canvas = document.getElementById('reports-chart-hours');
     if (!canvas || !window.Chart) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     if (this.chartHours) {
       try { this.chartHours.destroy(); } catch (e) {}
+      this.chartHours = null;
     }
     const filtered = this.getFilteredSales();
     const filter = this.currentFilter;
@@ -985,7 +1271,7 @@ const ReportsManager = {
       data = months.map((_, i) => filtered.filter(s => new Date(s.fecha).getMonth() === i).reduce((sum, s) => sum + (s.total || 0), 0));
       label = 'Ventas por mes ($)';
     }
-    this.chartHours = new Chart(ctx, {
+    this.chartHours = this.createChart(ctx, {
       type: 'line',
       data: {
         labels: labels,
@@ -1015,14 +1301,16 @@ const ReportsManager = {
     const canvas = document.getElementById('reports-chart-products');
     if (!canvas || !window.Chart) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     if (this.chartProducts) {
       try { this.chartProducts.destroy(); } catch (e) {}
+      this.chartProducts = null;
     }
     const filtered = this.getFilteredSales();
     const stats = this.getProductStats(filtered).slice(0, 10);
     const labels = stats.map(s => s.nombre.length > 18 ? s.nombre.substring(0, 18) + '…' : s.nombre);
     const data = stats.map(s => s.cantidad);
-    this.chartProducts = new Chart(ctx, {
+    this.chartProducts = this.createChart(ctx, {
       type: 'bar',
       data: {
         labels: labels,
@@ -1045,6 +1333,16 @@ const ReportsManager = {
         }
       }
     });
+  },
+
+  // Crea la gráfica sin dejar la vista a medias si la librería falla
+  createChart(ctx, config) {
+    try {
+      return new Chart(ctx, config);
+    } catch (error) {
+      console.error('[Reports] No se pudo dibujar la gráfica:', error);
+      return null;
+    }
   }
 };
 
