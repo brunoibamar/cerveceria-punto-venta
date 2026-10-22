@@ -614,6 +614,7 @@ const SalesPayment = {
     if (!host) return;
 
     const context = ctx || {};
+    this.lastContext = context;
     const selected = this.normalizeChannel(context.channel);
 
     // Se evita repintar cuando nada cambio (por ejemplo, al teclear el efectivo)
@@ -695,15 +696,33 @@ const SalesPayment = {
       return;
     }
     if (action === 'open-app') {
-      this.openMercadoPago();
+      let monto;
+      if (this.lastContext && typeof this.lastContext.total !== 'undefined') {
+        monto = this.lastContext.total;
+      } else if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
+        monto = window.cartTotal;
+      }
+      this.openMercadoPago(monto);
     }
   },
 
   // Abre la app de Mercado Pago sin abandonar el punto de venta
-  openMercadoPago() {
+  openMercadoPago(monto) {
     try {
-      const schemeUrl = 'mercadopago://';
-      const intentUrl = 'intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end';
+      let amount = Number(monto);
+      if (isNaN(amount)) {
+        if (this.lastContext && typeof this.lastContext.total !== 'undefined') {
+          amount = Number(this.lastContext.total) || 0;
+        } else if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
+          amount = Number(window.cartTotal) || 0;
+        } else {
+          amount = 0;
+        }
+      }
+      const amountStr = amount.toFixed(2);
+      const desc = encodeURIComponent('Venta Cerveceria');
+      const cobroUrl = `mercadopago://charge?amount=${encodeURIComponent(amountStr)}&description=${desc}`;
+      const intentUrl = `intent://charge?amount=${encodeURIComponent(amountStr)}&description=${desc}#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end`;
       window.location.href = intentUrl;
       setTimeout(() => {
         window.open(this.MP_WEB_URL, '_blank');
@@ -724,7 +743,13 @@ const SalesPayment = {
       this.nfc.status = 'error';
       this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
       this.updateNfcStatus();
-      this.openMercadoPago();
+      let monto;
+      if (this.lastContext && typeof this.lastContext.total !== 'undefined') {
+        monto = this.lastContext.total;
+      } else if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
+        monto = window.cartTotal;
+      }
+      this.openMercadoPago(monto);
       return;
     }
 
