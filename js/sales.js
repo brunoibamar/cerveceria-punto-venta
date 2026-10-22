@@ -707,7 +707,7 @@ const SalesPayment = {
         + '</div>'
         + '</div>'
         + '<div class="pay-card-actions">'
-        + '<button type="button" class="pay-card-btn primary" id="btn-open-mp-pointtap" onclick="window.location.href=\'mercadopago://\';">📱 Abrir Mercado Pago</button>'
+        + '<a href="mercadopago://" class="pay-card-btn primary btn-abrir-mp-estilo" id="btn-open-mp-pointtap" target="_blank" rel="noopener noreferrer">📱 Abrir Mercado Pago</a>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:8px;">Cobro presencial con Point Tap (NFC) desde la app oficial de Mercado Pago.</p>'
         + '</div>';
