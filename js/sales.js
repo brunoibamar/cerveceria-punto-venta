@@ -32,18 +32,17 @@ function obtenerMontoCobro() {
   return 0;
 }
 
-function abrirPointTapMercadoPago(monto) {
-  // Deep link específico para la herramienta Point Tap / Cobro NFC de Mercado Pago
-  const pointTapIntent = `intent://point_tap?amount=${monto}#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end`;
-
-  window.location.href = pointTapIntent;
+function abrirMercadoPagoLimpio() {
+  // Esquema directo de la aplicación instalada, sin redirección a Play Store
+  window.location.href = "mercadopago://";
 }
 
 function abrirMercadoPagoDirecto(monto) {
   const amount = Number(monto);
   const amountStr = (isNaN(amount) ? obtenerMontoCobro() : amount).toFixed(2);
 
-  abrirPointTapMercadoPago(amountStr);
+  // Uso el esquema directo puro para evitar que el navegador abra Play Store
+  window.location.href = "mercadopago://";
 }
 
 /* ------------------------------------------------------------------
@@ -683,23 +682,23 @@ const SalesPayment = {
   // El listener se registra sobre el botón (y no por delegación en el modal)
   // para que la navegación ocurra dentro del mismo gesto del usuario: sin
   // setTimeout el navegador no la bloquea por política de seguridad.
-  bindDirectActions() {
+bindDirectActions() {
     const btnApp = document.getElementById('btn-open-mp-app');
     if (btnApp) {
-btnApp.addEventListener('click', (e) => {
-         e.preventDefault();
-         e.stopPropagation();
-         this.openMercadoPago(window.cartTotal);
-       });
+      btnApp.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirMercadoPagoLimpio();
+      });
     }
 
     const btnNfc = document.getElementById('btn-read-nfc');
     if (btnNfc) {
-btnNfc.addEventListener('click', (e) => {
-         e.preventDefault();
-         e.stopPropagation();
-         this.leerNfcYAbrirApp(window.cartTotal);
-       });
+      btnNfc.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.leerNfcYAbrirApp(window.cartTotal);
+      });
     }
   },
 
@@ -768,7 +767,8 @@ btnNfc.addEventListener('click', (e) => {
   openMercadoPago(monto) {
     try {
       const amount = Number(monto);
-      abrirMercadoPagoDirecto(isNaN(amount) ? obtenerMontoCobro() : amount);
+      // Uso el esquema directo puro para evitar que el navegador abra Play Store
+      window.location.href = "mercadopago://";
     } catch (error) {
       console.warn('[SalesPayment] No se pudo abrir la app de Mercado Pago:', error);
     }
