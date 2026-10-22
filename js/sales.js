@@ -22,7 +22,7 @@
    ------------------------------------------------------------------ */
 
 // Enlace universal de Mercado Pago (app instalada o web de cobro)
-const MP_UNIVERSAL_URL = 'https://link.mercadopago.com.mx/';
+const MP_UNIVERSAL_URL = 'https://link.mercadopago.com.mx/cerveceriatonito';
 
 /* ------------------------------------------------------------------
    Generador de códigos QR (modo byte, nivel de corrección de errores M)

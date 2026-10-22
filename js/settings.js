@@ -341,7 +341,7 @@ const SettingsManager = {
 
   // Texto que resume el estado del link de cobro en la tarjeta de Ajustes
   getMPLinkStatus() {
-    return this.getSavedMPLink() ? 'Configurado en este dispositivo' : 'Enlace oficial de Mercado Pago';
+    return this.getSavedMPLink() ? 'Configurado en este dispositivo' : 'Por defecto (Cervecería Tonito)';
   },
 
   // Guarda el link de cobro de Mercado Pago en el almacenamiento local.
