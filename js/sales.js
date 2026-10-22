@@ -654,6 +654,7 @@ const SalesPayment = {
         + '<button type="button" class="pay-card-btn primary" data-card-action="nfc-scan">📡 Leer NFC</button>'
         + '<button type="button" class="pay-card-btn" data-card-action="open-app">📱 Abrir app</button>'
         + '</div>'
+        + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
         + '<p class="pay-card-status" id="pos-pay-nfc-status">' + this.escapeHtml(this.nfc.message) + '</p>'
         + '<p class="pay-card-fallback"><a href="' + this.MP_WEB_URL + '" target="_blank" rel="noopener">¿No tienes la app? Abre Mercado Pago en el navegador</a></p>'
         + '</div>';
@@ -701,15 +702,19 @@ const SalesPayment = {
   // Abre la app de Mercado Pago sin abandonar el punto de venta
   openMercadoPago() {
     try {
-      const frame = document.createElement('iframe');
-      frame.style.display = 'none';
-      frame.src = this.MP_APP_URL;
-      document.body.appendChild(frame);
+      const schemeUrl = 'mercadopago://';
+      const intentUrl = 'intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end';
+      window.location.href = intentUrl;
       setTimeout(() => {
-        if (frame.parentNode) frame.parentNode.removeChild(frame);
+        window.open(this.MP_WEB_URL, '_blank');
       }, 1500);
     } catch (error) {
       console.warn('[SalesPayment] No se pudo abrir la app de Mercado Pago:', error);
+      try {
+        window.open(this.MP_WEB_URL, '_blank');
+      } catch (e) {
+        // ignore
+      }
     }
   },
 
@@ -719,6 +724,7 @@ const SalesPayment = {
       this.nfc.status = 'error';
       this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
       this.updateNfcStatus();
+      this.openMercadoPago();
       return;
     }
 
