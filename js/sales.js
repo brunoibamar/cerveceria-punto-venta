@@ -16,33 +16,16 @@
    botones del modal (#btn-open-mp-app y #btn-read-nfc) sin intermediarios.
    ------------------------------------------------------------------ */
 
-// Monto del cobro en curso, para viajar en el intent de la app
-function obtenerMontoCobro() {
-  try {
-    if (typeof SalesPayment !== 'undefined' && SalesPayment.lastContext
-      && typeof SalesPayment.lastContext.total !== 'undefined') {
-      return Number(SalesPayment.lastContext.total) || 0;
-    }
-    if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
-      return Number(window.cartTotal) || 0;
-    }
-  } catch (error) {
-    // ignore
-  }
-  return 0;
-}
-
-function abrirMercadoPagoLimpio() {
-  // Esquema directo de la aplicación instalada, sin redirección a Play Store
-  window.location.href = "mercadopago://";
-}
-
-function abrirMercadoPagoDirecto(monto) {
-  const amount = Number(monto);
-  const amountStr = (isNaN(amount) ? obtenerMontoCobro() : amount).toFixed(2);
-
-  // Uso el esquema directo puro para evitar que el navegador abra Play Store
-  window.location.href = "mercadopago://";
+// Abre la app instalada de Mercado Pago con el esquema puro "mercadopago://".
+// Se simula un clic sobre un enlace temporal para que el sistema operativo
+// resuelva el esquema, sin parámetros ni destinos alternativos.
+function abrirMercadoPagoDirecto() {
+  const link = document.createElement('a');
+  link.href = 'mercadopago://';
+  link.rel = 'noopener noreferrer';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 /* ------------------------------------------------------------------
@@ -682,13 +665,13 @@ const SalesPayment = {
   // El listener se registra sobre el botón (y no por delegación en el modal)
   // para que la navegación ocurra dentro del mismo gesto del usuario: sin
   // setTimeout el navegador no la bloquea por política de seguridad.
-bindDirectActions() {
+  bindDirectActions() {
     const btnApp = document.getElementById('btn-open-mp-app');
     if (btnApp) {
       btnApp.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        abrirMercadoPagoLimpio();
+        abrirMercadoPagoDirecto();
       });
     }
 
@@ -697,7 +680,7 @@ bindDirectActions() {
       btnNfc.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.leerNfcYAbrirApp(window.cartTotal);
+        this.leerNfcYAbrirApp();
       });
     }
   },
@@ -757,26 +740,24 @@ bindDirectActions() {
       return;
     }
     if (action === 'open-app') {
-      this.openMercadoPago(window.cartTotal);
+      this.openMercadoPago();
     }
   },
 
   // Abre la app instalada de Mercado Pago sin abandonar el punto de venta.
-  // El intent se asigna dentro del gesto del usuario (sin setTimeout) para que
-  // Android intercepte el esquema y el navegador no lo bloquee.
-  openMercadoPago(monto) {
+  // Se invoca dentro del gesto del usuario (sin setTimeout) para que el
+  // sistema operativo resuelva el esquema "mercadopago://" sin intermediarios.
+  openMercadoPago() {
     try {
-      const amount = Number(monto);
-      // Uso el esquema directo puro para evitar que el navegador abra Play Store
-      window.location.href = "mercadopago://";
+      abrirMercadoPagoDirecto();
     } catch (error) {
       console.warn('[SalesPayment] No se pudo abrir la app de Mercado Pago:', error);
     }
   },
 
   // Botón "Leer NFC": intenta la lectura con Web NFC y abre la app instalada
-  // de Mercado Pago (Tap to Pay) con el intent oficial de Android.
-  leerNfcYAbrirApp(monto) {
+  // de Mercado Pago (Tap to Pay) con el esquema puro de la aplicación.
+  leerNfcYAbrirApp() {
     const soportaWebNfc = typeof window !== 'undefined' && 'NDEFReader' in window;
 
     if (soportaWebNfc) {
@@ -787,7 +768,7 @@ bindDirectActions() {
       this.updateNfcStatus();
     }
 
-    this.openMercadoPago(typeof monto !== 'undefined' ? monto : window.cartTotal);
+    this.openMercadoPago();
   },
 
   // Inicia la lectura de una etiqueta NFC (Web NFC: Chrome en Android)
