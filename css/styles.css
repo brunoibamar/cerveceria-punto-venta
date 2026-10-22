@@ -4176,6 +4176,7 @@ body {
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: var(--transition-smooth);
 }
 

@@ -11,17 +11,28 @@
 // un generador propio, sin depender de un CDN ni de un servicio externo.
 
 /* ------------------------------------------------------------------
-   Apertura directa de la app de Mercado Pago (Android)
-   Se expone como función global para poder engancharla directamente a los
-   botones del modal (#btn-open-mp-app y #btn-read-nfc) sin intermediarios.
+   Apertura de la app de Mercado Pago (Android)
+   Los botones del modal de cobro son enlaces HTML reales
+   (<a href="mercadopago://">) porque los navegadores móviles bloquean la
+   navegación por script hacia esquemas personalizados: únicamente un clic
+   real sobre el enlace abre la app de inmediato, sin intermediarios y sin
+   destino alternativo en la tienda de apps.
    ------------------------------------------------------------------ */
 
-// Abre la app instalada de Mercado Pago con el esquema puro "mercadopago://".
-// Se simula un clic sobre un enlace temporal para que el sistema operativo
-// resuelva el esquema, sin parámetros ni destinos alternativos.
+// Esquema puro de la app instalada
+const MP_APP_SCHEME = 'mercadopago://';
+
+// Abre la app de Mercado Pago pulsando el enlace real del modal.
+// Si el enlace todavía no está en el DOM se crea uno temporal.
 function abrirMercadoPagoDirecto() {
+  const existente = document.getElementById('btn-open-mp-app');
+  if (existente) {
+    existente.click();
+    return;
+  }
+
   const link = document.createElement('a');
-  link.href = 'mercadopago://';
+  link.href = MP_APP_SCHEME;
   link.rel = 'noopener noreferrer';
   document.body.appendChild(link);
   link.click();
@@ -524,7 +535,7 @@ const SalesPayment = {
   DEFAULT_CHANNEL: 'terminal',
 
   // App de Mercado Pago (deep link) y respaldo web
-  MP_APP_URL: 'mercadopago://',
+  MP_APP_URL: MP_APP_SCHEME,
   MP_WEB_URL: 'https://www.mercadopago.com.mx/',
 
   // Estado de la lectura NFC en curso
@@ -662,25 +673,22 @@ const SalesPayment = {
   },
 
   // Engancha los botones de la app de Mercado Pago directamente al elemento.
-  // El listener se registra sobre el botón (y no por delegación en el modal)
-  // para que la navegación ocurra dentro del mismo gesto del usuario: sin
-  // setTimeout el navegador no la bloquea por política de seguridad.
+  // Como son enlaces reales (<a href="mercadopago://">) no se cancela la
+  // navegación: el href abre la app dentro del mismo gesto del usuario.
+  // Solo se detiene la delegación del modal para no abrirla dos veces.
   bindDirectActions() {
     const btnApp = document.getElementById('btn-open-mp-app');
     if (btnApp) {
       btnApp.addEventListener('click', (e) => {
-        e.preventDefault();
         e.stopPropagation();
-        abrirMercadoPagoDirecto();
       });
     }
 
     const btnNfc = document.getElementById('btn-read-nfc');
     if (btnNfc) {
       btnNfc.addEventListener('click', (e) => {
-        e.preventDefault();
         e.stopPropagation();
-        this.leerNfcYAbrirApp();
+        this.leerNfc();
       });
     }
   },
@@ -696,8 +704,8 @@ const SalesPayment = {
       return '<div class="pay-card-panel-body">'
         + '<p class="pay-card-text">Acerca el teléfono a la etiqueta NFC o abre la app de Mercado Pago para cobrar con Tap to Pay.</p>'
         + '<div class="pay-card-actions">'
-        + '<button type="button" class="pay-card-btn primary" id="btn-read-nfc" data-card-action="nfc-scan">📡 Leer NFC</button>'
-        + '<button type="button" class="pay-card-btn" id="btn-open-mp-app" data-card-action="open-app">📱 Abrir app</button>'
+        + '<a class="pay-card-btn primary" id="btn-read-nfc" data-card-action="nfc-scan" href="' + this.MP_APP_URL + '" rel="noopener noreferrer">📡 Leer NFC</a>'
+        + '<a class="pay-card-btn" id="btn-open-mp-app" data-card-action="open-app" href="' + this.MP_APP_URL + '" rel="noopener noreferrer">📱 Abrir app</a>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
         + '<p class="pay-card-status" id="pos-pay-nfc-status">' + this.escapeHtml(this.nfc.message) + '</p>'
@@ -736,7 +744,7 @@ const SalesPayment = {
   // Acciones del panel (leer NFC, abrir la app de Mercado Pago)
   handleAction(action) {
     if (action === 'nfc-scan') {
-      this.leerNfcYAbrirApp();
+      this.leerNfc();
       return;
     }
     if (action === 'open-app') {
@@ -744,9 +752,7 @@ const SalesPayment = {
     }
   },
 
-  // Abre la app instalada de Mercado Pago sin abandonar el punto de venta.
-  // Se invoca dentro del gesto del usuario (sin setTimeout) para que el
-  // sistema operativo resuelva el esquema "mercadopago://" sin intermediarios.
+  // Abre la app instalada de Mercado Pago pulsando el enlace real del modal.
   openMercadoPago() {
     try {
       abrirMercadoPagoDirecto();
@@ -755,9 +761,10 @@ const SalesPayment = {
     }
   },
 
-  // Botón "Leer NFC": intenta la lectura con Web NFC y abre la app instalada
-  // de Mercado Pago (Tap to Pay) con el esquema puro de la aplicación.
-  leerNfcYAbrirApp() {
+  // Botón "Leer NFC": intenta la lectura con Web NFC. El enlace se encarga de
+  // abrir la app de Mercado Pago (Tap to Pay) con su href, así que aquí no se
+  // cancela la navegación ni se vuelve a lanzar la app por script.
+  leerNfc() {
     const soportaWebNfc = typeof window !== 'undefined' && 'NDEFReader' in window;
 
     if (soportaWebNfc) {
@@ -767,8 +774,6 @@ const SalesPayment = {
       this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
       this.updateNfcStatus();
     }
-
-    this.openMercadoPago();
   },
 
   // Inicia la lectura de una etiqueta NFC (Web NFC: Chrome en Android)
