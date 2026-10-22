@@ -1209,11 +1209,6 @@ if (other) {
         this.setCardChannel(cardOption.dataset.cardOption);
         return;
       }
-
-      const cardAction = target.closest('[data-card-action]');
-      if (cardAction) {
-        this.handleCardAction(cardAction.dataset.cardAction);
-      }
     });
 
     const cashInput = document.getElementById('pos-pay-cash');
@@ -1304,7 +1299,6 @@ if (other) {
       modal.classList.remove('is-active');
       modal.classList.remove('is-success');
     }
-    if (typeof SalesPayment !== 'undefined' && SalesPayment.stopNfc) SalesPayment.stopNfc();
     this.payment.isOpen = false;
   },
 
@@ -1357,12 +1351,6 @@ if (other) {
   getCardChannel() {
     if (typeof SalesPayment === 'undefined') return 'terminal';
     return SalesPayment.normalizeChannel(this.payment.cardChannel);
-  },
-
-  // Ejecuta las acciones del panel de cobro con tarjeta (leer NFC, abrir la app)
-  handleCardAction(action) {
-    if (typeof SalesPayment === 'undefined') return;
-    SalesPayment.handleAction(action, this.getCardContext());
   },
 
   // Datos del cobro actual que necesita el módulo de opciones de tarjeta

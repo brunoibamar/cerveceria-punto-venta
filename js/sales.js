@@ -11,33 +11,18 @@
 // un generador propio, sin depender de un CDN ni de un servicio externo.
 
 /* ------------------------------------------------------------------
-   Apertura de la app de Mercado Pago (Android)
-   Los botones del modal de cobro son enlaces HTML reales
-   (<a href="mercadopago://">) porque los navegadores móviles bloquean la
-   navegación por script hacia esquemas personalizados: únicamente un clic
-   real sobre el enlace abre la app de inmediato, sin intermediarios y sin
-   destino alternativo en la tienda de apps.
+   Apertura de la app de Mercado Pago
+   Los botones del modal de cobro son enlaces HTML puros (<a href="...">)
+   apuntando al enlace universal de Mercado Pago: el navegador abre la app
+   instalada en el teléfono si está disponible y, si no, carga la web de
+   cobro sin pasar por la tienda de aplicaciones.
+
+   No hay scripts, listeners ni esquemas intent: el enlace se resuelve con
+   el gesto nativo del usuario, así que ningún código puede bloquearlo.
    ------------------------------------------------------------------ */
 
-// Esquema puro de la app instalada
-const MP_APP_SCHEME = 'intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end';
-
-// Abre la app de Mercado Pago pulsando el enlace real del modal.
-// Si el enlace todavía no está en el DOM se crea uno temporal.
-function abrirMercadoPagoDirecto() {
-  const existente = document.getElementById('btn-open-mp-app');
-  if (existente) {
-    existente.click();
-    return;
-  }
-
-  const link = document.createElement('a');
-  link.href = MP_APP_SCHEME;
-  link.rel = 'noopener noreferrer';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+// Enlace universal de Mercado Pago (app instalada o web de cobro)
+const MP_UNIVERSAL_URL = 'https://link.mercadopago.com.mx/';
 
 /* ------------------------------------------------------------------
    Generador de códigos QR (modo byte, nivel de corrección de errores M)
@@ -534,16 +519,8 @@ const SalesPayment = {
   // Canal con el que arranca el cobro (el más tradicional, no requiere nada extra)
   DEFAULT_CHANNEL: 'terminal',
 
-  // App de Mercado Pago (deep link) y respaldo web
-  MP_APP_URL: MP_APP_SCHEME,
-  MP_WEB_URL: 'https://www.mercadopago.com.mx/',
-
-  // Estado de la lectura NFC en curso
-  nfc: {
-    reader: null,
-    status: 'idle',
-    message: ''
-  },
+  // Enlace universal de Mercado Pago (app instalada o web de cobro)
+  MP_UNIVERSAL_URL: MP_UNIVERSAL_URL,
 
   // Cache del QR ya dibujado para no recalcularlo en cada repintado
   qrCache: {
@@ -571,9 +548,6 @@ const SalesPayment = {
 
   // Reinicia el estado del módulo (se llama al abrir el modal de cobro)
   reset() {
-    this.stopNfc();
-    this.nfc.status = 'idle';
-    this.nfc.message = '';
     this.qrCache.payload = '';
     this.qrCache.svg = '';
     this.renderSignature = '';
@@ -649,7 +623,6 @@ const SalesPayment = {
     // Se evita repintar cuando nada cambio (por ejemplo, al teclear el efectivo)
     const signature = [selected, context.total, context.currency, context.reference].join('|');
     if (this.renderSignature === signature && host.innerHTML) {
-      this.syncNfcStatus();
       return;
     }
     this.renderSignature = signature;
@@ -668,29 +641,6 @@ const SalesPayment = {
     host.innerHTML = '<span class="pay-card-options-title">Cobro con Mercado Pago</span>'
       + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
       + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
-
-    this.bindDirectActions();
-  },
-
-  // Engancha los botones de la app de Mercado Pago directamente al elemento.
-  // Como son enlaces reales (<a href="mercadopago://">) no se cancela la
-  // navegación: el href abre la app dentro del mismo gesto del usuario.
-  // Solo se detiene la delegación del modal para no abrirla dos veces.
-  bindDirectActions() {
-    const btnApp = document.getElementById('btn-open-mp-app');
-    if (btnApp) {
-      btnApp.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    }
-
-    const btnNfc = document.getElementById('btn-read-nfc');
-    if (btnNfc) {
-      btnNfc.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.leerNfc();
-      });
-    }
   },
 
   // Panel con las instrucciones del canal elegido
@@ -701,15 +651,15 @@ const SalesPayment = {
     const amount = currency + total.toFixed(2);
 
     if (channel === 'nfc') {
+      const mpUrl = this.MP_UNIVERSAL_URL;
       return '<div class="pay-card-panel-body">'
         + '<p class="pay-card-text">Acerca el teléfono a la etiqueta NFC o abre la app de Mercado Pago para cobrar con Tap to Pay.</p>'
         + '<div class="pay-card-actions">'
-+ '<a href="intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end" class="btn-mp-direct" id="btn-read-nfc" data-card-action="nfc-scan" target="_blank" rel="noopener noreferrer">📡 Leer NFC</a>'
-+ '<a href="intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end" class="btn-mp-direct" id="btn-open-mp-app" data-card-action="open-app" target="_blank" rel="noopener noreferrer">📱 Abrir app</a>'
+        + '<a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer" class="pay-card-btn primary" id="btn-open-mp-app">📱 Abrir app</a>'
+        + '<a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer" class="pay-card-btn" id="btn-read-nfc">📡 Leer NFC</a>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
-        + '<p class="pay-card-status" id="pos-pay-nfc-status">' + this.escapeHtml(this.nfc.message) + '</p>'
-        + '<p class="pay-card-fallback"><a href="' + this.MP_WEB_URL + '" target="_blank" rel="noopener">¿No tienes la app? Abre Mercado Pago en el navegador</a></p>'
+        + '<p class="pay-card-fallback"><a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer">¿No tienes la app? Abre Mercado Pago en el navegador</a></p>'
         + '</div>';
     }
 
@@ -739,127 +689,6 @@ const SalesPayment = {
       + '<li>Pulsa "Confirmar Pago" para registrar la venta.</li>'
       + '</ol>'
       + '</div>';
-  },
-
-  // Acciones del panel (leer NFC, abrir la app de Mercado Pago)
-  handleAction(action) {
-    if (action === 'nfc-scan') {
-      this.leerNfc();
-      return;
-    }
-    if (action === 'open-app') {
-      this.openMercadoPago();
-    }
-  },
-
-  // Abre la app instalada de Mercado Pago pulsando el enlace real del modal.
-  openMercadoPago() {
-    try {
-      abrirMercadoPagoDirecto();
-    } catch (error) {
-      console.warn('[SalesPayment] No se pudo abrir la app de Mercado Pago:', error);
-    }
-  },
-
-  // Botón "Leer NFC": intenta la lectura con Web NFC. El enlace se encarga de
-  // abrir la app de Mercado Pago (Tap to Pay) con su href, así que aquí no se
-  // cancela la navegación ni se vuelve a lanzar la app por script.
-  leerNfc() {
-    const soportaWebNfc = typeof window !== 'undefined' && 'NDEFReader' in window;
-
-    if (soportaWebNfc) {
-      this.startNfc();
-    } else {
-      this.nfc.status = 'error';
-      this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
-      this.updateNfcStatus();
-    }
-  },
-
-  // Inicia la lectura de una etiqueta NFC (Web NFC: Chrome en Android)
-  startNfc() {
-    if (typeof window === 'undefined' || !('NDEFReader' in window)) {
-      this.nfc.status = 'error';
-      this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
-      this.updateNfcStatus();
-      return;
-    }
-
-    this.stopNfc();
-    this.nfc.status = 'reading';
-    this.nfc.message = 'Acerca el teléfono a la etiqueta NFC…';
-    this.updateNfcStatus();
-
-    try {
-      const reader = new window.NDEFReader();
-      this.nfc.reader = reader;
-
-      reader.onreading = event => {
-        let text = '';
-        try {
-          const decoder = new TextDecoder();
-          const records = (event && event.message && event.message.records) || [];
-          records.forEach(record => {
-            if (record.recordType === 'text') text += decoder.decode(record.data);
-          });
-        } catch (error) {
-          text = '';
-        }
-
-        this.nfc.status = 'ok';
-        this.nfc.message = text ? 'Lectura NFC: ' + text : 'Etiqueta NFC leída correctamente.';
-        this.updateNfcStatus();
-        this.stopNfc();
-      };
-
-      reader.onerror = error => {
-        this.nfc.status = 'error';
-        this.nfc.message = 'No se pudo leer la etiqueta NFC. Intenta de nuevo.';
-        console.warn('[SalesPayment] Error de lectura NFC:', error);
-        this.updateNfcStatus();
-        this.stopNfc();
-      };
-
-      reader.scan().catch(error => {
-        this.nfc.status = 'error';
-        this.nfc.message = 'No se pudo iniciar la lectura NFC: revisa los permisos del navegador.';
-        console.warn('[SalesPayment] No se pudo iniciar el escáner NFC:', error);
-        this.updateNfcStatus();
-        this.stopNfc();
-      });
-    } catch (error) {
-      this.nfc.status = 'error';
-      this.nfc.message = 'No se pudo iniciar la lectura NFC en este dispositivo.';
-      console.warn('[SalesPayment] NFC no disponible:', error);
-      this.updateNfcStatus();
-    }
-  },
-
-  // Detiene la lectura NFC en curso
-  stopNfc() {
-    if (this.nfc.reader) {
-      try {
-        this.nfc.reader = null;
-      } catch (error) {
-        console.warn('[SalesPayment] No se pudo detener la lectura NFC:', error);
-      }
-    }
-  },
-
-  // Refleja el estado de la lectura NFC en el panel
-  updateNfcStatus() {
-    const status = document.getElementById('pos-pay-nfc-status');
-    if (!status) return;
-    status.textContent = this.nfc.message;
-    status.classList.remove('is-error', 'is-ok');
-    if (this.nfc.status === 'error') status.classList.add('is-error');
-    if (this.nfc.status === 'ok') status.classList.add('is-ok');
-  },
-
-  // Vuelve a pintar el mensaje de NFC sin rehacer todo el panel
-  syncNfcStatus() {
-    if (this.nfc.status === 'idle' && !this.nfc.message) return;
-    this.updateNfcStatus();
   },
 
   // Escapa texto para insertarlo como HTML
