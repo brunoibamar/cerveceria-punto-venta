@@ -697,20 +697,19 @@ const SalesPayment = {
     const amount = currency + total.toFixed(2);
 
     if (channel === 'nfc') {
-      const mpUrl = this.getMPLink();
-      const configured = !!this.getSavedMPLink();
       return '<div class="pay-card-panel-body">'
-        + '<p class="pay-card-text">Acerca el teléfono a la etiqueta NFC o abre la app de Mercado Pago para cobrar con Tap to Pay.</p>'
-        + '<div class="pay-card-actions">'
-        + '<a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer" class="pay-card-btn primary" id="btn-open-mp-app">📱 Abrir app</a>'
-        + '<a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer" class="pay-card-btn" id="btn-read-nfc">📡 Leer NFC</a>'
+        + '<div class="pay-pointtap-guide" style="background:#1C1815;border:1px solid #E0A96D;border-radius:8px;padding:12px;margin-bottom:12px;">'
+        + '<div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#FAF4EE;">Total: ' + amount + '</div>'
+        + '<div style="font-size:0.875rem;color:#B8A89A;line-height:1.5;">'
+        + '<div>1. Toca "Abrir Mercado Pago".</div>'
+        + '<div>2. Selecciona "Point Tap".</div>'
+        + '<div>3. Ingresa el monto total y acerca la tarjeta al reverso del teléfono.</div>'
         + '</div>'
-        + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
-        + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:4px;">'
-        + (configured
-          ? 'Abre el link de cobro configurado en Ajustes.'
-          : 'Sin link configurado: se usa el enlace oficial de Mercado Pago.') + '</p>'
-        + '<p class="pay-card-fallback"><a href="' + this.MP_UNIVERSAL_URL + '" target="_blank" rel="noopener noreferrer">¿No tienes la app? Abre Mercado Pago en el navegador</a></p>'
+        + '</div>'
+        + '<div class="pay-card-actions">'
+        + '<button type="button" class="pay-card-btn primary" id="btn-open-mp-pointtap" onclick="window.location.href=\'mercadopago://\';">📱 Abrir Mercado Pago</button>'
+        + '</div>'
+        + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:8px;">Cobro presencial con Point Tap (NFC) desde la app oficial de Mercado Pago.</p>'
         + '</div>';
     }
 
