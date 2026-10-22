@@ -42,7 +42,7 @@ const SettingsManager = {
     },
     mplink: {
       title: 'Link de Cobro Mercado Pago (URL)',
-      subtitle: 'Enlace que abren los botones “Abrir app” y “Leer NFC” del modal de cobro.',
+      subtitle: 'Link de cobro que se codifica en el QR cuando no hay plantilla en Ajustes → Mercado Pago.',
       icon: '🔗'
     },
     backup: {
@@ -97,7 +97,7 @@ const SettingsManager = {
         <button class="settings-card" data-modal="mp">
           <span class="settings-card-icon">💳</span>
           <span class="settings-card-title">Mercado Pago</span>
-          <span class="settings-card-sub">${settings.mercadoPagoCobroUrl ? 'QR · NFC · Terminal' : 'Sin link de cobro'}</span>
+          <span class="settings-card-sub">${settings.mercadoPagoCobroUrl ? 'Link de cobro QR' : 'Sin link de cobro'}</span>
           <span class="settings-card-arrow">▸</span>
         </button>
         <button class="settings-card" data-modal="mplink">
@@ -238,7 +238,7 @@ const SettingsManager = {
         <div class="modal-field">
           <label for="m-mp-link">Link de Cobro Mercado Pago (URL)</label>
           <input type="url" id="m-mp-link" value="${this.escapeAttr(link)}" placeholder="https://link.mercadopago.com.mx/..." autocomplete="off" inputmode="url" />
-          <p class="form-hint">Se guarda solo en este dispositivo. Los botones “Abrir app” y “Leer NFC” del modal de cobro usan este enlace; si lo dejas vacío se abre el enlace oficial de Mercado Pago.</p>
+          <p class="form-hint">Se guarda solo en este dispositivo y se usa como link de cobro del código QR cuando no hay plantilla en Ajustes → Mercado Pago. El botón “Abrir Mercado Pago” del modal de cobro usa siempre el enlace oficial HTTPS, que abre la app instalada de forma nativa.</p>
         </div>
         <button type="button" class="settings-modal-save" id="btn-save-mp-link">Guardar Configuración</button>
       `;
@@ -341,7 +341,7 @@ const SettingsManager = {
 
   // Texto que resume el estado del link de cobro en la tarjeta de Ajustes
   getMPLinkStatus() {
-    return this.getSavedMPLink() ? 'Configurado en este dispositivo' : 'Por defecto (Cervecería Tonito)';
+    return this.getSavedMPLink() ? 'Configurado en este dispositivo' : 'Sin configurar en este dispositivo';
   },
 
   // Guarda el link de cobro de Mercado Pago en el almacenamiento local.

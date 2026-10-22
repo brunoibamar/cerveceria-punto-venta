@@ -12,17 +12,19 @@
 
 /* ------------------------------------------------------------------
    Apertura de la app de Mercado Pago
-   Los botones del modal de cobro son enlaces HTML puros (<a href="...">)
-   apuntando al enlace universal de Mercado Pago: el navegador abre la app
-   instalada en el teléfono si está disponible y, si no, carga la web de
-   cobro sin pasar por la tienda de aplicaciones.
+   El botón "Abrir Mercado Pago" del modal de cobro es un enlace HTML
+   puro (<a href="https://www.mercadopago.com.mx/">) y nada más: sin
+   listeners, sin preventDefault y sin redirecciones intermedias.
 
-   No hay scripts, listeners ni esquemas intent: el enlace se resuelve con
-   el gesto nativo del usuario, así que ningún código puede bloquearlo.
+   El dominio oficial de Mercado Pago está registrado como Android App
+   Link de la app (com.mercadopago.wallet), así que el sistema abre la
+   app instalada de forma nativa y, si no está instalada, el navegador
+   carga el sitio oficial. Por eso no se usan esquemas URI inseguros
+   ("mercadopago://"): Android los bloquea y dejaban el botón muerto.
    ------------------------------------------------------------------ */
 
-// Enlace universal de Mercado Pago (app instalada o web de cobro)
-const MP_UNIVERSAL_URL = 'https://link.mercadopago.com.mx/cerveceriatonito';
+// Enlace oficial de Mercado Pago (HTTPS con App Link nativo en Android)
+const MP_OFFICIAL_URL = 'https://www.mercadopago.com.mx/';
 
 /* ------------------------------------------------------------------
    Generador de códigos QR (modo byte, nivel de corrección de errores M)
@@ -519,8 +521,8 @@ const SalesPayment = {
   // Canal con el que arranca el cobro (el más tradicional, no requiere nada extra)
   DEFAULT_CHANNEL: 'terminal',
 
-  // Enlace universal de Mercado Pago (app instalada o web de cobro)
-  MP_UNIVERSAL_URL: MP_UNIVERSAL_URL,
+  // Enlace oficial de Mercado Pago (App Link HTTPS: abre la app nativa)
+  MP_OFFICIAL_URL: MP_OFFICIAL_URL,
 
   // Clave del almacenamiento local con el link de cobro configurado en Ajustes
   MP_LINK_KEY: 'mp_link',
@@ -578,13 +580,6 @@ const SalesPayment = {
     }
     const link = String(saved).trim();
     return /^https?:\/\/\S+$/i.test(link) ? link : '';
-  },
-
-  // Link de cobro que se abre en el modal de cobro.
-  // Sin link configurado se usa el enlace universal oficial de Mercado Pago:
-  // el navegador abre la app instalada en el teléfono o la web de cobro.
-  getMPLink() {
-    return this.getSavedMPLink() || this.MP_UNIVERSAL_URL;
   },
 
   // Plantilla del link de cobro: la del módulo Mercado Pago de Ajustes o,
@@ -653,7 +648,7 @@ const SalesPayment = {
     const selected = this.normalizeChannel(context.channel);
 
     // Se evita repintar cuando nada cambio (por ejemplo, al teclear el efectivo)
-    const signature = [selected, context.total, context.currency, context.reference, this.getMPLink()].join('|');
+    const signature = [selected, context.total, context.currency, context.reference, this.getMPLinkTemplate()].join('|');
     if (this.renderSignature === signature && host.innerHTML) {
       return;
     }
@@ -673,20 +668,6 @@ const SalesPayment = {
     host.innerHTML = '<span class="pay-card-options-title">Cobro con Mercado Pago</span>'
       + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
       + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
-
-    this.bindMPLinks(host);
-  },
-
-  // Los botones "Abrir app" y "Leer NFC" releen el link de cobro guardado en
-  // Ajustes justo antes de abrirse, por si cambió después de pintar el panel.
-  bindMPLinks(host) {
-    const links = host.querySelectorAll('#btn-open-mp-app, #btn-read-nfc');
-    links.forEach(link => {
-      link.addEventListener('click', () => {
-        const url = this.getMPLink();
-        if (url) link.setAttribute('href', url);
-      });
-    });
   },
 
   // Panel con las instrucciones del canal elegido
@@ -707,7 +688,7 @@ const SalesPayment = {
         + '</div>'
         + '</div>'
         + '<div class="pay-card-actions">'
-        + '<a href="mercadopago://" class="pay-card-btn primary btn-abrir-mp-estilo" id="btn-open-mp-pointtap" target="_blank" rel="noopener noreferrer">📱 Abrir Mercado Pago</a>'
+        + '<a href="' + MP_OFFICIAL_URL + '" class="pay-card-btn primary btn-abrir-mp" id="btn-open-mp-pointtap" target="_blank" rel="noopener noreferrer">📱 Abrir Mercado Pago</a>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:8px;">Cobro presencial con Point Tap (NFC) desde la app oficial de Mercado Pago.</p>'
         + '</div>';
