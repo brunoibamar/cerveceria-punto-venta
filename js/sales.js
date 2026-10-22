@@ -522,6 +522,9 @@ const SalesPayment = {
   // Enlace universal de Mercado Pago (app instalada o web de cobro)
   MP_UNIVERSAL_URL: MP_UNIVERSAL_URL,
 
+  // Clave del almacenamiento local con el link de cobro configurado en Ajustes
+  MP_LINK_KEY: 'mp_link',
+
   // Cache del QR ya dibujado para no recalcularlo en cada repintado
   qrCache: {
     payload: '',
@@ -563,6 +566,35 @@ const SalesPayment = {
     return {};
   },
 
+  // Link de cobro guardado en Ajustes (localStorage).
+  // Devuelve una cadena vacía si el usuario no configuró ninguno válido.
+  getSavedMPLink() {
+    let saved = '';
+    try {
+      saved = window.localStorage.getItem(this.MP_LINK_KEY) || '';
+    } catch (error) {
+      console.warn('[SalesPayment] No se pudo leer el link de Mercado Pago:', error);
+      return '';
+    }
+    const link = String(saved).trim();
+    return /^https?:\/\/\S+$/i.test(link) ? link : '';
+  },
+
+  // Link de cobro que se abre en el modal de cobro.
+  // Sin link configurado se usa el enlace universal oficial de Mercado Pago:
+  // el navegador abre la app instalada en el teléfono o la web de cobro.
+  getMPLink() {
+    return this.getSavedMPLink() || this.MP_UNIVERSAL_URL;
+  },
+
+  // Plantilla del link de cobro: la del módulo Mercado Pago de Ajustes o,
+  // si no existe, el link de cobro guardado en el dispositivo.
+  getMPLinkTemplate() {
+    const fromSettings = String(this.getSettings().mercadoPagoCobroUrl || '').trim();
+    if (fromSettings) return fromSettings;
+    return this.getSavedMPLink();
+  },
+
   // Arma el contenido del código QR de cobro.
   // Si el negocio configuró su link de Mercado Pago se usa esa plantilla
   // (admite {amount}, {currency}, {reference} y {folio}); si no, se genera
@@ -574,7 +606,7 @@ const SalesPayment = {
     const reference = context.reference || this.buildReference();
     const folio = context.folio || reference;
 
-    const template = String(this.getSettings().mercadoPagoCobroUrl || '').trim();
+    const template = this.getMPLinkTemplate();
     if (template) {
       return template
         .replace(/\{amount\}/gi, total.toFixed(2))
@@ -621,7 +653,7 @@ const SalesPayment = {
     const selected = this.normalizeChannel(context.channel);
 
     // Se evita repintar cuando nada cambio (por ejemplo, al teclear el efectivo)
-    const signature = [selected, context.total, context.currency, context.reference].join('|');
+    const signature = [selected, context.total, context.currency, context.reference, this.getMPLink()].join('|');
     if (this.renderSignature === signature && host.innerHTML) {
       return;
     }
@@ -641,6 +673,20 @@ const SalesPayment = {
     host.innerHTML = '<span class="pay-card-options-title">Cobro con Mercado Pago</span>'
       + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
       + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
+
+    this.bindMPLinks(host);
+  },
+
+  // Los botones "Abrir app" y "Leer NFC" releen el link de cobro guardado en
+  // Ajustes justo antes de abrirse, por si cambió después de pintar el panel.
+  bindMPLinks(host) {
+    const links = host.querySelectorAll('#btn-open-mp-app, #btn-read-nfc');
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        const url = this.getMPLink();
+        if (url) link.setAttribute('href', url);
+      });
+    });
   },
 
   // Panel con las instrucciones del canal elegido
@@ -651,7 +697,8 @@ const SalesPayment = {
     const amount = currency + total.toFixed(2);
 
     if (channel === 'nfc') {
-      const mpUrl = this.MP_UNIVERSAL_URL;
+      const mpUrl = this.getMPLink();
+      const configured = !!this.getSavedMPLink();
       return '<div class="pay-card-panel-body">'
         + '<p class="pay-card-text">Acerca el teléfono a la etiqueta NFC o abre la app de Mercado Pago para cobrar con Tap to Pay.</p>'
         + '<div class="pay-card-actions">'
@@ -659,14 +706,18 @@ const SalesPayment = {
         + '<a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer" class="pay-card-btn" id="btn-read-nfc">📡 Leer NFC</a>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
-        + '<p class="pay-card-fallback"><a href="' + mpUrl + '" target="_blank" rel="noopener noreferrer">¿No tienes la app? Abre Mercado Pago en el navegador</a></p>'
+        + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:4px;">'
+        + (configured
+          ? 'Abre el link de cobro configurado en Ajustes.'
+          : 'Sin link configurado: se usa el enlace oficial de Mercado Pago.') + '</p>'
+        + '<p class="pay-card-fallback"><a href="' + this.MP_UNIVERSAL_URL + '" target="_blank" rel="noopener noreferrer">¿No tienes la app? Abre Mercado Pago en el navegador</a></p>'
         + '</div>';
     }
 
     if (channel === 'qr') {
       const payload = this.buildPayload(context);
       const svg = this.renderQr(payload, 'Código QR de cobro de ' + amount);
-      const configured = !!String(this.getSettings().mercadoPagoCobroUrl || '').trim();
+      const configured = !!this.getMPLinkTemplate();
       return '<div class="pay-card-panel-body">'
         + '<div class="pay-qr">'
         + '<div class="pay-qr-frame">' + svg + '</div>'

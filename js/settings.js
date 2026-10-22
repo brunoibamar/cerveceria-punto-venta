@@ -9,6 +9,10 @@ const SettingsManager = {
   containerId: 'settings-content',
   overlayId: 'settings-modal-overlay',
 
+  // Clave del almacenamiento local donde se guarda el link de cobro de
+  // Mercado Pago configurado desde Ajustes
+  MP_LINK_KEY: 'mp_link',
+
   // Descripción de cada modal: título, subtítulo y campos propios
   MODALS: {
     ticket: {
@@ -35,6 +39,11 @@ const SettingsManager = {
       title: 'Mercado Pago',
       subtitle: 'Link de cobro que se codifica en el QR y se usa con NFC o terminal.',
       icon: '💳'
+    },
+    mplink: {
+      title: 'Link de Cobro Mercado Pago (URL)',
+      subtitle: 'Enlace que abren los botones “Abrir app” y “Leer NFC” del modal de cobro.',
+      icon: '🔗'
     },
     backup: {
       title: 'Respaldo de Seguridad (JSON)',
@@ -91,6 +100,12 @@ const SettingsManager = {
           <span class="settings-card-sub">${settings.mercadoPagoCobroUrl ? 'QR · NFC · Terminal' : 'Sin link de cobro'}</span>
           <span class="settings-card-arrow">▸</span>
         </button>
+        <button class="settings-card" data-modal="mplink">
+          <span class="settings-card-icon">🔗</span>
+          <span class="settings-card-title">Link de Cobro Mercado Pago (URL)</span>
+          <span class="settings-card-sub">${this.getMPLinkStatus()}</span>
+          <span class="settings-card-arrow">▸</span>
+        </button>
         <button class="settings-card" data-modal="backup">
           <span class="settings-card-icon">💾</span>
           <span class="settings-card-title">Respaldo de Seguridad (JSON)</span>
@@ -127,7 +142,7 @@ const SettingsManager = {
         <h3 class="settings-modal-title" id="settings-modal-title">${meta.icon} ${this.escapeHtml(meta.title)}</h3>
         <p class="settings-modal-sub">${this.escapeHtml(meta.subtitle)}</p>
         ${body}
-        ${type !== 'backup' ? '<button type="button" class="settings-modal-save" id="settings-modal-save">Guardar</button>' : ''}
+        ${(type !== 'backup' && type !== 'mplink') ? '<button type="button" class="settings-modal-save" id="settings-modal-save">Guardar</button>' : ''}
       </div>
     `;
 
@@ -208,6 +223,27 @@ const SettingsManager = {
       `;
     }
 
+    if (type === 'mplink') {
+      const link = this.getSavedMPLink();
+      const template = document.getElementById('settings-mp-link-template');
+      if (template && template.content) {
+        const fragment = template.content.cloneNode(true);
+        const input = fragment.querySelector('#m-mp-link');
+        if (input) input.setAttribute('value', link);
+        const holder = document.createElement('div');
+        holder.appendChild(fragment);
+        return holder.innerHTML;
+      }
+      return `
+        <div class="modal-field">
+          <label for="m-mp-link">Link de Cobro Mercado Pago (URL)</label>
+          <input type="url" id="m-mp-link" value="${this.escapeAttr(link)}" placeholder="https://link.mercadopago.com.mx/..." autocomplete="off" inputmode="url" />
+          <p class="form-hint">Se guarda solo en este dispositivo. Los botones “Abrir app” y “Leer NFC” del modal de cobro usan este enlace; si lo dejas vacío se abre el enlace oficial de Mercado Pago.</p>
+        </div>
+        <button type="button" class="settings-modal-save" id="btn-save-mp-link">Guardar Configuración</button>
+      `;
+    }
+
     if (type === 'backup') {
       const today = new Date().toISOString().split('T')[0];
       return `
@@ -247,6 +283,11 @@ const SettingsManager = {
       if (importInput) {
         importInput.addEventListener('change', (e) => this.importBackup(e));
       }
+    } else if (type === 'mplink') {
+      const saveLinkBtn = document.getElementById('btn-save-mp-link');
+      if (saveLinkBtn) {
+        saveLinkBtn.addEventListener('click', () => this.saveMPLink());
+      }
     } else {
       const saveBtn = document.getElementById('settings-modal-save');
       if (saveBtn) {
@@ -284,6 +325,50 @@ const SettingsManager = {
       settings.mercadoPagoCobroUrl = document.getElementById('m-mercadoPagoCobroUrl').value.trim();
     }
     Database.saveSettings(settings);
+    this.closeModal();
+    this.render();
+  },
+
+  // Link de cobro de Mercado Pago guardado en el dispositivo (vacío si no hay)
+  getSavedMPLink() {
+    try {
+      return String(window.localStorage.getItem(this.MP_LINK_KEY) || '').trim();
+    } catch (error) {
+      console.warn('[SettingsManager] No se pudo leer el link de Mercado Pago:', error);
+      return '';
+    }
+  },
+
+  // Texto que resume el estado del link de cobro en la tarjeta de Ajustes
+  getMPLinkStatus() {
+    return this.getSavedMPLink() ? 'Configurado en este dispositivo' : 'Enlace oficial de Mercado Pago';
+  },
+
+  // Guarda el link de cobro de Mercado Pago en el almacenamiento local.
+  // Un valor vacío borra la configuración y se vuelve al enlace oficial.
+  saveMPLink() {
+    const input = document.getElementById('m-mp-link');
+    if (!input) return;
+
+    const value = String(input.value || '').trim();
+    if (value && !/^https?:\/\/\S+$/i.test(value)) {
+      alert('El link de cobro debe empezar con http:// o https://');
+      input.focus();
+      return;
+    }
+
+    try {
+      if (value) {
+        window.localStorage.setItem(this.MP_LINK_KEY, value);
+      } else {
+        window.localStorage.removeItem(this.MP_LINK_KEY);
+      }
+    } catch (error) {
+      console.error('[SettingsManager] No se pudo guardar el link de Mercado Pago:', error);
+      alert('No se pudo guardar la configuración en este dispositivo.');
+      return;
+    }
+
     this.closeModal();
     this.render();
   },

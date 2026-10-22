@@ -179,6 +179,21 @@
   </div>
 
   <!--
+    Link de Cobro de Mercado Pago configurable desde Ajustes.
+    Vive fuera de #app-main para que sobreviva al redibujado de cada vista.
+    js/settings.js clona este template dentro del modal de Ajustes y guarda
+    el valor en el dispositivo (localStorage, clave "mp_link").
+  -->
+  <template id="settings-mp-link-template">
+    <div class="modal-field">
+      <label for="m-mp-link">Link de Cobro Mercado Pago (URL)</label>
+      <input type="url" id="m-mp-link" placeholder="https://link.mercadopago.com.mx/..." autocomplete="off" inputmode="url" />
+      <p class="form-hint">Se guarda solo en este dispositivo. Los botones “Abrir app” y “Leer NFC” del modal de cobro usan este enlace; si lo dejas vacío se abre el enlace oficial de Mercado Pago (app instalada o navegador).</p>
+    </div>
+    <button type="button" class="settings-modal-save" id="btn-save-mp-link">Guardar Configuración</button>
+  </template>
+
+  <!--
     Escáner de código de barras para Inventario (Nuevo/Editar Producto)
   -->
   <!--
