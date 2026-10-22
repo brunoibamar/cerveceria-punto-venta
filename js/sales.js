@@ -20,7 +20,7 @@
    ------------------------------------------------------------------ */
 
 // Esquema puro de la app instalada
-const MP_APP_SCHEME = 'mercadopago://';
+const MP_APP_SCHEME = 'intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end';
 
 // Abre la app de Mercado Pago pulsando el enlace real del modal.
 // Si el enlace todavía no está en el DOM se crea uno temporal.
@@ -704,8 +704,8 @@ const SalesPayment = {
       return '<div class="pay-card-panel-body">'
         + '<p class="pay-card-text">Acerca el teléfono a la etiqueta NFC o abre la app de Mercado Pago para cobrar con Tap to Pay.</p>'
         + '<div class="pay-card-actions">'
-+ '<a href="mercadopago://" class="btn-mp-direct" id="btn-read-nfc" data-card-action="nfc-scan" target="_blank" rel="noopener noreferrer">📡 Leer NFC</a>'
-+ '<a href="mercadopago://" class="btn-mp-direct" id="btn-open-mp-app" data-card-action="open-app" target="_blank" rel="noopener noreferrer">📱 Abrir app</a>'
++ '<a href="intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end" class="btn-mp-direct" id="btn-read-nfc" data-card-action="nfc-scan" target="_blank" rel="noopener noreferrer">📡 Leer NFC</a>'
++ '<a href="intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end" class="btn-mp-direct" id="btn-open-mp-app" data-card-action="open-app" target="_blank" rel="noopener noreferrer">📱 Abrir app</a>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
         + '<p class="pay-card-status" id="pos-pay-nfc-status">' + this.escapeHtml(this.nfc.message) + '</p>'
