@@ -6153,3 +6153,10 @@ body {
     flex: 0 0 34%;
   }
 }
+
+/* QR zoom lightbox */
+.qr-zoom-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
+.qr-zoom-overlay.is-open { display: flex; }
+.qr-zoom-overlay .qr-zoom-content { background: #fff; padding: 24px; border-radius: 12px; }
+.qr-zoom-overlay .qr-zoom-content svg { width: 80vmin; height: 80vmin; }
+.qr-zoom-close { margin-top: 16px; padding: 10px 24px; font-size: 1rem; border: none; border-radius: 8px; background: #E0A96D; color: #1C1815; cursor: pointer; }

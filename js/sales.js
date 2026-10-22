@@ -491,32 +491,25 @@ const QrCode = {
    ------------------------------------------------------------------ */
 const SalesPayment = {
   // Las tres formas de cobro con tarjeta
-  CHANNELS: {
-    nfc: {
-      id: 'nfc',
-      icon: '📱',
-      name: 'NFC / Contactless',
-      desc: 'Tap to Pay con la app',
-      short: 'NFC'
-    },
-    qr: {
-      id: 'qr',
-      icon: '🔳',
-      name: 'Cobrar con QR',
-      desc: 'Muestra el código de cobro',
-      short: 'QR'
-    },
-    terminal: {
-      id: 'terminal',
-      icon: '💳',
-      name: 'Terminal física',
-      desc: 'Registro directo del cajero',
-      short: 'Terminal'
-    }
-  },
+   CHANNELS: {
+     qr: {
+       id: 'qr',
+       icon: '🔳',
+       name: 'Cobrar con QR',
+       desc: 'Muestra el código de cobro',
+       short: 'QR'
+     },
+     terminal: {
+       id: 'terminal',
+       icon: '💳',
+       name: 'Terminal física',
+       desc: 'Registro directo del cajero',
+       short: 'Terminal'
+     }
+   },
 
-  // Orden en que se muestran los botones
-  ORDER: ['nfc', 'qr', 'terminal'],
+   // Orden en que se muestran los botones
+   ORDER: ['qr', 'terminal'],
 
   // Canal con el que arranca el cobro (el más tradicional, no requiere nada extra)
   DEFAULT_CHANNEL: 'terminal',
@@ -584,11 +577,13 @@ const SalesPayment = {
 
   // Plantilla del link de cobro: la del módulo Mercado Pago de Ajustes o,
   // si no existe, el link de cobro guardado en el dispositivo.
-  getMPLinkTemplate() {
-    const fromSettings = String(this.getSettings().mercadoPagoCobroUrl || '').trim();
-    if (fromSettings) return fromSettings;
-    return this.getSavedMPLink();
-  },
+   getMPLinkTemplate() {
+     const fromSettings = String(this.getSettings().mercadoPagoCobroUrl || '').trim();
+     if (fromSettings) return fromSettings;
+     const saved = this.getSavedMPLink();
+     if (saved) return saved;
+     return 'https://link.mercadopago.com.mx/cerveceriatonito';
+   },
 
   // Arma el contenido del código QR de cobro.
   // Si el negocio configuró su link de Mercado Pago se usa esa plantilla
@@ -665,9 +660,15 @@ const SalesPayment = {
         + '</button>';
     }).join('');
 
-    host.innerHTML = '<span class="pay-card-options-title">Cobro con Mercado Pago</span>'
-      + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
-      + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
+     host.innerHTML = '<span class="pay-card-options-title">Cobro con Mercado Pago</span>'
+       + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
+       + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
+
+     const frame = host.querySelector('#pay-qr-frame');
+     if (frame) {
+       frame.addEventListener('click', () => this.openQrZoom());
+       frame.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.openQrZoom(); } });
+     }
   },
 
   // Panel con las instrucciones del canal elegido
@@ -677,30 +678,13 @@ const SalesPayment = {
     const currency = context.currency || '$';
     const amount = currency + total.toFixed(2);
 
-    if (channel === 'nfc') {
-      return '<div class="pay-card-panel-body">'
-        + '<div class="pay-pointtap-guide" style="background:#1C1815;border:1px solid #E0A96D;border-radius:8px;padding:12px;margin-bottom:12px;">'
-        + '<div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#FAF4EE;">Total: ' + amount + '</div>'
-        + '<div style="font-size:0.875rem;color:#B8A89A;line-height:1.5;">'
-        + '<div>1. Toca "Abrir Mercado Pago".</div>'
-        + '<div>2. Selecciona "Point Tap".</div>'
-        + '<div>3. Ingresa el monto total y acerca la tarjeta al reverso del teléfono.</div>'
-        + '</div>'
-        + '</div>'
-        + '<div class="pay-card-actions">'
-        + '<a href="' + MP_OFFICIAL_URL + '" class="pay-card-btn primary btn-abrir-mp" id="btn-open-mp-pointtap" target="_blank" rel="noopener noreferrer">📱 Abrir Mercado Pago</a>'
-        + '</div>'
-        + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:8px;">Cobro presencial con Point Tap (NFC) desde la app oficial de Mercado Pago.</p>'
-        + '</div>';
-    }
-
     if (channel === 'qr') {
       const payload = this.buildPayload(context);
       const svg = this.renderQr(payload, 'Código QR de cobro de ' + amount);
       const configured = !!this.getMPLinkTemplate();
       return '<div class="pay-card-panel-body">'
         + '<div class="pay-qr">'
-        + '<div class="pay-qr-frame">' + svg + '</div>'
+        + '<div class="pay-qr-frame" id="pay-qr-frame" role="button" tabindex="0" aria-label="Ampliar código QR">' + svg + '</div>'
         + '<div class="pay-qr-info">'
         + '<span class="pay-qr-amount">' + amount + '</span>'
         + '<span class="pay-qr-label">Escanea con la app de Mercado Pago</span>'
@@ -722,7 +706,28 @@ const SalesPayment = {
       + '</div>';
   },
 
-  // Escapa texto para insertarlo como HTML
+   // Amplía el QR a pantalla completa
+   openQrZoom() {
+     const svg = this.qrCache.svg || '';
+     let overlay = document.getElementById('qr-zoom-overlay');
+     if (!overlay) {
+       overlay = document.createElement('div');
+       overlay.id = 'qr-zoom-overlay';
+       overlay.className = 'qr-zoom-overlay';
+       overlay.innerHTML = '<div class="qr-zoom-content">' + svg + '</div>'
+         + '<button type="button" class="qr-zoom-close" id="qr-zoom-close">Cerrar</button>';
+       document.body.appendChild(overlay);
+     } else {
+       overlay.querySelector('.qr-zoom-content').innerHTML = svg;
+     }
+     overlay.classList.add('is-open');
+     const close = () => overlay.classList.remove('is-open');
+     overlay.onclick = (e) => { if (e.target === overlay) close(); };
+     const btn = overlay.querySelector('#qr-zoom-close');
+     if (btn) btn.onclick = close;
+   },
+
+   // Escapa texto para insertarlo como HTML
   escapeHtml(text) {
     return String(text === undefined || text === null ? '' : text)
       .replace(/&/g, '&amp;')
