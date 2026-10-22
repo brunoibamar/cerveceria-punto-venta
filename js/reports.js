@@ -301,7 +301,7 @@ const ReportsManager = {
     if (!filtered.length) {
       return '<div class="reports-empty">No hay ventas en el periodo seleccionado.</div>';
     }
-    let html = '<div class="reports-list"><table class="reports-table"><thead><tr><th>Hora</th><th>Productos</th><th>Método</th><th class="num">Total</th></tr></thead><tbody>';
+    let html = '<div class="reports-list"><div class="reports-table-wrap"><table class="reports-table"><thead><tr><th>Hora</th><th>Productos</th><th>Método</th><th class="num">Total</th></tr></thead><tbody>';
     [...filtered].reverse().forEach(s => {
       const items = Array.isArray(s.items) ? s.items : [];
       const qty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
@@ -325,7 +325,7 @@ const ReportsManager = {
        safeCuts.forEach(c => {
         html += `<tr><td>${this.formatDateTime(c.fecha)}</td><td class="num">${this.formatCurrency(Number(c.totalGeneral) || 0)}</td></tr>`;
       });
-      html += '</tbody></table></div>';
+    html += '</tbody></table></div></div>';
       return html;
     }
 

@@ -233,10 +233,10 @@ const POS = {
     videoElement: null,
     stream: null,
     isScanning: false,
-    isContinuous: true,
+    isContinuous: false,
     lastScanned: '',
     lastScannedTime: 0,
-    debounceMs: 800
+    debounceMs: 1500
   },
 
   init() {

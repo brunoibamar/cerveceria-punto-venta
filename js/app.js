@@ -342,7 +342,7 @@ const App = {
                   </div>
                   <div class="scanner-mode">
                     <label style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px;">
-                      <input type="checkbox" id="pos-scanner-continuous" checked />
+                      <input type="checkbox" id="pos-scanner-continuous" />
                       Modo continuo
                     </label>
                   </div>

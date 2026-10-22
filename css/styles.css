@@ -2046,8 +2046,10 @@ body {
   min-height: 0;
 }
 
-.reports-table {
-  width: 100%;
+.reports-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
   border-collapse: collapse;
   font-size: 12.5px;
 }
@@ -4597,7 +4599,9 @@ body {
   .cut-actions,
   .cut-footer-row {
     width: 100%;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .cut-actions .btn,
@@ -5497,9 +5501,23 @@ body {
     padding-top: calc(8px + env(safe-area-inset-top, 0px));
   }
 
-  .header-brand h1 {
-    font-size: 14px;
-    letter-spacing: 0.2px;
+  .header-brand {
+    gap: 6px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .btn-corte-caja {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .header-user {
+    font-size: 12px;
+    gap: 4px;
   }
 
   .brand-logo {
