@@ -32,17 +32,18 @@ function obtenerMontoCobro() {
   return 0;
 }
 
+function abrirPointTapMercadoPago(monto) {
+  // Deep link específico para la herramienta Point Tap / Cobro NFC de Mercado Pago
+  const pointTapIntent = `intent://point_tap?amount=${monto}#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end`;
+
+  window.location.href = pointTapIntent;
+}
+
 function abrirMercadoPagoDirecto(monto) {
   const amount = Number(monto);
   const amountStr = (isNaN(amount) ? obtenerMontoCobro() : amount).toFixed(2);
-  const desc = encodeURIComponent('Venta Cerveceria');
 
-  // Intent oficial de Android para lanzar la app de Mercado Pago México
-  const androidIntent = "intent://wallet/?amount=" + amountStr + "&description=" + desc
-    + "#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end";
-
-  // Asignar directamente para que Android intercepte el esquema sin bloqueo
-  window.location.href = androidIntent;
+  abrirPointTapMercadoPago(amountStr);
 }
 
 /* ------------------------------------------------------------------
@@ -685,20 +686,20 @@ const SalesPayment = {
   bindDirectActions() {
     const btnApp = document.getElementById('btn-open-mp-app');
     if (btnApp) {
-      btnApp.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.openMercadoPago();
-      });
+btnApp.addEventListener('click', (e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         this.openMercadoPago(window.cartTotal);
+       });
     }
 
     const btnNfc = document.getElementById('btn-read-nfc');
     if (btnNfc) {
-      btnNfc.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.leerNfcYAbrirApp();
-      });
+btnNfc.addEventListener('click', (e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         this.leerNfcYAbrirApp(window.cartTotal);
+       });
     }
   },
 
@@ -757,7 +758,7 @@ const SalesPayment = {
       return;
     }
     if (action === 'open-app') {
-      this.openMercadoPago();
+      this.openMercadoPago(window.cartTotal);
     }
   },
 
@@ -775,7 +776,7 @@ const SalesPayment = {
 
   // Botón "Leer NFC": intenta la lectura con Web NFC y abre la app instalada
   // de Mercado Pago (Tap to Pay) con el intent oficial de Android.
-  leerNfcYAbrirApp() {
+  leerNfcYAbrirApp(monto) {
     const soportaWebNfc = typeof window !== 'undefined' && 'NDEFReader' in window;
 
     if (soportaWebNfc) {
@@ -786,7 +787,7 @@ const SalesPayment = {
       this.updateNfcStatus();
     }
 
-    this.openMercadoPago();
+    this.openMercadoPago(typeof monto !== 'undefined' ? monto : window.cartTotal);
   },
 
   // Inicia la lectura de una etiqueta NFC (Web NFC: Chrome en Android)
