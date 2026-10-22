@@ -2,10 +2,12 @@
 // Paleta "Midnight & Amber": fondo #12100E, tarjetas #1C1815, acento #E0A96D
 //
 // Al elegir la pestaña "Tarjeta" o "Transferencia" el modal de cobro muestra
-// tres formas de cobro y el cajero elige una:
-//   📱 NFC / Contactless (Tap to Pay) -> abre la app de Mercado Pago y lee etiquetas NFC
-//   🔳 Cobrar con Código QR            -> dibuja el QR de cobro en el propio dispositivo
-//   💳 Terminal física / Registro      -> la terminal de Mercado Pago cobra y el cajero registra
+// las formas de cobro y el cajero elige una:
+//   🔳 Código QR      -> abre un modal flotante de pantalla completa con el QR
+//   💳 Terminal física -> la terminal de Mercado Pago cobra y el cajero registra
+//
+// Las dos opciones se muestran como tarjetas idénticas (mismo alto, mismo ancho)
+// para que el selector quede simétrico.
 //
 // Todo el módulo funciona sin conexión: el QR se dibuja en el dispositivo con
 // un generador propio, sin depender de un CDN ni de un servicio externo.
@@ -490,20 +492,20 @@ const QrCode = {
    Opciones de cobro con tarjeta de Mercado Pago
    ------------------------------------------------------------------ */
 const SalesPayment = {
-  // Las tres formas de cobro con tarjeta
+  // Las formas de cobro con tarjeta (tarjetas idénticas y simétricas)
    CHANNELS: {
      qr: {
        id: 'qr',
        icon: '🔳',
-       name: 'Cobrar con QR',
-       desc: 'Muestra el código de cobro',
+       name: 'Código QR',
+       desc: 'Escanea con la app',
        short: 'QR'
      },
      terminal: {
        id: 'terminal',
        icon: '💳',
        name: 'Terminal física',
-       desc: 'Registro directo del cajero',
+       desc: 'Cobra y registra aquí',
        short: 'Terminal'
      }
    },
@@ -546,6 +548,7 @@ const SalesPayment = {
 
   // Reinicia el estado del módulo (se llama al abrir el modal de cobro)
   reset() {
+    this.closeQrOverlay();
     this.qrCache.payload = '';
     this.qrCache.svg = '';
     this.renderSignature = '';
@@ -633,7 +636,7 @@ const SalesPayment = {
     return this.qrCache.svg;
   },
 
-  // Renderiza los tres botones y el panel del canal elegido
+  // Renderiza los botones y el panel del canal elegido
   render(ctx) {
     const host = document.getElementById('pos-pay-card-options');
     if (!host) return;
@@ -641,6 +644,9 @@ const SalesPayment = {
     const context = ctx || {};
     this.lastContext = context;
     const selected = this.normalizeChannel(context.channel);
+
+    // Los clics del bloque de opciones (se registran una sola vez)
+    this.bindHostEvents(host);
 
     // Se evita repintar cuando nada cambio (por ejemplo, al teclear el efectivo)
     const signature = [selected, context.total, context.currency, context.reference, this.getMPLinkTemplate()].join('|');
@@ -664,11 +670,37 @@ const SalesPayment = {
        + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
        + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
 
-     const frame = host.querySelector('#pay-qr-frame');
-     if (frame) {
-       frame.addEventListener('click', () => this.openQrZoom());
-       frame.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.openQrZoom(); } });
+     // Una columna por forma de cobro: todas las tarjetas miden lo mismo.
+     const grid = host.querySelector('.pay-card-options-grid');
+     if (grid) {
+       grid.style.gridTemplateColumns = 'repeat(' + this.ORDER.length + ', minmax(0, 1fr))';
      }
+  },
+
+  // Clics del bloque de opciones de tarjeta.
+  // Se engancha al contenedor (no a los botones) para sobrevivir al repintado.
+  bindHostEvents(host) {
+    if (!host || host.dataset.salesBound === '1') return;
+    host.dataset.salesBound = '1';
+
+    host.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!target || typeof target.closest !== 'function') return;
+
+      // Botón "Ver código QR" del panel: abre el modal flotante.
+      if (target.closest('[data-pay-open-qr]')) {
+        e.preventDefault();
+        this.openQrOverlay(this.lastContext);
+        return;
+      }
+
+      // Opción "Código QR": el QR no se expande dentro del ticket,
+      // se abre en un modal flotante de pantalla completa.
+      const option = target.closest('[data-card-option]');
+      if (option && option.dataset.cardOption === 'qr') {
+        this.openQrOverlay(this.lastContext);
+      }
+    });
   },
 
   // Panel con las instrucciones del canal elegido
@@ -679,20 +711,19 @@ const SalesPayment = {
     const amount = currency + total.toFixed(2);
 
     if (channel === 'qr') {
-      const payload = this.buildPayload(context);
-      const svg = this.renderQr(payload, 'Código QR de cobro de ' + amount);
       const configured = !!this.getMPLinkTemplate();
       return '<div class="pay-card-panel-body">'
         + '<div class="pay-qr">'
-        + '<div class="pay-qr-frame" id="pay-qr-frame" role="button" tabindex="0" aria-label="Ampliar código QR">' + svg + '</div>'
+        + '<div class="pay-qr-badge" aria-hidden="true">🔳</div>'
         + '<div class="pay-qr-info">'
         + '<span class="pay-qr-amount">' + amount + '</span>'
-        + '<span class="pay-qr-label">Escanea con la app de Mercado Pago</span>'
+        + '<span class="pay-qr-label">Código QR listo para escanear</span>'
         + '<span class="pay-qr-note">' + (configured
           ? 'El código apunta a tu link de cobro configurado en Ajustes.'
           : 'Configura tu link de cobro en Ajustes → Mercado Pago para cobrar directo a tu cuenta.') + '</span>'
         + '</div>'
         + '</div>'
+        + '<button type="button" class="pay-card-btn primary" data-pay-open-qr>🔳 Ver código QR a pantalla completa</button>'
         + '</div>';
     }
 
@@ -706,26 +737,101 @@ const SalesPayment = {
       + '</div>';
   },
 
-   // Amplía el QR a pantalla completa
-   openQrZoom() {
-     const svg = this.qrCache.svg || '';
-     let overlay = document.getElementById('qr-zoom-overlay');
-     if (!overlay) {
-       overlay = document.createElement('div');
-       overlay.id = 'qr-zoom-overlay';
-       overlay.className = 'qr-zoom-overlay';
-       overlay.innerHTML = '<div class="qr-zoom-content">' + svg + '</div>'
-         + '<button type="button" class="qr-zoom-close" id="qr-zoom-close">Cerrar</button>';
-       document.body.appendChild(overlay);
-     } else {
-       overlay.querySelector('.qr-zoom-content').innerHTML = svg;
-     }
-     overlay.classList.add('is-open');
-     const close = () => overlay.classList.remove('is-open');
-     overlay.onclick = (e) => { if (e.target === overlay) close(); };
-     const btn = overlay.querySelector('#qr-zoom-close');
-     if (btn) btn.onclick = close;
-   },
+  /* ------------------------------------------------------------------
+     Modal flotante del código QR (pantalla completa)
+     Ventana independiente en primer plano, dedicada solo al QR:
+     se abre al tocar la opción "Código QR" y se cierra con el
+     botón "Cerrar / Volver" para regresar al ticket.
+     ------------------------------------------------------------------ */
+
+  // ¿Está abierto el modal flotante del QR?
+  isQrOverlayOpen() {
+    const overlay = document.getElementById('qr-overlay');
+    return !!(overlay && overlay.classList.contains('is-open'));
+  },
+
+  // Abre el modal flotante con el QR en formato gigante
+  openQrOverlay(ctx) {
+    const context = ctx || this.lastContext || {};
+    const total = Number(context.total) || 0;
+    const currency = context.currency || '$';
+    const amount = currency + total.toFixed(2);
+
+    const payload = this.buildPayload(context);
+    const svg = this.renderQr(payload, 'Código QR de cobro de ' + amount);
+
+    let overlay = document.getElementById('qr-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'qr-overlay';
+      overlay.className = 'qr-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', 'Código QR de cobro');
+      document.body.appendChild(overlay);
+      this.bindQrOverlay(overlay);
+    }
+
+    overlay.innerHTML = '<div class="qr-overlay-card">'
+      + '<div class="qr-overlay-head">'
+      + '<span class="qr-overlay-kicker">Código QR de cobro</span>'
+      + '<strong class="qr-overlay-amount">' + amount + '</strong>'
+      + '</div>'
+      + '<div class="qr-overlay-frame">' + svg + '</div>'
+      + '<p class="qr-overlay-hint">Pide al cliente que escanee este código con la app de Mercado Pago. '
+      + 'Cuando lo escanee, vuelve al ticket para confirmar el pago.</p>'
+      + '<button type="button" class="qr-overlay-close" id="qr-overlay-close">Cerrar / Volver</button>'
+      + '</div>';
+
+    overlay.classList.add('is-open');
+
+    const closeBtn = document.getElementById('qr-overlay-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeQrOverlay());
+      try {
+        closeBtn.focus({ preventScroll: true });
+      } catch (error) {
+        closeBtn.focus();
+      }
+    }
+
+    this.watchPaymentModal(overlay);
+  },
+
+  // Cierra el modal flotante del QR y regresa al ticket
+  closeQrOverlay() {
+    const overlay = document.getElementById('qr-overlay');
+    if (overlay) overlay.classList.remove('is-open');
+  },
+
+  // Eventos del modal flotante: clic en el fondo y tecla Escape
+  bindQrOverlay(overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) this.closeQrOverlay();
+    });
+
+    // Escape cierra solo el overlay (no el modal de cobro): la tecla se
+    // captura antes de llegar al manejador general del modal.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !this.isQrOverlayOpen()) return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.closeQrOverlay();
+    }, true);
+  },
+
+  // Si el modal de cobro se cierra, el overlay del QR se cierra con él
+  watchPaymentModal(overlay) {
+    if (!overlay || overlay.dataset.modalWatch === '1') return;
+    const modal = document.getElementById('pos-payment-modal');
+    if (!modal || typeof MutationObserver === 'undefined') return;
+
+    overlay.dataset.modalWatch = '1';
+    const observer = new MutationObserver(() => {
+      if (!modal.classList.contains('is-active')) this.closeQrOverlay();
+    });
+    observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+  },
 
    // Escapa texto para insertarlo como HTML
   escapeHtml(text) {

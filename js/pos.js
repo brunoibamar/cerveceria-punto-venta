@@ -1545,7 +1545,7 @@ if (other) {
       if (channel === 'nfc') {
         hint.textContent = 'Acerca el teléfono a la etiqueta NFC o usa Tap to Pay en la app de Mercado Pago y confirma el cobro.';
       } else if (channel === 'qr') {
-        hint.textContent = 'Muestra el código QR y confirma el cobro cuando el cliente lo escanee en la app de Mercado Pago.';
+        hint.textContent = 'Abre el código QR a pantalla completa para que el cliente lo escanee en la app de Mercado Pago y confirma el cobro.';
       } else {
         hint.textContent = 'Cobra en la terminal de Mercado Pago, verifica el voucher y confirma el pago.';
       }

@@ -4063,8 +4063,11 @@ body {
 
 .pay-card-options-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  /* Una columna por opción (js/sales.js ajusta el número real):
+     todas las tarjetas miden exactamente lo mismo y quedan simétricas. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
 }
 
 .pay-channel {
@@ -4072,10 +4075,12 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
   min-width: 0;
-  min-height: 74px;
-  padding: 9px 4px;
+  min-height: 86px;
+  padding: 10px 8px;
   border-radius: 14px;
   border: 1px solid var(--border-soft);
   background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
@@ -4106,18 +4111,37 @@ body {
 }
 
 .pay-channel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
   font-size: 20px;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .pay-channel-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Se reservan dos renglones para que "Código QR" y "Terminal física"
+     ocupen exactamente el mismo alto y las tarjetas queden simétricas. */
+  min-height: 2.3em;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
+  color: var(--text-primary);
 }
 
 .pay-channel-desc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 1.3em;
   font-size: 9px;
   line-height: 1.2;
   text-align: center;
@@ -4248,27 +4272,25 @@ body {
   font-weight: 700;
 }
 
-/* --- Contenedor del código QR de cobro --- */
+/* --- Resumen del canal QR (el QR grande vive en su propio overlay) --- */
 .pay-qr {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.pay-qr-frame {
+.pay-qr-badge {
   flex: 0 0 auto;
-  width: 128px;
-  height: 128px;
-  padding: 7px;
-  border-radius: 12px;
-  background: #faf4ee;
-  box-shadow: var(--shadow-elegant);
-}
-
-.pay-qr-frame svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.24) 0%, rgba(224, 169, 109, 0.06) 100%);
+  font-size: 22px;
+  line-height: 1;
 }
 
 .pay-qr-info {
@@ -5973,17 +5995,19 @@ body {
   }
 
   .pay-card-options-grid {
-    gap: 4px;
+    gap: 6px;
   }
 
   .pay-channel {
-    min-height: 58px;
-    padding: 6px 2px;
+    min-height: 64px;
+    padding: 7px 4px;
     border-radius: 11px;
-    gap: 1px;
+    gap: 2px;
   }
 
   .pay-channel-icon {
+    width: 24px;
+    height: 24px;
     font-size: 16px;
   }
 
@@ -6029,11 +6053,11 @@ body {
     gap: 9px;
   }
 
-  .pay-qr-frame {
-    width: 96px;
-    height: 96px;
-    padding: 5px;
-    border-radius: 9px;
+  .pay-qr-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+    border-radius: 10px;
   }
 
   .pay-qr-amount {
@@ -6154,9 +6178,145 @@ body {
   }
 }
 
-/* QR zoom lightbox */
-.qr-zoom-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
-.qr-zoom-overlay.is-open { display: flex; }
-.qr-zoom-overlay .qr-zoom-content { background: #fff; padding: 24px; border-radius: 12px; }
-.qr-zoom-overlay .qr-zoom-content svg { width: 80vmin; height: 80vmin; }
-.qr-zoom-close { margin-top: 16px; padding: 10px 24px; font-size: 1rem; border: none; border-radius: 8px; background: #E0A96D; color: #1C1815; cursor: pointer; }
+/* =========================================================
+   MODAL FLOTANTE DEL CÓDIGO QR (pantalla completa)
+   Ventana independiente en primer plano, dedicada solo al QR:
+   alto contraste para que el cliente lo escanee desde lejos.
+   ========================================================= */
+.qr-overlay {
+  position: fixed;
+  inset: 0;
+  /* Por encima del modal de cobro (z-index 10050) */
+  z-index: 10100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: radial-gradient(900px 640px at 50% 18%, rgba(224, 169, 109, 0.18) 0%, #0B0908 58%, #050403 100%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qr-overlay.is-open {
+  display: flex;
+  animation: qrOverlayIn 0.26s var(--ease-smooth) both;
+}
+
+.qr-overlay-card {
+  margin: auto;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.qr-overlay-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.qr-overlay-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.qr-overlay-amount {
+  font-size: clamp(30px, 9vw, 52px);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+  text-shadow: 0 0 22px rgba(224, 169, 109, 0.35);
+}
+
+.qr-overlay-frame {
+  flex: 0 0 auto;
+  width: min(72vmin, 440px);
+  height: min(72vmin, 440px);
+  padding: 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(224, 169, 109, 0.45);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 6px rgba(224, 169, 109, 0.12), 0 28px 70px rgba(0, 0, 0, 0.65);
+}
+
+.qr-overlay-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.qr-overlay-hint {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.qr-overlay-close {
+  flex: 0 0 auto;
+  width: min(340px, 100%);
+  min-height: 54px;
+  padding: 14px 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(224, 169, 109, 0.75);
+  background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
+  color: #17130F;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(224, 169, 109, 0.28);
+  transition: var(--transition-smooth);
+}
+
+.qr-overlay-close:active {
+  transform: scale(0.98);
+}
+
+.qr-overlay-close:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 3px;
+}
+
+@keyframes qrOverlayIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 520px) {
+  .qr-overlay {
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .qr-overlay-card {
+    gap: 10px;
+  }
+
+  .qr-overlay-frame {
+    width: min(70vmin, 340px);
+    height: min(70vmin, 340px);
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .qr-overlay-hint {
+    font-size: 12px;
+  }
+
+  .qr-overlay-close {
+    min-height: 52px;
+    font-size: 14px;
+  }
+}
