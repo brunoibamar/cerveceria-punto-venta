@@ -11,6 +11,41 @@
 // un generador propio, sin depender de un CDN ni de un servicio externo.
 
 /* ------------------------------------------------------------------
+   Apertura directa de la app de Mercado Pago (Android)
+   Se expone como función global para poder engancharla directamente a los
+   botones del modal (#btn-open-mp-app y #btn-read-nfc) sin intermediarios.
+   ------------------------------------------------------------------ */
+
+// Monto del cobro en curso, para viajar en el intent de la app
+function obtenerMontoCobro() {
+  try {
+    if (typeof SalesPayment !== 'undefined' && SalesPayment.lastContext
+      && typeof SalesPayment.lastContext.total !== 'undefined') {
+      return Number(SalesPayment.lastContext.total) || 0;
+    }
+    if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
+      return Number(window.cartTotal) || 0;
+    }
+  } catch (error) {
+    // ignore
+  }
+  return 0;
+}
+
+function abrirMercadoPagoDirecto(monto) {
+  const amount = Number(monto);
+  const amountStr = (isNaN(amount) ? obtenerMontoCobro() : amount).toFixed(2);
+  const desc = encodeURIComponent('Venta Cerveceria');
+
+  // Intent oficial de Android para lanzar la app de Mercado Pago México
+  const androidIntent = "intent://wallet/?amount=" + amountStr + "&description=" + desc
+    + "#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end";
+
+  // Asignar directamente para que Android intercepte el esquema sin bloqueo
+  window.location.href = androidIntent;
+}
+
+/* ------------------------------------------------------------------
    Generador de códigos QR (modo byte, nivel de corrección de errores M)
    Implementación propia y sin dependencias: arma la matriz del símbolo
    aplicando los patrones de función, la corrección Reed-Solomon y las
@@ -639,6 +674,32 @@ const SalesPayment = {
     host.innerHTML = '<span class="pay-card-options-title">Cobro con Mercado Pago</span>'
       + '<div class="pay-card-options-grid" role="radiogroup" aria-label="Forma de cobro con tarjeta">' + buttons + '</div>'
       + '<div class="pay-card-panel">' + this.buildPanel(selected, context) + '</div>';
+
+    this.bindDirectActions();
+  },
+
+  // Engancha los botones de la app de Mercado Pago directamente al elemento.
+  // El listener se registra sobre el botón (y no por delegación en el modal)
+  // para que la navegación ocurra dentro del mismo gesto del usuario: sin
+  // setTimeout el navegador no la bloquea por política de seguridad.
+  bindDirectActions() {
+    const btnApp = document.getElementById('btn-open-mp-app');
+    if (btnApp) {
+      btnApp.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openMercadoPago();
+      });
+    }
+
+    const btnNfc = document.getElementById('btn-read-nfc');
+    if (btnNfc) {
+      btnNfc.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.leerNfcYAbrirApp();
+      });
+    }
   },
 
   // Panel con las instrucciones del canal elegido
@@ -652,8 +713,8 @@ const SalesPayment = {
       return '<div class="pay-card-panel-body">'
         + '<p class="pay-card-text">Acerca el teléfono a la etiqueta NFC o abre la app de Mercado Pago para cobrar con Tap to Pay.</p>'
         + '<div class="pay-card-actions">'
-        + '<button type="button" class="pay-card-btn primary" data-card-action="nfc-scan">📡 Leer NFC</button>'
-        + '<button type="button" class="pay-card-btn" data-card-action="open-app">📱 Abrir app</button>'
+        + '<button type="button" class="pay-card-btn primary" id="btn-read-nfc" data-card-action="nfc-scan">📡 Leer NFC</button>'
+        + '<button type="button" class="pay-card-btn" id="btn-open-mp-app" data-card-action="open-app">📱 Abrir app</button>'
         + '</div>'
         + '<p class="pay-card-note" style="font-size:0.75rem;color:#666;margin-top:6px;">El cobro NFC (Tap to Pay) se procesa directamente dentro de la app oficial de Mercado Pago</p>'
         + '<p class="pay-card-status" id="pos-pay-nfc-status">' + this.escapeHtml(this.nfc.message) + '</p>'
@@ -692,49 +753,40 @@ const SalesPayment = {
   // Acciones del panel (leer NFC, abrir la app de Mercado Pago)
   handleAction(action) {
     if (action === 'nfc-scan') {
-      this.startNfc();
+      this.leerNfcYAbrirApp();
       return;
     }
     if (action === 'open-app') {
-      let monto;
-      if (this.lastContext && typeof this.lastContext.total !== 'undefined') {
-        monto = this.lastContext.total;
-      } else if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
-        monto = window.cartTotal;
-      }
-      this.openMercadoPago(monto);
+      this.openMercadoPago();
     }
   },
 
-  // Abre la app de Mercado Pago sin abandonar el punto de venta
+  // Abre la app instalada de Mercado Pago sin abandonar el punto de venta.
+  // El intent se asigna dentro del gesto del usuario (sin setTimeout) para que
+  // Android intercepte el esquema y el navegador no lo bloquee.
   openMercadoPago(monto) {
     try {
-      let amount = Number(monto);
-      if (isNaN(amount)) {
-        if (this.lastContext && typeof this.lastContext.total !== 'undefined') {
-          amount = Number(this.lastContext.total) || 0;
-        } else if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
-          amount = Number(window.cartTotal) || 0;
-        } else {
-          amount = 0;
-        }
-      }
-      const amountStr = amount.toFixed(2);
-      const desc = encodeURIComponent('Venta Cerveceria');
-      const cobroUrl = `mercadopago://charge?amount=${encodeURIComponent(amountStr)}&description=${desc}`;
-      const intentUrl = `intent://charge?amount=${encodeURIComponent(amountStr)}&description=${desc}#Intent;scheme=mercadopago;package=com.mercadopago.wallet;end`;
-      window.location.href = intentUrl;
-      setTimeout(() => {
-        window.open(this.MP_WEB_URL, '_blank');
-      }, 1500);
+      const amount = Number(monto);
+      abrirMercadoPagoDirecto(isNaN(amount) ? obtenerMontoCobro() : amount);
     } catch (error) {
       console.warn('[SalesPayment] No se pudo abrir la app de Mercado Pago:', error);
-      try {
-        window.open(this.MP_WEB_URL, '_blank');
-      } catch (e) {
-        // ignore
-      }
     }
+  },
+
+  // Botón "Leer NFC": intenta la lectura con Web NFC y abre la app instalada
+  // de Mercado Pago (Tap to Pay) con el intent oficial de Android.
+  leerNfcYAbrirApp() {
+    const soportaWebNfc = typeof window !== 'undefined' && 'NDEFReader' in window;
+
+    if (soportaWebNfc) {
+      this.startNfc();
+    } else {
+      this.nfc.status = 'error';
+      this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
+      this.updateNfcStatus();
+    }
+
+    this.openMercadoPago();
   },
 
   // Inicia la lectura de una etiqueta NFC (Web NFC: Chrome en Android)
@@ -743,13 +795,6 @@ const SalesPayment = {
       this.nfc.status = 'error';
       this.nfc.message = 'Este dispositivo no puede leer NFC. Usa el código QR o la terminal física.';
       this.updateNfcStatus();
-      let monto;
-      if (this.lastContext && typeof this.lastContext.total !== 'undefined') {
-        monto = this.lastContext.total;
-      } else if (typeof window !== 'undefined' && window.cartTotal !== undefined) {
-        monto = window.cartTotal;
-      }
-      this.openMercadoPago(monto);
       return;
     }
 
