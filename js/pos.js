@@ -3425,3 +3425,5 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = POS;
 }
+
+POS.cancelOpening=function(){try{POS.closeCashSession();}catch(e){}location.reload();};
