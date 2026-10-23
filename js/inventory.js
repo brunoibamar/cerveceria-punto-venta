@@ -207,7 +207,7 @@
         // ---------- MODAL DE NEVERA (control global) ----------
         html += '<div id="' + this.fridgeModalId + '" class="inv-modal" style="display:none;" aria-hidden="true">';
         html += '  <div class="inv-modal-backdrop" data-inv-close="true"></div>';
-        html += '  <div class="inv-modal-shell inv-modal-shell-sm" role="dialog" aria-modal="true" aria-labelledby="fridge-modal-title">';
+        html += '  <div class="inv-modal-shell nevera-fria-shell" role="dialog" aria-modal="true" aria-labelledby="fridge-modal-title">';
         html += '    <header class="inv-modal-header">';
         html += '      <div class="inv-modal-heading">';
         html += '        <span class="inv-modal-badge inv-modal-badge-cold" aria-hidden="true">❄️</span>';

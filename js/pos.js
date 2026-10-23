@@ -865,7 +865,7 @@ if (other) {
           : '';
 
         html += `
-          <tr class="${isCold ? 'cart-row-cold' : ''}">
+          <tr class="${isCold ? 'cart-row-cold is-freezing' : ''}">
             <td>${this.escapeHtml(item.nombre || '')}${chargeHtml}</td>
             <td>${this.escapeHtml(currency)}${price.toFixed(2)}</td>
             <td>
@@ -2324,6 +2324,27 @@ if (other) {
     const session = this.getSessionInfo();
     if (!session) {
       alert('No hay un turno de caja abierto. Inicia sesión nuevamente para abrir caja.');
+      return;
+    }
+
+    // Si no hubo ventas en el turno, permitir cerrar la sesión directamente
+    // sin exigir desglose ni generar reporte de corte con monto cero.
+    const summary = this.getTurnSummary();
+    if (!summary || (Number(summary.totalVentas) || 0) <= 0) {
+      const ok = window.confirm('No se registraron ventas en este turno. ¿Cerrar sesión y volver al login?');
+      if (!ok) return;
+      this.closeCashCutModal();
+      this.closeCashSession();
+      try {
+        if (typeof App !== 'undefined' && typeof App.showLogin === 'function') {
+          App.currentView = null;
+          App.showLogin();
+        } else {
+          location.reload();
+        }
+      } catch (e) {
+        location.reload();
+      }
       return;
     }
 

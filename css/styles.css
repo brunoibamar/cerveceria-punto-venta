@@ -1,4 +1,4 @@
-Ôªø/* Cervecer√≠a POS - Dise√±o nativo Android de alta gama */
+/* CervecerÌa POS - DiseÒo nativo Android de alta gama */
 :root {
   --bg-primary: #12100E;
   --bg-secondary: #1C1815;
@@ -18,9 +18,18 @@
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --modal-backdrop-blur: 4px;
-  /* Altura oculta por el teclado num√©rico del celular (la actualiza
+  /* Altura oculta por el teclado numÈrico del celular (la actualiza
      js inline de index.html con window.visualViewport). */
   --kb-inset: 0px;
+
+  /* Glassmorphism ∑ login / apertura de caja */
+  --glass-bg: rgba(20, 17, 14, 0.70);
+  --glass-bg-hover: rgba(36, 30, 26, 0.78);
+  --glass-border: rgba(224, 169, 109, 0.42);
+  --glass-border-soft: rgba(224, 169, 109, 0.16);
+  --glass-glow: rgba(224, 169, 109, 0.30);
+  --glass-shadow: 0 24px 58px rgba(0, 0, 0, 0.82), 0 0 0 1px rgba(224, 169, 109, 0.10);
+  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 0 24px rgba(224, 169, 109, 0.05);
 }
 
 * {
@@ -190,7 +199,7 @@ body {
   letter-spacing: 0.8px;
 }
 
-/* Afordancia discreta: s√≥lo aparece al pasar el cursor o al enfocar */
+/* Afordancia discreta: sÛlo aparece al pasar el cursor o al enfocar */
 .promo-card-hint {
   width: 26px;
   height: 26px;
@@ -290,10 +299,10 @@ body {
 }
 
 /* =========================================================
-   PROMOCIONES ¬∑ TARJETA INTERACTIVA Y MODAL DE ACCIONES
+   PROMOCIONES ∑ TARJETA INTERACTIVA Y MODAL DE ACCIONES
    La tarjeta no muestra botones: toda la superficie es
    pulsable y abre un modal minimalista con las acciones
-   Editar / Eliminar. En m√≥vil el modal sube desde abajo.
+   Editar / Eliminar. En mÛvil el modal sube desde abajo.
    ========================================================= */
 
 /* --- Modal base (acciones y editor) --- */
@@ -883,7 +892,7 @@ body {
   font-size: 12.5px;
 }
 
-/* --- Adaptaci√≥n a pantallas peque√±as --- */
+/* --- AdaptaciÛn a pantallas pequeÒas --- */
 @media (max-width: 560px) {
   .promo-modal {
     padding: 0;
@@ -981,7 +990,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Bot√≥n/tarjeta independiente de nevera: solo copo de nieve + capacidad */
+/* BotÛn/tarjeta independiente de nevera: solo copo de nieve + capacidad */
 .inv-btn.fridge.wide {
   display: inline-flex;
   align-items: center;
@@ -1159,9 +1168,9 @@ body {
 }
 
 /* =========================================================
-   INVENTARIO ¬∑ MODAL FLOTANTE DE PRODUCTO
+   INVENTARIO ∑ MODAL FLOTANTE DE PRODUCTO
    Modal centrado con fondo difuminado (backdrop-filter),
-   formulario en grid de dos columnas, bot√≥n de c√°mara con
+   formulario en grid de dos columnas, botÛn de c·mara con
    flash y control de nevera como tarjeta independiente.
    Paleta "Midnight & Amber".
    ========================================================= */
@@ -1181,7 +1190,7 @@ body {
   display: flex;
 }
 
-/* Fondo difuminado: difumina la vista de inventario detr√°s del modal */
+/* Fondo difuminado: difumina la vista de inventario detr·s del modal */
 .inv-modal-backdrop {
   position: absolute;
   inset: 0;
@@ -1359,7 +1368,7 @@ body {
   background: #1e1915;
 }
 
-/* C√≥digo de barras + bot√≥n de c√°mara con flash */
+/* CÛdigo de barras + botÛn de c·mara con flash */
 .inv-input-group {
   display: flex;
   align-items: stretch;
@@ -1553,7 +1562,7 @@ body {
 }
 
 /* =========================================================
-   ESC√ÅNER DE C√ìDIGO DE BARRAS (inventario y punto de venta)
+   ESC¡NER DE C”DIGO DE BARRAS (inventario y punto de venta)
    ========================================================= */
 .scanner-modal {
   position: fixed;
@@ -1766,7 +1775,7 @@ body {
   }
 }
 
-/* --- Adaptaci√≥n a pantallas peque√±as --- */
+/* --- AdaptaciÛn a pantallas pequeÒas --- */
 @media (max-width: 560px) {
   .inv-modal {
     padding: 0;
@@ -1797,9 +1806,9 @@ body {
   }
 }
 
-/* ---------- REPORTES ¬∑ REDISE√ëO MINIMALISTA ---------- */
-/* Cuadr√≠cula de m√©tricas compactas, acordeones por bot√≥n y
-   gr√°ficas con altura m√°xima acotada. Paleta "Midnight & Amber". */
+/* ---------- REPORTES ∑ REDISE—O MINIMALISTA ---------- */
+/* CuadrÌcula de mÈtricas compactas, acordeones por botÛn y
+   gr·ficas con altura m·xima acotada. Paleta "Midnight & Amber". */
 
 .reports-view {
   display: flex;
@@ -1824,7 +1833,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Cuadr√≠cula de m√©tricas compactas */
+/* CuadrÌcula de mÈtricas compactas */
 .reports-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1940,8 +1949,8 @@ body {
   background: linear-gradient(180deg, rgba(224, 169, 109, 0.16) 0%, transparent 100%);
 }
 
-/* Acordeones: cada bot√≥n y su panel forman un solo bloque, as√≠ el panel
-   se despliega justo debajo de su bot√≥n y empuja al resto hacia abajo. */
+/* Acordeones: cada botÛn y su panel forman un solo bloque, asÌ el panel
+   se despliega justo debajo de su botÛn y empuja al resto hacia abajo. */
 .reports-accordion {
   display: flex;
   flex-direction: column;
@@ -2020,7 +2029,7 @@ body {
 }
 
 /* Panel desplegable: la altura la calcula el JS con la medida real del
-   contenido, de modo que no quedan huecos vac√≠os al terminar la animaci√≥n. */
+   contenido, de modo que no quedan huecos vacÌos al terminar la animaciÛn. */
 .reports-acc-panel {
   min-width: 0;
 }
@@ -2048,7 +2057,7 @@ body {
   transform: translateY(0);
 }
 
-/* Aviso de gr√°fica no disponible */
+/* Aviso de gr·fica no disponible */
 .reports-chart-note {
   margin: 0;
   padding: 10px 4px 4px;
@@ -2129,8 +2138,8 @@ body {
   white-space: nowrap;
 }
 
-/* Gr√°ficas: altura m√°xima estricta, nunca gigantes.
-   El m√°ximo contempla el padding del marco para que el lienzo no quede cortado. */
+/* Gr·ficas: altura m·xima estricta, nunca gigantes.
+   El m·ximo contempla el padding del marco para que el lienzo no quede cortado. */
 .reports-chart-wrap {
   position: relative;
   width: 100%;
@@ -2230,9 +2239,9 @@ body {
 }
 
 /* =========================================================
-   AJUSTES ¬∑ GRID DE TARJETAS-BOT√ìN
-   Cada opci√≥n de ajuste es una tarjeta interactiva con
-   fondo oscuro, borde √°mbar y efecto hover suave.
+   AJUSTES ∑ GRID DE TARJETAS-BOT”N
+   Cada opciÛn de ajuste es una tarjeta interactiva con
+   fondo oscuro, borde ·mbar y efecto hover suave.
    Paleta "Midnight & Amber".
    ========================================================= */
 .settings-header {
@@ -2367,7 +2376,7 @@ body {
 }
 
 /* =========================================================
-   ESTRUCTURA DE LA APLICACI√ìN (cabecera + √°rea principal)
+   ESTRUCTURA DE LA APLICACI”N (cabecera + ·rea principal)
    Sin estas reglas el <svg class="brand-logo"> se dibuja al
    100% del ancho del contenedor y desborda la pantalla.
    ========================================================= */
@@ -2402,7 +2411,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Logotipo de la marca: tama√±o fijo, nunca se estira ni desborda */
+/* Logotipo de la marca: tamaÒo fijo, nunca se estira ni desborda */
 .brand-logo {
   display: block;
   flex: 0 0 auto;
@@ -2479,7 +2488,7 @@ body {
   transform: translateY(-1px);
 }
 
-/* √Årea principal: contenedor con scroll propio para que la
+/* ¡rea principal: contenedor con scroll propio para que la
    pantalla de login pueda centrarse sin salirse de la vista */
 .app-main {
   flex: 1 1 auto;
@@ -2491,7 +2500,7 @@ body {
   padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Barra de navegaci√≥n inferior */
+/* Barra de navegaciÛn inferior */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -2555,8 +2564,10 @@ body {
 }
 
 /* =========================================================
-   LOGIN / APERTURA DE CAJA
-   Contenedor flexible centrado + elementos con tama√±o acotado
+   LOGIN / APERTURA DE CAJA ∑ GLASSMORPHISM + SOLAPAS (COMPUERTA)
+   Contenedor flexible centrado + elementos con tamaÒo acotado
+   Vidrio esmerilado, bordes ·mbar, solapas laterales inspiradas
+   en la copa de la marca y apertura animada paso a paso.
    ========================================================= */
 .login-screen {
   min-height: 100%;
@@ -2582,7 +2593,7 @@ body {
   text-align: center;
 }
 
-/* Copa de bienvenida: tama√±o m√°ximo controlado (nunca gigante) */
+/* Copa de bienvenida: tamaÒo m·ximo controlado (nunca gigante) */
 .login-brand .brand-logo {
   width: 88px;
   height: 88px;
@@ -2638,7 +2649,7 @@ body {
   margin: 0;
 }
 
-/* --- Selecci√≥n de rol --- */
+/* --- SelecciÛn de rol --- */
 .login-roles {
   display: flex;
   flex-wrap: wrap;
@@ -2863,7 +2874,7 @@ body {
   box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.12);
 }
 
-/* --- Resumen del √∫ltimo corte --- */
+/* --- Resumen del ˙ltimo corte --- */
 .login-cut-banner {
   width: 100%;
   max-width: 420px;
@@ -2903,7 +2914,7 @@ body {
   margin-top: 8px;
 }
 
-/* --- Adaptaci√≥n a pantallas peque√±as / bajas --- */
+/* --- AdaptaciÛn a pantallas pequeÒas / bajas --- */
 @media (max-width: 520px) {
   .login-screen {
     gap: 20px;
@@ -2949,9 +2960,74 @@ body {
 }
 
 /* =========================================================
-   PUNTO DE VENTA ¬∑ LAYOUT DE DOS COLUMNAS (caja registradora)
-   Columna izquierda: b√∫squeda, cat√°logo y historial de ventas.
-   Columna derecha: carrito, totales y bot√≥n COBRAR.
+   PUNTO DE VENTA ∑ LAYOUT DE DOS COLUMNAS (caja registradora)
+   Columna izquierda: b˙squeda, cat·logo y historial de ventas.
+   Columna derecha: carrito, totales y botÛn COBRAR.
+   ========================================================= */
+
+@keyframes loginGlassIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loginPaneRise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes loginFlapOpenLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(28px) scaleX(0.5);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes loginFlapOpenRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-28px) scaleX(0.5);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes loginKeyTap {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.93);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================================================
+   PUNTO DE VENTA ∑ LAYOUT DE DOS COLUMNAS (caja registradora)
+   Columna izquierda: b˙squeda, cat·logo y historial de ventas.
+   Columna derecha: carrito, totales y botÛn COBRAR.
    ========================================================= */
 
 .pos-view {
@@ -2965,7 +3041,7 @@ body {
   box-sizing: border-box;
 }
 
-/* ---------- Columna izquierda: b√∫squeda + cat√°logo + historial ---------- */
+/* ---------- Columna izquierda: b˙squeda + cat·logo + historial ---------- */
 .pos-sidebar {
   display: flex;
   flex-direction: column;
@@ -3182,8 +3258,47 @@ body {
 
 .cart-row-cold {
   border-left: 3px solid rgba(147, 197, 253, 0.55);
+  min-height: 52px;
+}
+.cart-row-cold.is-freezing {
+  position: relative;
+  overflow: hidden;
+  min-height: 52px;
+  background: rgba(20, 40, 80, 0.06);
 }
 
+.cart-row-cold.is-freezing > * {
+  position: relative;
+  z-index: 10;
+}
+
+.cart-row-cold.is-freezing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 15px 4px rgba(220, 245, 255, 0.9), inset 0 0 30px 8px rgba(160, 210, 255, 0.4), 0 0 12px rgba(180, 230, 255, 0.6);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cart-row-cold.is-freezing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.65) 0%, rgba(190, 230, 255, 0.35) 40%, transparent 75%), linear-gradient(to top, rgba(255,255,255,0.5) 0%, transparent 70%);
+  filter: blur(7px);
+  animation: smokeDrift 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.8;
+}
+
+@keyframes smokeDrift {
+  0% { transform: translate(0, 10px) scaleY(0.8); opacity: 0.3; }
+  50% { transform: translate(4px, -5px) scaleY(1.05); opacity: 0.7; }
+  100% { transform: translate(-4px, -15px) scaleY(1.2); opacity: 0; }
+}
 .cart-qty {
   display: inline-flex;
   align-items: center;
@@ -3345,7 +3460,7 @@ body {
 }
 
 /* El atributo [hidden] debe ganarle a "display: flex" de las filas:
-   sin esto, "Cargo bebida fr√≠a" y "Descuento promo" se muestran
+   sin esto, "Cargo bebida frÌa" y "Descuento promo" se muestran
    siempre, aunque no tengan importe. */
 .pos-totals-row[hidden] {
   display: none !important;
@@ -3438,7 +3553,7 @@ body {
   box-shadow: none;
 }
 
-/* ---------- Historial de ventas ¬∑ acorde√≥n (columna izquierda) ---------- */
+/* ---------- Historial de ventas ∑ acordeÛn (columna izquierda) ---------- */
 .live-sales {
   flex: 0 0 auto;
   border-radius: 14px;
@@ -3602,26 +3717,26 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* El bot√≥n de Cobrar siempre queda al final, por encima de la nav bar */
+  /* El botÛn de Cobrar siempre queda al final, por encima de la nav bar */
   .pos-summary-bar {
     flex-shrink: 0;
   }
 }
 
 /* =========================================================
-   COBRO ¬∑ MODAL FLOTANTE MULTIM√âTODO
+   COBRO ∑ MODAL FLOTANTE MULTIM…TODO
    Ventana flotante centrada sobre un fondo oscuro difuminado
    (backdrop-filter). Contiene, en orden: total a pagar y
-   resumen de productos, selector de m√©todo de pago
+   resumen de productos, selector de mÈtodo de pago
    (Efectivo / Tarjeta / Transferencia / Mixto), denominaciones
-   r√°pidas, c√°lculo del cambio y confirmaci√≥n del pago.
+   r·pidas, c·lculo del cambio y confirmaciÛn del pago.
    Paleta "Midnight & Amber".
    ========================================================= */
 .payment-modal {
   position: fixed;
   inset: 0;
   /* Por encima de la barra fija de totales + COBRAR (z-index 9999) para
-     que el modal nunca quede encimado sobre ella en m√≥vil. */
+     que el modal nunca quede encimado sobre ella en mÛvil. */
   z-index: 10050;
   display: none;
   align-items: center;
@@ -3635,7 +3750,7 @@ body {
   display: flex;
 }
 
-/* Fondo difuminado: difumina la vista del POS detr√°s del modal */
+/* Fondo difuminado: difumina la vista del POS detr·s del modal */
 .payment-backdrop {
   position: absolute;
   inset: 0;
@@ -3660,7 +3775,7 @@ body {
   animation: payModalIn 0.3s var(--ease-smooth) both;
 }
 
-/* --- Pantallas del modal (cobro / confirmaci√≥n) --- */
+/* --- Pantallas del modal (cobro / confirmaciÛn) --- */
 .payment-screen {
   display: flex;
   flex: 1 1 auto;
@@ -3827,11 +3942,11 @@ body {
 }
 
 .payment-item.is-cold .payment-item-name::after {
-  content: '‚ùÑÔ∏è';
+  content: '??';
   font-size: 12px;
 }
 
-/* --- Selector de m√©todo de pago --- */
+/* --- Selector de mÈtodo de pago --- */
 .payment-tabs {
   flex: 0 0 auto;
   display: grid;
@@ -3952,7 +4067,7 @@ body {
   background: #1e1915;
 }
 
-/* --- Denominaciones r√°pidas --- */
+/* --- Denominaciones r·pidas --- */
 .payment-quick-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4120,10 +4235,10 @@ body {
 }
 
 /* =========================================================
-   COBRO CON TARJETA ¬∑ OPCIONES DE MERCADO PAGO
+   COBRO CON TARJETA ∑ OPCIONES DE MERCADO PAGO
    Selector compacto con las tres formas de cobro: NFC /
-   Contactless (Tap to Pay), cobro con c√≥digo QR y terminal
-   f√≠sica. Paleta "Midnight & Amber".
+   Contactless (Tap to Pay), cobro con cÛdigo QR y terminal
+   fÌsica. Paleta "Midnight & Amber".
    ========================================================= */
 .pay-card-options {
   display: flex;
@@ -4141,8 +4256,8 @@ body {
 
 .pay-card-options-grid {
   display: grid;
-  /* Una columna por opci√≥n (js/sales.js ajusta el n√∫mero real):
-     todas las tarjetas miden exactamente lo mismo y quedan sim√©tricas. */
+  /* Una columna por opciÛn (js/sales.js ajusta el n˙mero real):
+     todas las tarjetas miden exactamente lo mismo y quedan simÈtricas. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   gap: 8px;
@@ -4204,8 +4319,8 @@ body {
   align-items: center;
   justify-content: center;
   width: 100%;
-  /* Se reservan dos renglones para que "C√≥digo QR" y "Terminal f√≠sica"
-     ocupen exactamente el mismo alto y las tarjetas queden sim√©tricas. */
+  /* Se reservan dos renglones para que "CÛdigo QR" y "Terminal fÌsica"
+     ocupen exactamente el mismo alto y las tarjetas queden simÈtricas. */
   min-height: 2.3em;
   font-size: 11px;
   font-weight: 700;
@@ -4628,7 +4743,7 @@ body {
   }
 }
 
-/* --- Adaptaci√≥n a pantallas peque√±as --- */
+/* --- AdaptaciÛn a pantallas pequeÒas --- */
 @media (max-width: 560px) {
   .payment-modal {
     padding: 0;
@@ -4687,10 +4802,10 @@ body {
 }
 
 /* =========================================================
-   AJUSTES ¬∑ MODAL FLOTANTE
-   Cada tarjeta-bot√≥n de Ajustes abre una ventana flotante
-   centrada con fondo difuminado que contiene √∫nicamente sus
-   campos. Ning√∫n bloque se despliega plano bajo las tarjetas.
+   AJUSTES ∑ MODAL FLOTANTE
+   Cada tarjeta-botÛn de Ajustes abre una ventana flotante
+   centrada con fondo difuminado que contiene ˙nicamente sus
+   campos. Ning˙n bloque se despliega plano bajo las tarjetas.
    Paleta "Midnight & Amber".
    ========================================================= */
 .settings-modal-backdrop {
@@ -4866,8 +4981,8 @@ body {
   }
 }
 /* ==========================================================
-   Modal de Cortes de Caja ‚Äî Midnight & Amber
-   Tarjetas-bot√≥n desplegables por secci√≥n
+   Modal de Cortes de Caja ó Midnight & Amber
+   Tarjetas-botÛn desplegables por secciÛn
    ========================================================== */
 .cuts-modal-overlay {
   position: fixed;
@@ -5014,7 +5129,7 @@ body {
   border-radius: 999px;
 }
 
-/* Pesta√±as de periodo */
+/* PestaÒas de periodo */
 .cuts-modal-filters {
   display: flex;
   gap: 4px;
@@ -5086,7 +5201,7 @@ body {
   gap: 6px;
 }
 
-/* Tarjeta-bot√≥n principal */
+/* Tarjeta-botÛn principal */
 .cuts-card {
   display: flex;
   align-items: center;
@@ -5559,7 +5674,7 @@ body {
   50% { opacity: 0.55; box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
 }
 
-/* Acceso r√°pido desde la tarjeta de reportes */
+/* Acceso r·pido desde la tarjeta de reportes */
 .metric-card-clickable { cursor: pointer; }
 .metric-card-clickable:hover { transform: translateY(-2px); transition: transform 0.15s; }
 
@@ -5595,11 +5710,11 @@ body {
 }
 
 /* =========================================================
-   AJUSTES M√ìVIL: header compacto, vista de ventas compacta
-   y anclaje seguro del bot√≥n COBRAR
+   AJUSTES M”VIL: header compacto, vista de ventas compacta
+   y anclaje seguro del botÛn COBRAR
    ========================================================= */
 @media (max-width: 600px) {
-  /* Encabezado superior m√°s compacto: no recorta "Cervecer√≠a" */
+  /* Encabezado superior m·s compacto: no recorta "CervecerÌa" */
   .app-header {
     padding: 8px 12px;
     padding-top: calc(8px + env(safe-area-inset-top, 0px));
@@ -5629,11 +5744,11 @@ body {
     height: 32px;
   }
 
-  /* ---------- Vista de ventas: un √∫nico scroll vertical ----------
-     La tarjeta de totales y el bot√≥n COBRAR salen del flujo y quedan
-     fijados por encima de la barra de navegaci√≥n; el resto del contenido
+  /* ---------- Vista de ventas: un ˙nico scroll vertical ----------
+     La tarjeta de totales y el botÛn COBRAR salen del flujo y quedan
+     fijados por encima de la barra de navegaciÛn; el resto del contenido
      fluye en el scroll principal, con 120px de aire al final para que
-     ning√∫n producto quede oculto bajo la barra fija. */
+     ning˙n producto quede oculto bajo la barra fija. */
    .pos-view {
      height: auto;
      min-height: 100%;
@@ -5644,7 +5759,7 @@ body {
      padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
    }
 
-  /* Sin scrolls anidados: el cat√°logo, el historial y el ticket fluyen
+  /* Sin scrolls anidados: el cat·logo, el historial y el ticket fluyen
      en el mismo contenedor con scroll. */
   .pos-sidebar,
   .pos-main {
@@ -5673,7 +5788,7 @@ body {
     display: none;
   }
 
-  /* Palomita "Pieza Fr√≠a": cabe en la misma l√≠nea que el buscador */
+  /* Palomita "Pieza FrÌa": cabe en la misma lÌnea que el buscador */
   .cold-toggle {
     display: inline-flex;
     align-items: center;
@@ -5739,7 +5854,7 @@ body {
     margin: 0 0 1px;
   }
 
-  /* Columnas m√°s angostas: caben m√°s productos por fila en el celular */
+  /* Columnas m·s angostas: caben m·s productos por fila en el celular */
   .product-grid {
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
     gap: 5px;
@@ -5769,10 +5884,10 @@ body {
     font-size: 8px;
   }
 
-  /* ---------- Historial de ventas (acorde√≥n) ----------
-     Se reduce a una barra delgad√≠sima: t√≠tulo y resumen en una sola l√≠nea
-     con tipograf√≠a de 11px, de modo que no roba espacio vertical al
-     cat√°logo ni al ticket actual. */
+  /* ---------- Historial de ventas (acordeÛn) ----------
+     Se reduce a una barra delgadÌsima: tÌtulo y resumen en una sola lÌnea
+     con tipografÌa de 11px, de modo que no roba espacio vertical al
+     cat·logo ni al ticket actual. */
   .live-sales {
     border-radius: 10px;
     box-shadow: none;
@@ -5853,7 +5968,7 @@ body {
     max-height: none;
     overflow: visible;
     padding: 0;
-    /* Colch√≥n extra: la √∫ltima fila del ticket nunca queda bajo la barra fija */
+    /* ColchÛn extra: la ˙ltima fila del ticket nunca queda bajo la barra fija */
     padding-bottom: 36px;
   }
 
@@ -5903,7 +6018,7 @@ body {
     font-size: 10.5px;
   }
 
-  /* ---------- Tarjeta de resumen: desgloces en una sola l√≠nea ---------- */
+  /* ---------- Tarjeta de resumen: desgloces en una sola lÌnea ---------- */
   .pos-totals {
     display: flex;
     flex-direction: row;
@@ -5929,8 +6044,8 @@ body {
     font-size: 11px;
   }
 
-  /* Los desgloces opcionales (cargo fr√≠o / descuento promo) se alinean en
-     la misma l√≠nea horizontal, sin bordes ni saltos de l√≠nea propios. */
+  /* Los desgloces opcionales (cargo frÌo / descuento promo) se alinean en
+     la misma lÌnea horizontal, sin bordes ni saltos de lÌnea propios. */
   .pos-totals-row.pos-totals-cold,
   .pos-totals-row.pos-totals-promo {
     border-top: none;
@@ -5940,13 +6055,13 @@ body {
 
   .pos-totals-row.pos-totals-cold::before,
   .pos-totals-row.pos-totals-promo::before {
-    content: '¬∑';
+    content: '∑';
     margin-right: 3px;
     color: var(--text-secondary);
     opacity: 0.7;
   }
 
-  /* El total ocupa su propia l√≠nea, con tipograf√≠a reducida */
+  /* El total ocupa su propia lÌnea, con tipografÌa reducida */
   .pos-totals-row.pos-totals-grand {
     flex: 0 0 100%;
     order: 10;
@@ -5984,7 +6099,7 @@ body {
     gap: 8px;
   }
 
-  /* Bot√≥n de cobrar: alto, t√°ctil y siempre accesible */
+  /* BotÛn de cobrar: alto, t·ctil y siempre accesible */
    .pos-charge-btn {
      padding: 16px 20px;
      min-height: 52px;
@@ -5995,16 +6110,16 @@ body {
    }
 
   /* ---------- Modal de cobro: compacto, sin encimados y anclado al fondo ----------
-     La ventana flotante de "Cobrar venta" se comprime al m√°ximo (total,
-     m√©todos de pago y campos de efectivo) para que quepa completa en el
-     celular, y su pie queda fijo en el borde inferior: el bot√≥n final
-     nunca queda debajo del teclado num√©rico ni encimado sobre el modal. */
+     La ventana flotante de "Cobrar venta" se comprime al m·ximo (total,
+     mÈtodos de pago y campos de efectivo) para que quepa completa en el
+     celular, y su pie queda fijo en el borde inferior: el botÛn final
+     nunca queda debajo del teclado numÈrico ni encimado sobre el modal. */
   .payment-modal {
     padding: 0;
     padding-top: env(safe-area-inset-top, 0px);
     align-items: flex-end;
     /* Con el teclado abierto (iOS) el inset inferior empuja la ventana
-       hacia arriba para que el bot√≥n de cobro siga siendo visible. */
+       hacia arriba para que el botÛn de cobro siga siendo visible. */
     padding-bottom: var(--kb-inset, 0px);
   }
 
@@ -6016,7 +6131,7 @@ body {
   }
 
   /* Con el modal de cobro abierto, la barra fija de totales + COBRAR se
-     retira: as√≠ no queda encimada sobre la ventana flotante. */
+     retira: asÌ no queda encimada sobre la ventana flotante. */
   body:has(#pos-payment-modal.is-active) .pos-summary-bar {
     visibility: hidden;
     pointer-events: none;
@@ -6085,7 +6200,7 @@ body {
     gap: 8px;
   }
 
-  /* --- M√©todos de pago --- */
+  /* --- MÈtodos de pago --- */
   .payment-tabs {
     margin: 5px 10px 0;
     gap: 4px;
@@ -6272,7 +6387,7 @@ body {
     font-size: 20px;
   }
 
-  /* --- Pie del modal: bot√≥n de cobro siempre visible y al fondo --- */
+  /* --- Pie del modal: botÛn de cobro siempre visible y al fondo --- */
   .payment-footer {
     position: sticky;
     bottom: 0;
@@ -6301,7 +6416,7 @@ body {
 }
 
 /* =========================================================
-   MODAL FLOTANTE DEL C√ìDIGO QR (pantalla completa)
+   MODAL FLOTANTE DEL C”DIGO QR (pantalla completa)
    Ventana independiente en primer plano, dedicada solo al QR:
    alto contraste para que el cliente lo escanee desde lejos.
    ========================================================= */
@@ -6441,4 +6556,92 @@ body {
     min-height: 52px;
     font-size: 14px;
   }
+}
+
+/* Animaciones microinteracciones */
+@keyframes valuePop { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+.value-pop { animation: valuePop 220ms ease; }
+@keyframes slideOutRight { to { transform: translateX(30px); opacity:0; } }
+.btn-delete:active { animation: shake 300ms ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+.tab-btn { transition: all 0.3s ease; }
+.tab-btn[aria-current='true'] .tab-icon { transform: translateY(-4px); color: #E0A96D; filter: drop-shadow(0 0 6px #E0A96D); }
+.tab-btn .tab-label { transition: all 0.3s ease; opacity:0.7; }
+.tab-btn[aria-current='true'] .tab-label { opacity:1; }
+@keyframes fadeInUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0);} }
+.animate-fade-in { animation: fadeInUp 300ms ease; }
+.animate-stagger > * { animation: fadeInUp 300ms ease both; }
+/* Efecto de congelado progresivo en descripcion de producto */
+.product-card-description.is-frozen {
+  transition: all 1s ease-out;
+  text-shadow: 0 0 6px rgba(224, 169, 109, 0.45), 0 0 12px rgba(255, 255, 255, 0.18);
+  background-image: linear-gradient(135deg, rgba(224, 169, 109, 0.12) 0%, rgba(255, 255, 255, 0.06) 50%, rgba(224, 169, 109, 0.08) 100%);
+  filter: brightness(1.2);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.nevera-fria-modal, .fridge-modal, .modal-nevera, .inv-fridge-modal {
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px 5px rgba(220, 245, 255, 0.8), inset 0 0 40px 10px rgba(160, 210, 255, 0.4), 0 0 20px rgba(180, 230, 255, 0.6);
+}
+
+.nevera-fria-modal::after, .fridge-modal::after, .modal-nevera::after, .inv-fridge-modal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 30% 80%, rgba(255, 255, 255, 0.6) 0%, transparent 60%),
+    radial-gradient(circle at 70% 20%, rgba(190, 230, 255, 0.4) 0%, transparent 60%);
+  filter: blur(8px);
+  animation: iceSmoke 5s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.nevera-fria-modal > *, .fridge-modal > *, .modal-nevera > *, .inv-fridge-modal > * {
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes iceSmoke {
+  0% { transform: translateY(10px); opacity: 0.4; }
+  50% { transform: translateY(-5px); opacity: 0.75; }
+  100% { transform: translateY(-15px); opacity: 0.4; }
+}
+/* AISLAMIENTO: el efecto de escarcha/hielo (marco + neblina helada) se aplica
+   ⁄NICAMENTE a la Nevera FrÌa mediante la clase dedicada .nevera-fria-shell.
+   Ning˙n otro modal del sistema (Nuevo Producto, ediciÛn, etc.) hereda estos estilos. */
+
+.nevera-fria-shell {
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: inset 0 0 25px 6px rgba(210, 245, 255, 0.85), inset 0 0 45px 12px rgba(150, 210, 255, 0.45), 0 0 25px rgba(180, 230, 255, 0.6) !important;
+  border: 2px solid rgba(220, 245, 255, 0.8) !important;
+}
+
+.nevera-fria-shell::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.7) 0%, rgba(180, 225, 255, 0.35) 40%, transparent 80%) !important;
+  filter: blur(8px) !important;
+  animation: iceSmokeRise 3s infinite alternate ease-in-out !important;
+}
+
+.nevera-fria-shell > * {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+@keyframes iceSmokeRise {
+  0% { transform: translateY(10px) scale(0.98); opacity: 0.5; }
+  100% { transform: translateY(-10px) scale(1.02); opacity: 0.85; }
 }
