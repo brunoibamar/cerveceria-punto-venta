@@ -951,7 +951,12 @@ if (other) {
     const promoDiscount = Math.max(0, Number(evaluation.discount) || 0);
 
     const subtotalEl = document.getElementById('pos-subtotal');
-    if (subtotalEl) subtotalEl.textContent = this.formatMoney(this.getSubtotal());
+    if (subtotalEl) {
+      subtotalEl.textContent = this.formatMoney(this.getSubtotal());
+      subtotalEl.classList.remove('value-pop');
+      void subtotalEl.offsetWidth;
+      subtotalEl.classList.add('value-pop');
+    }
 
     const coldRowEl = document.getElementById('pos-cold-charge-row');
     if (coldRowEl) coldRowEl.hidden = coldCharge <= 0;
@@ -962,7 +967,12 @@ if (other) {
     this.renderPromoDiscountRow(evaluation, promoDiscount);
 
     const totalEl = document.getElementById('pos-total');
-    if (totalEl) totalEl.textContent = this.formatMoney(this.getTotal());
+    if (totalEl) {
+      totalEl.textContent = this.formatMoney(this.getTotal());
+      totalEl.classList.remove('value-pop');
+      void totalEl.offsetWidth;
+      totalEl.classList.add('value-pop');
+    }
   },
 
   // Fila de descuento por promociones: se inserta sola en la barra de totales del POS

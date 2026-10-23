@@ -6607,3 +6607,17 @@ body {
     font-size: 14px;
   }
 }
+
+/* Animaciones microinteracciones */
+@keyframes valuePop { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+.value-pop { animation: valuePop 220ms ease; }
+@keyframes slideOutRight { to { transform: translateX(30px); opacity:0; } }
+.btn-delete:active { animation: shake 300ms ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+.tab-btn { transition: all 0.3s ease; }
+.tab-btn[aria-current='true'] .tab-icon { transform: translateY(-4px); color: #E0A96D; filter: drop-shadow(0 0 6px #E0A96D); }
+.tab-btn .tab-label { transition: all 0.3s ease; opacity:0.7; }
+.tab-btn[aria-current='true'] .tab-label { opacity:1; }
+@keyframes fadeInUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0);} }
+.animate-fade-in { animation: fadeInUp 300ms ease; }
+.animate-stagger > * { animation: fadeInUp 300ms ease both; }
