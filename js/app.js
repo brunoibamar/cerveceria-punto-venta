@@ -489,3 +489,5 @@ const App = {
     console.error('[App] Error configurando inicializacion segura:', error);
   }
 })();
+
+(function(){function tick(){var n=new Date();if(n.getHours()===23&&n.getMinutes()===50){alert('La caja cerrara automaticamente a las 12:00 AM. Tienes 10 minutos para finalizar operaciones.');}if(n.getHours()===0&&n.getMinutes()===0){try{if(typeof POS!=='undefined'&&POS.confirmCut)POS.confirmCut(true);}catch(e){console.error(e);}}}setInterval(tick,60000);})();

@@ -2564,24 +2564,66 @@ body {
 }
 
 /* =========================================================
-   LOGIN / APERTURA DE CAJA · GLASSMORPHISM + SOLAPAS (COMPUERTA)
-   Contenedor flexible centrado + elementos con tamaño acotado
-   Vidrio esmerilado, bordes ámbar, solapas laterales inspiradas
+LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
+   Vidrio esmerilado, bordes Ã¡mbar, solapas laterales inspiradas
+
    en la copa de la marca y apertura animada paso a paso.
    ========================================================= */
 .login-screen {
+  position: relative;
   min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 32px 20px;
-  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
-  background: radial-gradient(1200px 800px at 50% 0%, #1a1511 0%, var(--bg-primary) 60%);
+  gap: 0;
+  padding: 30px 20px;
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+  background:
+    radial-gradient(1200px 800px at 50% 0%, #1a1511 0%, var(--bg-primary) 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 22%, transparent 78%, rgba(224, 169, 109, 0.035) 100%);
   color: var(--text-primary);
   overflow-y: auto;
   overflow-x: hidden;
+  animation: loginGlassIn 0.85s var(--ease-smooth) both;
+}
+
+.login-screen > * {
+  position: relative;
+  z-index: 1;
+  animation: loginPaneRise 0.7s var(--ease-smooth) both;
+}
+
+/* Solapas laterales tipo compuerta, inspiradas en el contorno de la copa de la marca */
+.login-screen::before,
+.login-screen::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  width: 60px;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.45);
+  animation: loginFlapOpen 0.9s var(--ease-smooth) both;
+}
+
+.login-screen::before {
+  left: -12px;
+  transform-origin: left center;
+  border-radius: 0 26px 26px 0;
+  background: linear-gradient(90deg, rgba(224, 169, 109, 0.16), transparent);
+  animation-name: loginFlapOpenLeft;
+}
+
+.login-screen::after {
+  right: -12px;
+  transform-origin: right center;
+  border-radius: 26px 0 0 26px;
+  background: linear-gradient(270deg, rgba(224, 169, 109, 0.16), transparent);
+  animation-name: loginFlapOpenRight;
 }
 
 .login-brand {
@@ -2663,10 +2705,12 @@ body {
   flex: 1 1 160px;
   min-width: 140px;
   max-width: 220px;
-  padding: 20px 22px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
-  border: 1px solid var(--border-soft);
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  border: 1px solid var(--glass-border-soft);
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 600;
@@ -2674,30 +2718,34 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   transition: var(--transition-smooth);
-  box-shadow: var(--shadow-elegant);
+  box-shadow: var(--glass-inner);
 }
 
 .login-role-btn:hover {
-  border-color: rgba(224, 169, 109, 0.55);
+  border-color: var(--glass-border);
+  background: var(--glass-bg-hover);
   transform: translateY(-2px);
+  box-shadow: var(--glass-shadow);
 }
 
 .login-role-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(224, 169, 109, 0.35);
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 3px rgba(224, 169, 109, 0.35), var(--glass-inner);
 }
 
 .login-role-btn.is-admin {
   color: var(--accent);
-  border-color: rgba(224, 169, 109, 0.4);
+  border-color: rgba(224, 169, 109, 0.45);
 }
 
 .login-role-btn.is-employee {
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .login-role-btn.is-guest {
   color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 /* --- Teclado NIP --- */
@@ -2705,40 +2753,52 @@ body {
   font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 30px;
   letter-spacing: 14px;
-  min-height: 44px;
-  padding: 0 6px;
+  min-height: 46px;
+  padding: 0 8px;
   color: var(--text-primary);
   text-align: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 14px;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.5), var(--glass-inner);
 }
 
 .pin-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  max-width: 300px;
+  max-width: 320px;
 }
 
 .pin-key {
-  padding: 18px 10px;
+  padding: 18px 8px;
   font-size: 20px;
-  background: #26221F;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text-primary);
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 16px;
   cursor: pointer;
   transition: var(--transition-smooth);
+  box-shadow: var(--glass-inner);
 }
 
 .pin-key:hover {
-  border-color: rgba(224, 169, 109, 0.5);
+  border-color: rgba(224, 169, 109, 0.55);
+  background: var(--glass-bg-hover);
   transform: translateY(-1px);
 }
 
+.pin-key:active {
+  animation: loginKeyTap 0.15s both;
+}
+
 .pin-key.is-clear {
-  background: #2A1A16;
+  background: rgba(42, 26, 22, 0.7);
   color: #E8B4B8;
-  border: 1px solid rgba(220, 100, 100, 0.25);
+  border: 1px solid rgba(220, 100, 100, 0.35);
   font-size: 16px;
   font-weight: 600;
 }
@@ -2754,41 +2814,52 @@ body {
   box-shadow: var(--shadow-gold);
 }
 
+.pin-key.is-ok:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 0 26px rgba(224, 169, 109, 0.4);
+}
+
 /* --- Formulario de personal --- */
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  width: 320px;
+  width: 330px;
   max-width: 100%;
 }
 
 .login-field {
   width: 100%;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: #201C19;
+  padding: 15px 17px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(18, 15, 13, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text-primary);
   font-size: 15px;
   margin: 0;
+  box-shadow: var(--glass-inner);
+  transition: var(--transition-smooth);
 }
 
 .login-field::placeholder {
-  color: #7d6f63;
+  color: rgba(125, 111, 99, 0.6);
 }
 
 .login-field:focus {
   outline: none;
-  border-color: rgba(224, 169, 109, 0.7);
-  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.12);
+  border-color: rgba(224, 169, 109, 0.75);
+  background: rgba(26, 22, 19, 0.85);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.14), var(--glass-inner);
 }
 
 .login-submit,
 .cash-confirm {
-  padding: 14px;
+  padding: 15px;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--accent);
   color: #12100E;
   font-weight: 700;
@@ -2796,7 +2867,7 @@ body {
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(224, 169, 109, 0.2);
+  box-shadow: 0 0 22px rgba(224, 169, 109, 0.35);
   margin: 0;
   transition: var(--transition-smooth);
 }
@@ -2805,14 +2876,21 @@ body {
 .cash-confirm:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
+  box-shadow: 0 0 34px rgba(224, 169, 109, 0.5);
+}
+
+.login-submit:active,
+.cash-confirm:active {
+  transform: scale(0.97);
 }
 
 .login-back {
-  margin-top: 4px;
-  padding: 8px 14px;
+  margin-top: 6px;
+  padding: 10px 16px;
   background: transparent;
   color: var(--text-secondary);
-  border: none;
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 12px;
   cursor: pointer;
   font-size: 12px;
   letter-spacing: 2px;
@@ -2822,21 +2900,26 @@ body {
 
 .login-back:hover {
   color: var(--text-primary);
+  border-color: var(--glass-border);
+  background: rgba(224, 169, 109, 0.08);
 }
 
 /* --- Apertura de caja --- */
 .cash-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
-  border-radius: 20px;
-  padding: 36px 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: 26px;
+  padding: 40px 30px;
+  box-shadow: var(--glass-shadow), var(--glass-inner);
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .cash-card-title {
@@ -2858,20 +2941,25 @@ body {
 
 .cash-amount {
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: #201C19;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(18, 15, 13, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text-primary);
-  font-size: 20px;
+  font-size: 24px;
   text-align: center;
   margin: 0;
+  box-shadow: var(--glass-inner);
+  transition: var(--transition-smooth);
 }
 
 .cash-amount:focus {
   outline: none;
-  border-color: rgba(224, 169, 109, 0.7);
-  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.12);
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.14), var(--glass-inner);
+  background: rgba(26, 22, 19, 0.75);
 }
 
 /* --- Resumen del último corte --- */
@@ -2960,9 +3048,12 @@ body {
 }
 
 /* =========================================================
-   PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
-   Columna izquierda: búsqueda, catálogo y historial de ventas.
-   Columna derecha: carrito, totales y botón COBRAR.
+LOGIN Â· KEYFRAMES DE APERTURA (efecto compuerta / solapas)
+   Se reproducen en cada paso del asistente al renderizar el
+   panel, dando la sensaciÃ³n de apertura y cierre de solapas
+   tipo compuerta entre la selecciÃ³n de usuario, el NIP y el
+   fondo inicial de caja.
+
    ========================================================= */
 
 @keyframes loginGlassIn {
@@ -3025,9 +3116,10 @@ body {
 }
 
 /* =========================================================
-   PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
-   Columna izquierda: búsqueda, catálogo y historial de ventas.
-   Columna derecha: carrito, totales y botón COBRAR.
+PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
+   Columna izquierda: bÃºsqueda, catÃ¡logo y historial de ventas.
+   Columna derecha: carrito, totales y botÃ³n COBRAR.
+
    ========================================================= */
 
 .pos-view {
@@ -6583,65 +6675,3 @@ body {
   padding: 2px 4px;
 }
 
-.nevera-fria-modal, .fridge-modal, .modal-nevera, .inv-fridge-modal {
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 0 20px 5px rgba(220, 245, 255, 0.8), inset 0 0 40px 10px rgba(160, 210, 255, 0.4), 0 0 20px rgba(180, 230, 255, 0.6);
-}
-
-.nevera-fria-modal::after, .fridge-modal::after, .modal-nevera::after, .inv-fridge-modal::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 1;
-  background:
-    radial-gradient(circle at 30% 80%, rgba(255, 255, 255, 0.6) 0%, transparent 60%),
-    radial-gradient(circle at 70% 20%, rgba(190, 230, 255, 0.4) 0%, transparent 60%);
-  filter: blur(8px);
-  animation: iceSmoke 5s ease-in-out infinite;
-  opacity: 0.7;
-}
-
-.nevera-fria-modal > *, .fridge-modal > *, .modal-nevera > *, .inv-fridge-modal > * {
-  position: relative;
-  z-index: 10;
-}
-
-@keyframes iceSmoke {
-  0% { transform: translateY(10px); opacity: 0.4; }
-  50% { transform: translateY(-5px); opacity: 0.75; }
-  100% { transform: translateY(-15px); opacity: 0.4; }
-}
-/* AISLAMIENTO: el efecto de escarcha/hielo (marco + neblina helada) se aplica
-   ÚNICAMENTE a la Nevera Fría mediante la clase dedicada .nevera-fria-shell.
-   Ningún otro modal del sistema (Nuevo Producto, edición, etc.) hereda estos estilos. */
-
-.nevera-fria-shell {
-  position: relative !important;
-  overflow: hidden !important;
-  box-shadow: inset 0 0 25px 6px rgba(210, 245, 255, 0.85), inset 0 0 45px 12px rgba(150, 210, 255, 0.45), 0 0 25px rgba(180, 230, 255, 0.6) !important;
-  border: 2px solid rgba(220, 245, 255, 0.8) !important;
-}
-
-.nevera-fria-shell::after {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
-  background: linear-gradient(to top, rgba(255, 255, 255, 0.7) 0%, rgba(180, 225, 255, 0.35) 40%, transparent 80%) !important;
-  filter: blur(8px) !important;
-  animation: iceSmokeRise 3s infinite alternate ease-in-out !important;
-}
-
-.nevera-fria-shell > * {
-  position: relative !important;
-  z-index: 10 !important;
-}
-
-@keyframes iceSmokeRise {
-  0% { transform: translateY(10px) scale(0.98); opacity: 0.5; }
-  100% { transform: translateY(-10px) scale(1.02); opacity: 0.85; }
-}
