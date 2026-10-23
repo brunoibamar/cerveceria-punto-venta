@@ -843,3 +843,26 @@ const SalesPayment = {
       .replace(/'/g, '&#39;');
   }
 };
+/* ------------------------------------------------------------------
+   Efecto visual de congelado al activar la opcion "frio"
+   ------------------------------------------------------------------ */
+(function () {
+  function toggleFrozen(target) {
+    const card = target && (typeof target.closest === 'function' ? target.closest('.product-card, .cart-row, tr, .ticket-item') : null);
+    const root = card || document;
+    const descs = root.querySelectorAll ? root.querySelectorAll('.product-card-description') : [];
+    if (descs.length) {
+      descs.forEach(d => d.classList.toggle('is-frozen'));
+    } else {
+      document.querySelectorAll('.product-card-description').forEach(d => d.classList.toggle('is-frozen'));
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    const t = e.target;
+    if (!t || typeof t.closest !== 'function') return;
+    const cold = t.closest('#toggle-cold, .toggle-cold, [data-toggle-cold]');
+    if (!cold) return;
+    toggleFrozen(cold);
+  });
+})();
