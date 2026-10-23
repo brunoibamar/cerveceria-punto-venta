@@ -182,12 +182,15 @@ const PromosManager = {
 
     const etiqueta = 'Promoción ' + (promo.nombre || 'sin nombre') + '. Toca para ver las opciones.';
 
+    const today = new Date().toISOString().slice(0,10);
+    const expired = !!(promo.endDate && today > promo.endDate);
     return `
-          <div class="promo-card" data-id="${this.escapeHtml(promo.id)}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${this.escapeHtml(etiqueta)}">
+          <div class="promo-card ${expired ? 'promo-expired' : ''}" data-id="${this.escapeHtml(promo.id)}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${this.escapeHtml(etiqueta)}">
             <div class="promo-card-header">
               <div class="promo-card-title">${this.escapeHtml(promo.nombre || '')}</div>
               <div class="promo-card-meta">
                 <div class="promo-card-badge">${this.escapeHtml(this.getTipoLabel(promo.tipo))}</div>
+                ${expired ? '<span class="promo-expired-badge">PROMOCIÓN CADUCADA</span>' : ''}
                 <span class="promo-card-hint" aria-hidden="true">&#8942;</span>
               </div>
             </div>
@@ -198,7 +201,7 @@ const PromosManager = {
             <div class="promo-card-divider"></div>
             <div class="promo-card-details">
               <div class="promo-card-row"><span>Descuento</span><span class="promo-card-value">${this.escapeHtml(this.formatPromoValue(promo))}</span></div>
-              <div class="promo-card-row"><span>Vigencia</span><span class="promo-card-value">${this.escapeHtml(promo.duracion || '-')}</span></div>
+              <div class="promo-card-row"><span>Vigencia</span><span class="promo-card-value">Del ${this.escapeHtml(promo.startDate || '-')} al ${this.escapeHtml(promo.endDate || '-')}</span></div>
             </div>
           </div>
         `;
@@ -206,7 +209,27 @@ const PromosManager = {
 
   bindCards() {
     document.querySelectorAll('.promo-card').forEach(card => {
-      card.addEventListener('click', () => this.openCardMenu(card.dataset.id));
+      card.addEventListener('click', () => {
+        const promo = this.getPromos().find(p => p.id === card.dataset.id);
+        const today = new Date().toISOString().slice(0,10);
+        const expired = !!(promo && promo.endDate && today > promo.endDate);
+        if (expired) {
+          const action = confirm('Esta promoción ha caducado. ¿Deseas renovar su vigencia? (Aceptar=Renovar, Cancelar=Eliminar)');
+          if (action) {
+            this.openModal(promo);
+          } else {
+            const c = document.querySelector('.promo-card[data-id="' + promo.id + '"]');
+            if (c) c.classList.add('trash-animate');
+            setTimeout(() => {
+              const rest = this.getPromos().filter(p => p.id !== promo.id);
+              try { Database.savePromos(rest); } catch(e){}
+              this.render();
+            }, 420);
+          }
+          return;
+        }
+        this.openCardMenu(card.dataset.id);
+      });
       card.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
           event.preventDefault();
@@ -644,7 +667,27 @@ const PromosManager = {
 
     try {
       if (this.editingId) {
-        const promos = this.getPromos();
+    const promos = this.getPromos();
+
+    const today = new Date().toISOString().slice(0,10);
+    const expired = promos.filter(p => p && p.endDate && today > p.endDate);
+    if (expired.length) {
+      const renew = confirm('Una promoción ha caducado. ¿Gustas renovarla?');
+      if (!renew) {
+        expired.forEach(p => {
+          const card = document.querySelector('.promo-card[data-id="' + p.id + '"]');
+          if (card) {
+            card.classList.add('trash-animate');
+            setTimeout(() => {
+              const rest = this.getPromos().filter(x => x.id !== p.id);
+              try { Database.savePromos(rest); } catch(e){}
+              this.render();
+            }, 420);
+          }
+        });
+      }
+    }
+
         const index = promos.findIndex(p => p.id === this.editingId);
         if (index >= 0) {
           promos[index] = Object.assign({}, promos[index], payload);

@@ -267,7 +267,7 @@
           var codigo = product.codigoBarras || product.codigo || '';
           var imagen = product.imagen || product.imagenUrl || product.foto || '';
 
-          html += '<div class="inventory-card">';
+          html += '<div class="inventory-card" data-product-id="' + id + '">';
           if (imagen) {
             html += '  <div class="inv-img"><img src="' + this.escapeHtml(imagen) + '" alt="' + this.escapeHtml(product.nombre || '') + '" onerror="this.style.display=\'none\'"></div>';
           }
@@ -283,7 +283,7 @@
           html += '  <div class="inv-stock ' + (lowStock ? 'low-stock' : '') + '">Stock: ' + stock + (lowStock ? ' ⚠️ Rellenar' : '') + ' <span class="inv-stock-min">(mín. ' + stockMin + ')</span></div>';
           html += '  <div class="inv-actions">';
           html += '    <button class="inv-edit" onclick="InventoryManager.editProduct(\'' + id + '\')">Editar</button>';
-          html += '    <button class="inv-delete" onclick="InventoryManager.deleteProduct(\'' + id + '\')">Eliminar</button>';
+          html += '    <button class="inv-delete" onclick="InventoryManager.deleteProduct(\'' + id + '\')" title="Eliminar" aria-label="Eliminar"><span class="trash-icon">&#128465;</span></button>';
           html += '  </div>';
           html += '</div>';
         }
@@ -465,9 +465,18 @@
     deleteProduct: function (id) {
       try {
         if (!confirm('¿Eliminar este producto?')) return;
-        if (typeof Database !== 'undefined' && Database.deleteProduct) Database.deleteProduct(id);
-        this.render();
-        this.notifyInventoryUpdated();
+        var card = document.querySelector('.inventory-card[data-product-id="' + id + '"]');
+        var finish = function () {
+          if (typeof Database !== 'undefined' && Database.deleteProduct) Database.deleteProduct(id);
+          InventoryManager.render();
+          InventoryManager.notifyInventoryUpdated();
+        };
+        if (card) {
+          card.classList.add('trash-animate');
+          setTimeout(finish, 420);
+        } else {
+          finish();
+        }
       } catch (e) {
         console.error('Inventory deleteProduct error:', e);
       }

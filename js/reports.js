@@ -601,7 +601,13 @@ const ReportsManager = {
       let metodo = 'Efectivo';
       if (method.includes('tarjeta') || method.includes('transfer')) metodo = 'Tarjeta';
       else if (method.includes('mixto') || method.includes('electronico')) metodo = 'Mixto';
-      html += `<tr><td>${this.formatDateTime(s.fecha)}</td><td>${qty} ${qty === 1 ? 'pieza' : 'piezas'}</td><td><span class="reports-chip">${this.escapeHtml(metodo)}</span></td><td class="num">${this.formatCurrency(s.total || 0)}</td></tr>`;
+      let desc = qty + ' ' + (qty === 1 ? 'pieza' : 'piezas');
+      const pd = Number(s.promoDiscount) || 0;
+      if (pd > 0) {
+        const promoName = (s.promoName || s.promocion || 'Promoción aplicada');
+        desc = 'Promoción: ' + promoName + ' (' + desc + ')';
+      }
+      html += `<tr><td>${this.formatDateTime(s.fecha)}</td><td>${this.escapeHtml(desc)}</td><td><span class="reports-chip">${this.escapeHtml(metodo)}</span></td><td class="num">${this.formatCurrency(s.total || 0)}</td></tr>`;
     });
     html += '</tbody></table></div>';
     return html;
@@ -1115,6 +1121,8 @@ const ReportsManager = {
 
     const filtered = this.getFilteredSales();
     const { efectivo, electronico } = this.paymentTotals(filtered);
+    const apertura = this.getOpeningAmount();
+    const efectivoEnCaja = Number(apertura || 0) + Number(efectivo || 0);
     const cuts = this.getCutsByPeriod(this.currentFilter);
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = filtered.reduce((sum, s) => sum + (s.total || 0), 0);
@@ -1122,17 +1130,6 @@ const ReportsManager = {
     const promoGains = filtered.reduce((sum, s) => {
       const pd = Number(s.promoDiscount) || 0;
       if (pd <= 0) return sum;
-      const items = Array.isArray(s.items) ? s.items : [];
-      const hasPromoItem = items.some(item => {
-        if (!item) return false;
-        const cat = (item.categoria || item.category || item.tipo || '').toString().toLowerCase();
-        if (cat.includes('promo')) return true;
-        if (cat.includes('comb')) return true;
-        if (cat.includes('paquet')) return true;
-        if (item.esPromo === true || item.isPromo === true || item.promo === true) return true;
-        return false;
-      });
-      if (!hasPromoItem) return sum;
       return sum + pd;
     }, 0);
 
@@ -1162,6 +1159,11 @@ const ReportsManager = {
             <div class="metric-row"><span class="metric-label">Efectivo</span><span class="metric-icon">💵</span></div>
             <div class="metric-value">${this.formatCurrency(efectivo)}</div>
             <div class="metric-sub">Pagos en efectivo</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-row"><span class="metric-label">Efectivo en Caja</span><span class="metric-icon">🏧</span></div>
+            <div class="metric-value highlight">${this.formatCurrency(efectivoEnCaja)}</div>
+            <div class="metric-sub">Apertura + Efectivo recibido</div>
           </div>
           <div class="metric-card">
             <div class="metric-row"><span class="metric-label">Tarjeta / Transferencia</span><span class="metric-icon">💳</span></div>

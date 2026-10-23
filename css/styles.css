@@ -3048,12 +3048,94 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
 }
 
 /* =========================================================
-LOGIN Â· KEYFRAMES DE APERTURA (efecto compuerta / solapas)
-   Se reproducen en cada paso del asistente al renderizar el
-   panel, dando la sensaciÃ³n de apertura y cierre de solapas
-   tipo compuerta entre la selecciÃ³n de usuario, el NIP y el
-   fondo inicial de caja.
+   GLASSY LOGIN · CONTENEDOR CRISTAL ESMERILADO Y TOGGLE
+   Formularios "Welcome Back" (Sign In) y "Create Account"
+   con animación de despliegue fluida (escala + opacidad).
+   ========================================================= */
 
+/* Contenedor principal del login glassy */
+.glassy-login {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* Marca dentro del contenedor glassy */
+.glassy-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.glassy-brand .brand-logo {
+  width: 64px;
+  height: 64px;
+  color: var(--accent);
+  filter: drop-shadow(0 8px 20px rgba(224, 169, 109, 0.35));
+}
+
+.glassy-brand-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.glassy-brand-subtitle {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Panel único de autenticación */
+.auth-panel {
+  width: 100%;
+  max-width: 360px;
+  padding: 32px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: var(--glass-shadow), var(--glass-inner);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+/* Adaptación móvil */
+@media (max-width: 480px) {
+  .glassy-login {
+    padding: 24px 16px;
+  }
+
+  .auth-panel {
+    max-width: 100%;
+    padding: 24px 16px;
+  }
+}
+
+/* =========================================================
+   LOGIN · KEYFRAMES DE APERTURA (efecto compuerta / solapas)
+   Se reproducen en cada paso del asistente al renderizar el
+   panel, dando la sensación de apertura y cierre de solapas
+   tipo compuerta entre la selección de usuario, el NIP y el
+   fondo inicial de caja.
    ========================================================= */
 
 @keyframes loginGlassIn {
@@ -3341,27 +3423,49 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   padding: 9px 10px;
   border-bottom: 1px solid rgba(224, 169, 109, 0.08);
   color: var(--text-primary);
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .cart-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.cart-row-cold {
+.cart-row-cold,
+.cart-row-cold.is-freezing {
   border-left: 3px solid rgba(147, 197, 253, 0.55);
-  min-height: 52px;
+  min-height: 64px;
+  height: 64px;
+}
+
+/* Columna producto: columna rígida que reserva espacio para el cargo de frío
+   sin alterar las dimensiones de la fila. */
+.cart-table td:first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 64px;
+}
+
+.cart-cold-charge {
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 4px;
+  line-height: 1;
 }
 .cart-row-cold.is-freezing {
   position: relative;
   overflow: hidden;
-  min-height: 52px;
+  min-height: 64px;
+  height: 64px;
   background: rgba(20, 40, 80, 0.06);
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
 }
 
 .cart-row-cold.is-freezing > * {
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 .cart-row-cold.is-freezing::before {
@@ -3371,7 +3475,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   border: 2px solid rgba(255, 255, 255, 0.4);
   box-shadow: inset 0 0 15px 4px rgba(220, 245, 255, 0.9), inset 0 0 30px 8px rgba(160, 210, 255, 0.4), 0 0 12px rgba(180, 230, 255, 0.6);
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
 }
 
 .cart-row-cold.is-freezing::after {
@@ -3382,7 +3486,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   filter: blur(7px);
   animation: smokeDrift 4s ease-in-out infinite;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0;
   opacity: 0.8;
 }
 
@@ -3784,6 +3888,11 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 .sale-tag.is-cold {
   border-color: rgba(224, 169, 109, 0.5);
   color: var(--accent);
+}
+
+.sale-tag.is-cut {
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #4ade80;
 }
 
 .live-ticket-total {
@@ -6675,3 +6784,17 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   padding: 2px 4px;
 }
 
+
+.inventory-card.trash-animate{animation:trashShrink .42s ease-in forwards;transform-origin:center;}
+@keyframes trashShrink{0%{transform:scale(1);opacity:1}100%{transform:scale(0) translateX(60px);opacity:0}}
+.promo-card.trash-animate{animation:trashShrink .42s ease-in forwards;transform-origin:center;}
+
+.trash-icon{color:#e53935;font-size:1.2rem;transition:transform .3s}
+.inv-delete.trash-shake .trash-icon{animation:lidShake .42s ease}
+@keyframes lidShake{0%{transform:rotate(0)}30%{transform:rotate(-25deg)}60%{transform:rotate(10deg)}100%{transform:rotate(0)}}
+.modal-edit{transform:scale(.8);opacity:0;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s}
+.modal-edit.is-open{transform:scale(1);opacity:1}
+.chart-area-gradient{fill:url(#areaGrad)}
+.chart-point-glow{filter:drop-shadow(0 0 6px #d4a373)}
+
+.promo-expired{opacity:.7;border:1px solid #b87333}.promo-expired-badge{background:#b87333;color:#fff;font-size:.7rem;padding:2px 6px;border-radius:4px;margin-left:6px}

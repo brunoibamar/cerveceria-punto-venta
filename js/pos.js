@@ -1746,6 +1746,7 @@ if (other) {
         coldUnits: this.getColdUnits(),
         total: this.getTotal(),
         promoDiscount: promoDiscount,
+        promoName: (evaluation.applications && evaluation.applications.length) ? evaluation.applications.map(a=>a.nombre).join(', ') : '',
         promosAplicados: (evaluation.applications || []).map(app => ({
           id: app.id,
           nombre: app.nombre,
@@ -1767,6 +1768,8 @@ if (other) {
         change: details.change,
         turnoId: session ? session.turnoId : null,
         turnoNumero: session ? session.turnoNumero : null,
+        corteId: session ? (session.corteId || session.turnoId || null) : null,
+        corteNumero: session ? (session.corteNumero || session.turnoNumero || null) : null,
         cajero: session ? session.usuario : null,
         status: 'completada'
       };
@@ -1929,6 +1932,10 @@ if (other) {
       ? `<span class="sale-tag is-cold" title="Cargo por bebida fría">❄️ ${ticket.cold.unidades} fría${ticket.cold.unidades === 1 ? '' : 's'}${ticket.cold.cargo > 0 ? ' · +' + this.escapeHtml(this.formatMoney(ticket.cold.cargo)) : ''}</span>`
       : '';
 
+    const corte = ticket.corteNumero
+      ? `<span class="sale-tag is-cut" title="Asociado al corte de caja">${this.escapeHtml('Corte #'+ticket.corteNumero)}</span>`
+      : '';
+
     return `
       <div class="live-ticket">
         <span class="live-ticket-time">${this.escapeHtml(ticket.hora)}</span>
@@ -1936,6 +1943,7 @@ if (other) {
           <div class="live-ticket-items">${this.escapeHtml(ticket.detalle)}</div>
           <div class="live-ticket-tags">
             ${cold}
+            ${corte}
             <span class="sale-tag">${this.escapeHtml(SalesLog.paymentIcon(ticket.paymentMethod))} ${this.escapeHtml(ticket.paymentLabel)}</span>
           </div>
         </div>

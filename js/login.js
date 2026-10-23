@@ -125,7 +125,7 @@ const Login = {
   init(containerId) {
     this.container = document.getElementById(containerId || 'app-main');
     this.hideAppChrome();
-    this.renderRoleScreen();
+    this.renderGlassyLogin();
   },
 
   // Oculta navegación y acciones de cabecera: sin caja abierta no hay acceso
@@ -193,15 +193,27 @@ const Login = {
     }
   },
 
-  // Pantalla obligatoria de selección de rol (punto de entrada único)
-  renderRoleScreen() {
+  // Pantalla de login glassy (solo Iniciar Sesión)
+  renderGlassyLogin() {
     this.container.innerHTML = `
-      <div class="login-screen">
-        <div class="login-brand">
+      <div class="glassy-login">
+        <div class="glassy-brand">
           <svg class="brand-logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><use href="#brand-logo-symbol"></use></svg>
-          <h1 class="login-brand-title">Cervecería</h1>
-          <p class="login-brand-subtitle">PUNTO DE VENTA</p>
+          <h1 class="glassy-brand-title">Cervecería</h1>
+          <p class="glassy-brand-subtitle">PUNTO DE VENTA</p>
         </div>
+        <div id="signin-content"></div>
+      </div>
+    `;
+    this.resetScroll();
+    this.renderSignInPanel();
+  },
+
+  // Rellena el panel de Iniciar Sesión (selección de rol)
+  renderSignInPanel() {
+    const content = this.container.querySelector('#signin-content');
+    content.innerHTML = `
+      <div class="auth-panel">
         <p class="login-subheading">Selecciona tu rol</p>
         <div class="login-roles">
           <button id="role-admin" class="login-role-btn is-admin">Administrador</button>
@@ -212,7 +224,6 @@ const Login = {
         </p>
       </div>
     `;
-    this.resetScroll();
     document.getElementById('role-admin').onclick = () => this.renderPinPad();
     document.getElementById('role-employee').onclick = () => this.renderStaffForm('employee');
   },
@@ -238,7 +249,7 @@ const Login = {
     });
     document.getElementById('pin-clear').onclick = () => { this.pin = this.pin.slice(0,-1); this.updatePinDisplay(); };
     document.getElementById('pin-ok').onclick = () => this.submitPin();
-    document.getElementById('pin-back').onclick = () => this.renderRoleScreen();
+    document.getElementById('pin-back').onclick = () => this.renderGlassyLogin();
   },
 
   updatePinDisplay() {
@@ -277,7 +288,7 @@ const Login = {
       if (!nombre || !clave) { alert('Completa todos los campos.'); return; }
       this.openCash({ role: role, name: nombre });
     };
-    document.getElementById('emp-back').onclick = () => this.renderRoleScreen();
+    document.getElementById('emp-back').onclick = () => this.renderGlassyLogin();
   },
 
   // Paso final obligatorio: apertura de caja con el fondo inicial del turno
