@@ -2476,11 +2476,13 @@ if (other) {
               <div class="payment-summary-row"><span>Ventas con tarjeta</span><span id="pos-cut-tarjeta">$0.00</span></div>
               <div class="payment-summary-row"><span>Ventas por transferencia</span><span id="pos-cut-transferencia">$0.00</span></div>
               <div class="cut-channels" id="pos-cut-channels" hidden>
-                <div class="payment-summary-row"><span>Cobro NFC / Contactless</span><span id="pos-cut-nfc">$0.00</span></div>
                 <div class="payment-summary-row"><span>Cobro con código QR</span><span id="pos-cut-qr">$0.00</span></div>
                 <div class="payment-summary-row"><span>Cobro en terminal física</span><span id="pos-cut-terminal">$0.00</span></div>
               </div>
               <div class="payment-summary-row"><span>Promociones (descuento)</span><span id="pos-cut-promociones">$0.00</span></div>
+              <div class="payment-summary-row"><span>Piezas frías</span><span id="pos-cut-piezas-frias">$0.00</span></div>
+              <div class="payment-summary-row"><span>Cartones fríos</span><span id="pos-cut-cartones-frios">$0.00</span></div>
+              <div class="payment-summary-row"><span>Promociones aplicadas</span><span id="pos-cut-promos-aplicadas">$0.00</span></div>
               <div class="payment-summary-row"><span>Total de ventas del turno</span><span id="pos-cut-ventas">$0.00</span></div>
               <div class="payment-summary-row is-change"><span>Total en caja</span><span id="pos-cut-total-caja">$0.00</span></div>
             </div>
@@ -2651,18 +2653,53 @@ if (other) {
     setText('pos-cut-transferencia', currency + summary.ventasTransferencia.toFixed(2));
 
     // Desglose por forma de cobro con tarjeta (solo si se usó alguna)
-    const canales = summary.ventasPorCanal || { nfc: 0, qr: 0, terminal: 0 };
-    setText('pos-cut-nfc', currency + canales.nfc.toFixed(2));
+    const canales = summary.ventasPorCanal || { qr: 0, terminal: 0 };
     setText('pos-cut-qr', currency + canales.qr.toFixed(2));
     setText('pos-cut-terminal', currency + canales.terminal.toFixed(2));
     const channelsBox = document.getElementById('pos-cut-channels');
     if (channelsBox) {
-      channelsBox.hidden = !(canales.nfc > 0 || canales.qr > 0 || canales.terminal > 0);
+      channelsBox.hidden = !(canales.qr > 0 || canales.terminal > 0);
     }
     setText('pos-cut-promociones', summary.descuentosPromociones > 0
       ? '-' + currency + summary.descuentosPromociones.toFixed(2)
       : currency + '0.00');
     setText('pos-cut-ventas', currency + summary.totalVentas.toFixed(2));
+
+    // Desglose de frío y promociones para el modal (desde ventas del turno)
+    let mPiezasFriasCant = 0, mPiezasFriasMonto = 0;
+    let mCartonesFriosCant = 0, mCartonesFriosMonto = 0;
+    let mPromosCant = 0, mPromosMonto = 0;
+    (summary.ventas || []).forEach(venta => {
+      (venta.items || []).forEach(item => {
+        if (!item) return;
+        const cargoFrio = Number(item.cargoFrio || 0);
+        const qty = Number(item.cantidad || item.quantity || 0);
+        if (cargoFrio <= 0) return;
+        const montoItem = cargoFrio > 0 ? cargoFrio : 0;
+        const nombre = String(item.nombre || item.productName || '').toUpperCase();
+        const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
+        const nombreEsCarton = nombre.includes('MEGA') || nombre.includes('CARTON') || nombre.includes('CHAROLA') || nombre.includes('PAQUETE') || nombre.includes('PACK');
+        const envaseEsCarton = item.envaseModalidad === 'carton';
+        const qtyEsCarton = unidadesPorCarton > 0 && qty >= unidadesPorCarton;
+        const volumenEsCarton = qty >= 12;
+        const esCarton = nombreEsCarton || envaseEsCarton || qtyEsCarton || volumenEsCarton;
+        if (esCarton) {
+          mCartonesFriosCant += qty;
+          mCartonesFriosMonto += montoItem;
+        } else {
+          mPiezasFriasCant += qty;
+          mPiezasFriasMonto += montoItem;
+        }
+        const promo = item.promoVolumenAplicada;
+        if (promo && Number(promo.precio || 0) > 0) {
+          mPromosCant += 1;
+          mPromosMonto += Number(promo.precio);
+        }
+      });
+    });
+    setText('pos-cut-piezas-frias', currency + mPiezasFriasMonto.toFixed(2));
+    setText('pos-cut-cartones-frios', currency + mCartonesFriosMonto.toFixed(2));
+    setText('pos-cut-promos-aplicadas', '-' + currency + mPromosMonto.toFixed(2));
     setText('pos-cut-expected', currency + summary.totalEnCaja.toFixed(2));
     setText('pos-cut-total-caja', currency + summary.totalEnCaja.toFixed(2));
 
@@ -2828,6 +2865,41 @@ if (other) {
     const diferencia = this.round2(counted - esperado);
     const tickets = this.getTurnTickets();
 
+    // Desglose de frío y promociones desde las transacciones del turno
+    let piezasFriasCant = 0, piezasFriasMonto = 0;
+    let cartonesFriosCant = 0, cartonesFriosMonto = 0;
+    let promocionesCant = 0, promocionesPiezas = 0, promocionesMonto = 0;
+    (tickets || []).forEach(ticket => {
+      (ticket.items || []).forEach(item => {
+        if (!item) return;
+        const nombre = String(item.nombre || item.productName || '').toUpperCase().trim();
+        const cargoFrio = Number(item.cargoFrio || 0);
+        const qty = Number(item.cantidad || item.quantity || 0);
+        const subtotal = Number(item.subtotal || 0);
+        const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
+        if (cargoFrio <= 0) return;
+        const montoItem = cargoFrio > 0 ? cargoFrio : (subtotal > 0 ? subtotal : 0);
+        const nombreEsCarton = nombre.includes('MEGA') || nombre.includes('CARTON') || nombre.includes('CHAROLA') || nombre.includes('PAQUETE') || nombre.includes('PACK');
+        const envaseEsCarton = item.envaseModalidad === 'carton';
+        const qtyEsCarton = unidadesPorCarton > 0 && qty >= unidadesPorCarton;
+        const volumenEsCarton = qty >= 12;
+        const esCarton = nombreEsCarton || envaseEsCarton || qtyEsCarton || volumenEsCarton;
+        if (esCarton) {
+          cartonesFriosCant += qty;
+          cartonesFriosMonto += montoItem;
+        } else {
+          piezasFriasCant += qty;
+          piezasFriasMonto += montoItem;
+        }
+        const promo = item.promoVolumenAplicada;
+        if (promo && Number(promo.precio || 0) > 0) {
+          promocionesCant += 1;
+          promocionesPiezas += Number(promo.cantidad || 1);
+          promocionesMonto += Number(promo.precio);
+        }
+      });
+    });
+
     return {
       tipo: 'cierre',
       corteNumero: session.turnoNumero,
@@ -2875,6 +2947,13 @@ if (other) {
           terminal: summary.ventasPorCanal.terminal
         },
         promociones: summary.descuentosPromociones,
+        promocionesCant: promocionesCant,
+        promocionesPiezas: promocionesPiezas,
+        promocionesMonto: this.round2(promocionesMonto),
+        piezasFriasCant: piezasFriasCant,
+        piezasFriasMonto: this.round2(piezasFriasMonto),
+        cartonesFriosCant: cartonesFriosCant,
+        cartonesFriosMonto: this.round2(cartonesFriosMonto),
         totalVentas: summary.totalVentas,
         totalEnCaja: esperado,
         efectivoContado: this.round2(counted),
@@ -3038,13 +3117,12 @@ if (other) {
     ticket += linea('Ventas en efectivo', monto(desglose.ventasEfectivo !== undefined ? desglose.ventasEfectivo : data.ventasEfectivo)) + '\n';
     ticket += linea('Ventas con tarjeta', monto(desglose.ventasTarjeta !== undefined ? desglose.ventasTarjeta : data.ventasTarjeta)) + '\n';
     ticket += linea('Ventas por transferencia', monto(desglose.ventasTransferencia !== undefined ? desglose.ventasTransferencia : data.ventasTransferencia)) + '\n';
-    const canales = desglose.ventasPorCanal || data.ventasPorCanal || null;
-    if (canales && (Number(canales.nfc) > 0 || Number(canales.qr) > 0 || Number(canales.terminal) > 0)) {
-      ticket += linea('  Cobro NFC', monto(canales.nfc)) + '\n';
-      ticket += linea('  Cobro con QR', monto(canales.qr)) + '\n';
-      ticket += linea('  Cobro en terminal', monto(canales.terminal)) + '\n';
-    }
+    ticket += linea('Cobro con código QR', monto(desglose.ventasPorCanal?.qr || 0)) + '\n';
+    ticket += linea('Cobro en terminal física', monto(desglose.ventasPorCanal?.terminal || 0)) + '\n';
     ticket += linea('Promociones (descuento)', '-' + monto(desglose.promociones !== undefined ? desglose.promociones : data.descuentosPromociones)) + '\n';
+    ticket += linea('Piezas frías', (desglose.piezasFriasCant || 0) + ' x ' + monto(desglose.piezasFriasMonto || 0)) + '\n';
+    ticket += linea('Cartones fríos', (desglose.cartonesFriosCant || 0) + ' x ' + monto(desglose.cartonesFriosMonto || 0)) + '\n';
+    ticket += linea('Promociones aplicadas', (desglose.promocionesCant || 0) + ' x ' + '-' + monto(desglose.promocionesMonto || 0)) + '\n';
     ticket += linea('Total de ventas', monto(desglose.totalVentas !== undefined ? desglose.totalVentas : data.totalVentas)) + '\n';
     ticket += '----------------------------------------\n';
     ticket += linea('Total en caja', monto(data.totalEnCaja !== undefined ? data.totalEnCaja : data.totalEsperado)) + '\n';
