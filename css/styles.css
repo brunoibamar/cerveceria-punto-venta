@@ -5601,6 +5601,138 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   background: transparent;
 }
 
+/* =========================================================
+   MODAL FLOTANTE: DETALLE DE REPORTES (Piezas/Cartones Fríos, Promociones)
+   ========================================================= */
+.reports-detail-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.reports-detail-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 6, 5, 0.72);
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
+}
+
+.reports-detail-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  max-height: 86vh;
+  max-height: 86dvh;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: linear-gradient(180deg, #191411 0%, #120F0C 100%);
+  border: 1px solid rgba(224, 169, 109, 0.28);
+  border-radius: 20px;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  animation: cutsModalIn 0.28s var(--ease-smooth) both;
+}
+
+.reports-detail-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(224, 169, 109, 0.16);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.07), transparent);
+}
+
+.reports-detail-modal-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.reports-detail-modal-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(224, 169, 109, 0.75);
+}
+
+.reports-detail-modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #E0A96D;
+}
+
+.reports-detail-modal-close {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: var(--text-secondary);
+  background: rgba(224, 169, 109, 0.08);
+  border: 1px solid rgba(224, 169, 109, 0.22);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.reports-detail-modal-close:hover {
+  color: #12100E;
+  background: #E0A96D;
+  border-color: #E0A96D;
+  transform: rotate(90deg);
+}
+
+.reports-detail-modal-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid rgba(224, 169, 109, 0.12);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.reports-detail-modal-total strong {
+  color: #E0A96D;
+  font-size: 15px;
+}
+
+.reports-detail-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+
+.reports-detail-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reports-detail-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(224, 169, 109, 0.28);
+  border-radius: 999px;
+}
+
+.reports-detail-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Grupo tarjeta + panel desplegable */
 .cuts-group {
   display: flex;

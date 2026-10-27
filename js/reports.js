@@ -1206,26 +1206,45 @@ const ReportsManager = {
 
     if (!rows.length) {
       return `
-        <div class="reports-modal reports-detail-modal" data-detail-modal-close="true">
-          <div class="reports-modal-content">
-            <button type="button" class="reports-modal-close" data-detail-modal-close="true" aria-label="Cerrar">✕</button>
-            <h3>${cfg.icon} ${cfg.title}</h3>
-            <p class="reports-empty">No hay transacciones en esta categoría para el periodo actual.</p>
+        <div class="reports-detail-modal-overlay" data-detail-modal-close="true">
+          <div class="reports-detail-modal-backdrop" data-detail-modal-close="true"></div>
+          <div class="reports-detail-modal">
+            <div class="reports-detail-modal-head">
+              <div class="reports-detail-modal-titles">
+                <div class="reports-detail-modal-eyebrow">Detalle de Reporte</div>
+                <h2 class="reports-detail-modal-title">${cfg.icon} ${cfg.title}</h2>
+              </div>
+              <button type="button" class="reports-detail-modal-close" data-detail-modal-close="true" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="reports-detail-modal-body">
+              <p class="reports-empty">No hay transacciones en esta categoría para el periodo actual.</p>
+            </div>
           </div>
         </div>`;
     }
 
     return `
-      <div class="reports-modal reports-detail-modal" data-detail-modal-close="true">
-        <div class="reports-modal-content">
-          <button type="button" class="reports-modal-close" data-detail-modal-close="true" aria-label="Cerrar">✕</button>
-          <h3>${cfg.icon} ${cfg.title}</h3>
-          <div class="reports-modal-total">Total ${category === 'piezas-frias' ? 'piezas frías' : category === 'cartones-frios' ? 'cartones fríos' : 'promociones'}: <strong>${this.formatCurrency(total)}</strong></div>
-          <div class="reports-table-wrap">
-            <table class="reports-table">
-              <thead><tr><th>Hora</th><th>Producto</th><th>Tipo</th><th class="num">Monto ($)</th></tr></thead>
-              <tbody>${rows.join('')}</tbody>
-            </table>
+      <div class="reports-detail-modal-overlay" data-detail-modal-close="true">
+        <div class="reports-detail-modal-backdrop" data-detail-modal-close="true"></div>
+        <div class="reports-detail-modal">
+          <div class="reports-detail-modal-head">
+            <div class="reports-detail-modal-titles">
+              <div class="reports-detail-modal-eyebrow">Detalle de Reporte</div>
+              <h2 class="reports-detail-modal-title">${cfg.icon} ${cfg.title}</h2>
+            </div>
+            <button type="button" class="reports-detail-modal-close" data-detail-modal-close="true" aria-label="Cerrar">✕</button>
+          </div>
+          <div class="reports-detail-modal-total">
+            <span>Total ${category === 'piezas-frias' ? 'piezas frías' : category === 'cartones-frios' ? 'cartones fríos' : 'promociones'}</span>
+            <strong>${this.formatCurrency(total)}</strong>
+          </div>
+          <div class="reports-detail-modal-body">
+            <div class="reports-table-wrap">
+              <table class="reports-table">
+                <thead><tr><th>Hora</th><th>Producto / Tipo</th><th class="num">Monto ($)</th></tr></thead>
+                <tbody>${rows.join('')}</tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>`;
