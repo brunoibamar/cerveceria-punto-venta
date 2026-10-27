@@ -963,7 +963,7 @@ if (other) {
     if (this.cart.length === 0) {
       html += '<div class="cart-empty">Carrito vacío</div>';
     } else {
-      html += '<div class="cart-table-wrap"><table class="cart-table"><thead><tr><th>Producto</th><th>Precio</th><th>Cant.</th><th>Frío</th><th>Subtotal</th><th></th></tr></thead><tbody>';
+      html += '<div class="cart-items-grid">';
       this.cart.forEach(item => {
         const isCold = this.normalizeColdFlag(item.piezaFria);
         const idArg = this.jsArg(item.productId);
@@ -992,48 +992,56 @@ if (other) {
         let envaseHtml = '';
         if (hasEnvaseCargo) {
           envaseHtml = `
-            <label class="cart-envase" style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;">
+            <label class="cart-envase" style="display:inline-flex;align-items:center;gap:6px;">
               <input type="checkbox" class="cart-envase-checkbox" ${envaseChecked ? 'checked' : ''}
                 onchange="POS.toggleEnvaseFaltante('${idArg}', ${coldArg})"
                 title="Marcar si el cliente no devuelve el envase" />
-              <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseCargoUnit.toFixed(2)})</span>
+              <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseCargoUnit.toFixed(2)})</span>
             </label>`;
         }
 
         const envaseLineHtml = envaseQtyCharge > 0
-          ? `<div class="cart-envase-charge">+ ${this.escapeHtml(currency)}${envaseQtyCharge.toFixed(2)} envase</div>`
+          ? `<span class="cart-tag cart-tag-envase">+${this.escapeHtml(currency)}${envaseQtyCharge.toFixed(2)} envase</span>`
           : '';
 
         const tempHtml = isCold
-          ? `<span class="temp-indicator temp-cold" role="button" tabindex="0" onclick="POS.toggleCold('${idArg}', true)" onkeydown="if(event.key==='Enter'||event.key===' '){POS.toggleCold('${idArg}', true);}" title="Pieza fría (toca para quitar la marca)">❄️ <span class="temp-check">✓</span> Frío</span>`
-          : `<span class="temp-indicator temp-ambient" role="button" tabindex="0" onclick="POS.toggleCold('${idArg}', false)" onkeydown="if(event.key==='Enter'||event.key===' '){POS.toggleCold('${idArg}', false);}" title="Toca para marcar como pieza fría">❄️ Frío</span>`;
+          ? `<button type="button" class="temp-indicator temp-cold" onclick="POS.toggleCold('${idArg}', true)" onkeydown="if(event.key==='Enter'||event.key===' '){POS.toggleCold('${idArg}', true);}" title="Pieza fría (toca para quitar la marca)">❄️ <span class="temp-check">✓</span> Frío</button>`
+          : `<button type="button" class="temp-indicator temp-ambient" onclick="POS.toggleCold('${idArg}', false)" onkeydown="if(event.key==='Enter'||event.key===' '){POS.toggleCold('${idArg}', false);}" title="Toca para marcar como pieza fría">❄️ Frío</button>`;
 
         const chargeHtml = lineCharge > 0
-          ? `<div class="cart-cold-charge">+ ${this.escapeHtml(currency)}${lineCharge.toFixed(2)} frío</div>`
+          ? `<span class="cart-tag cart-tag-cold">+${this.escapeHtml(currency)}${lineCharge.toFixed(2)} frío</span>`
           : '';
 
         const cartonBadge = isFullCarton
-          ? `<span class="cart-carton-badge">📦 ${fullCartons} cartón${fullCartons > 1 ? 'es' : ''} completo (${qty} piezas) · ${this.escapeHtml(currency)}${cartonPrice.toFixed(2)} c/u</span>`
+          ? `<span class="cart-tag cart-tag-carton">📦 ${fullCartons} cartón${fullCartons > 1 ? 'es' : ''} completo · ${this.escapeHtml(currency)}${cartonPrice.toFixed(2)} c/u</span>`
           : '';
 
         html += `
-          <tr class="${isCold ? 'cart-row-cold is-freezing' : ''}">
-            <td>${this.escapeHtml(item.nombre || '')}${chargeHtml}${envaseHtml}${cartonBadge}</td>
-            <td>${this.escapeHtml(currency)}${isFullCarton ? cartonPrice.toFixed(2) : price.toFixed(2)}</td>
-            <td>
-              <div class="cart-qty">
+          <div class="cart-item-card${isCold ? ' is-cold' : ''}">
+            <div class="cart-item-body">
+              <div class="cart-item-name">
+                <span class="cart-item-title">${this.escapeHtml(item.nombre || '')}</span>
+                <div class="cart-item-tags">
+                  ${tempHtml}
+                  ${chargeHtml}
+                  ${envaseHtml}
+                  ${envaseLineHtml}
+                  ${cartonBadge}
+                </div>
+              </div>
+              <div class="cart-item-price">${this.escapeHtml(currency)}${isFullCarton ? cartonPrice.toFixed(2) : price.toFixed(2)}</div>
+              <div class="cart-item-qty">
                 <button type="button" class="btn-qty" onclick="POS.changeQuantity('${idArg}', -1, ${coldArg})">-</button>
                 <span class="cart-qty-value">${qty}</span>
                 <button type="button" class="btn-qty" onclick="POS.changeQuantity('${idArg}', 1, ${coldArg})">+</button>
               </div>
-            </td>
-            <td class="cart-temp">${tempHtml}</td>
-            <td>${this.escapeHtml(currency)}${lineTotal.toFixed(2)}${envaseLineHtml}</td>
-            <td><button type="button" class="btn-delete" onclick="POS.removeFromCart('${idArg}', ${coldArg})">×</button></td>
-          </tr>
+              <div class="cart-item-total">${this.escapeHtml(currency)}${lineTotal.toFixed(2)}</div>
+            </div>
+            <button type="button" class="btn-delete" onclick="POS.removeFromCart('${idArg}', ${coldArg})" title="Eliminar producto">×</button>
+          </div>
         `;
       });
-        html += '</tbody></table></div>';
+      html += '</div>';
       html += this.renderCartPromos(currency);
     }
 
