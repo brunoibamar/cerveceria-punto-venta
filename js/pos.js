@@ -2947,8 +2947,9 @@ if (other) {
 
     if (!ok) return;
 
-    // El cierre de sesión ocurre al terminar la acción elegida
-    this.finishCashCut(action === 'json' || action === 'print' ? 350 : 0);
+    // Las acciones de correo, JSON e impresión NO cierran el turno.
+    // El cierre de sesión es exclusivo del botón oficial de "Cerrar Turno / Corte de Caja".
+    // El turno permanece activo e intacto para seguir operando.
   },
 
   // Bloquea el modal mientras se ejecuta una acción de cierre
@@ -3093,26 +3094,25 @@ if (other) {
       settings = {};
     }
 
-    const publicKey = String(settings.emailPublicKey || '').trim();
-    const serviceId = String(settings.emailServiceId || '').trim();
-    const templateId = String(settings.emailTemplateId || '').trim();
+    // Credenciales oficiales de EmailJS (valor por defecto si no hay en ajustes)
+    const publicKey = String(settings.emailPublicKey || 'SqbTPIS_U8CAwQTw').trim();
+    const serviceId = String(settings.emailServiceId || 'service_1576q89').trim();
+    const templateId = String(settings.emailTemplateId || 'template_dkl2n9i').trim();
 
     if (!publicKey || !serviceId || !templateId) {
-      return { ok: false, error: 'Configura las credenciales de EmailJS en Ajustes → Correo de Respaldo (EmailJS).' };
+      return { ok: false, error: 'No se pudieron cargar las credenciales de EmailJS.' };
     }
 
     if (typeof emailjs === 'undefined') {
       return { ok: false, error: 'La librería de EmailJS no está disponible. Revisa tu conexión a internet.' };
     }
 
-    let destino = String(settings.backupEmail || '').trim();
+    // Correo de destino predeterminado: reportes van directo a esta bandeja
+    let destino = String(settings.backupEmail || 'tonitocerverciapunto@gmail.com').trim();
     if (!destino) {
-      destino = String(window.prompt('Correo de destino para el corte de caja:', '') || '').trim();
-      if (!destino) {
-        return { ok: false, error: 'Se necesita un correo de destino para enviar el corte de caja.' };
-      }
-      settings.backupEmail = destino;
+      destino = 'tonitocerverciapunto@gmail.com';
       try {
+        settings.backupEmail = destino;
         Database.saveSettings(settings);
       } catch (e) {
         console.error('[POS] No se pudo guardar el correo de respaldo:', e);
@@ -3144,10 +3144,18 @@ if (other) {
         id: cut.id || 'N/A',
         fecha: cut.fechaCierre || new Date().toISOString().split('T')[0],
         hora: cut.horaCierre || new Date().toLocaleTimeString(),
+        turno: cut.turno || 'N/A',
+        corteNumero: cut.corteNumero || 'N/A',
         totalEfectivo: cut.ventasEfectivo || 0,
         totalTarjeta: cut.ventasTarjeta || 0,
         totalTransferencia: cut.ventasTransferencia || 0,
         totalGeneral: cut.totalGeneral || 0,
+        totalVentas: cut.totalVentas || 0,
+        cantidadVentas: cut.cantidadVentas || 0,
+        montoApertura: cut.montoApertura || 0,
+        fondoInicial: cut.fondoInicial || 0,
+        descuentosPromociones: cut.descuentosPromociones || 0,
+        promocionesAplicadas: cut.promocionesAplicadas || [],
         transacciones: cut.tickets || [],
         ventas: cut.usuario || 'Sistema',
         productos: this.getCutProducts(cut)
