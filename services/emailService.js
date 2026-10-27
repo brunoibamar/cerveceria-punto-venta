@@ -41,6 +41,59 @@ const EmailService = {
     };
   },
 
+  getColdItemBreakdown(item) {
+    if (!item) {
+      return { piezasCant: 0, piezasMonto: 0, cartonesCant: 0, cartonesMonto: 0 };
+    }
+    const cantidad = Number(item.cantidad || item.quantity || 0);
+    const cargoFrio = Number(item.cargoFrio) || 0;
+    const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
+    const hasPromotion = Number(item.promoVolumenAplicada && item.promoVolumenAplicada.precio) > 0;
+    const hasCompleteCarton = !hasPromotion && (
+      Boolean(item.isCarton || item.carton || item.charola)
+      || (unidadesPorCarton > 0 && cantidad >= unidadesPorCarton)
+    );
+    const cartonUnits = hasCompleteCarton
+      ? (unidadesPorCarton > 0 ? Math.floor(cantidad / unidadesPorCarton) * unidadesPorCarton : cantidad)
+      : 0;
+    const coldRate = cantidad > 0 ? cargoFrio / cantidad : 0;
+    const cartonesMonto = this.round2(coldRate * cartonUnits);
+
+    return {
+      piezasCant: Math.max(0, cantidad - cartonUnits),
+      piezasMonto: this.round2(cargoFrio - cartonesMonto),
+      cartonesCant: cartonUnits,
+      cartonesMonto: cartonesMonto
+    };
+  },
+
+  getColdItemsSummary(transacciones) {
+    const resumen = {
+      piezasCant: 0,
+      piezasMonto: 0,
+      cartonesCant: 0,
+      cartonesMonto: 0
+    };
+
+    (Array.isArray(transacciones) ? transacciones : []).forEach(ticket => {
+      (Array.isArray(ticket && ticket.items) ? ticket.items : []).forEach(item => {
+        if (!item) return;
+        const cargoFrio = Number(item.cargoFrio) || 0;
+        if (cargoFrio <= 0) return;
+
+        const detalle = this.getColdItemBreakdown(item);
+        resumen.cartonesCant += detalle.cartonesCant;
+        resumen.cartonesMonto += detalle.cartonesMonto;
+        resumen.piezasCant += detalle.piezasCant;
+        resumen.piezasMonto += detalle.piezasMonto;
+      });
+    });
+
+    resumen.piezasMonto = this.round2(resumen.piezasMonto);
+    resumen.cartonesMonto = this.round2(resumen.cartonesMonto);
+    return resumen;
+  },
+
   /**
    * Envía el resumen de un corte de caja por correo electrónico.
    * @param {Object} corte - Datos del corte de caja (payload de sendCutByEmail).
@@ -79,89 +132,13 @@ const EmailService = {
       });
 
       // ---------- Cálculo de artículos fríos desde los tickets ----------
-      // Construir set de nombres de producto que pertenecen a promociones
-      // para excluirlos del conteo de piezas frías / cartones fríos
-      const nombresPromo = new Set();
-      (corte.promocionesAplicadas || []).forEach(promo => {
-        if (Array.isArray(promo.detalle)) {
-          promo.detalle.forEach(d => {
-            if (d && d.nombre) nombresPromo.add(String(d.nombre).toUpperCase().trim());
-          });
-        }
-      });
-
-      console.log('EmailJS >> nombresPromo excluidos:', Array.from(nombresPromo));
-
-      let piezasFriasCant = 0;
-      let piezasFriasMonto = 0;
-      let cartonesFriosCant = 0;
-      let cartonesFriosMonto = 0;
-
-      (corte.transacciones || []).forEach(ticket => {
-        (ticket.items || []).forEach(item => {
-          if (!item) return;
-          const nombre = String(item.nombre || item.productName || '').toUpperCase().trim();
-
-          // 1. Excluir estrictamente cualquier producto que sea parte de una promoción/paquete
-          const esPromo = nombresPromo.has(nombre);
-          if (esPromo) {
-            console.log('EmailJS >> ítem excluido (promo):', { nombre, cantidad: item.cantidad || item.quantity });
-            return;
-          }
-
-          // 2. Solo procesar productos que tengan cargo de frío (cargoFrio > 0)
-          const cargoFrio = Number(item.cargoFrio || 0);
-          const qty = Number(item.cantidad || item.quantity || 0);
-          const precio = Number(item.precio || item.price || 0);
-          const subtotal = Number(item.subtotal || 0);
-          const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
-
-          if (cargoFrio <= 0) {
-            console.log('EmailJS >> ítem ignorado (sin cargo frío):', { nombre, cargoFrio, qty });
-            return;
-          }
-
-          // 3. Detectar si es cartón/charola completa de forma robusta
-          //    - nombre contiene 'MEGA', 'CARTON' o 'CHAROLA' (paquetes grandes tipo Mega Corona 12+)
-          //    - envaseModalidad === 'carton'
-          //    - unidadesPorCarton definido y qty cumple o supera ese número
-          //    - qty >= 12 (paquete grande por volumen)
-          const nombreEsCarton = nombre.includes('MEGA')
-            || nombre.includes('CARTON')
-            || nombre.includes('CHAROLA')
-            || nombre.includes('PAQUETE')
-            || nombre.includes('PACK');
-          const envaseEsCarton = item.envaseModalidad === 'carton';
-          const qtyEsCarton = unidadesPorCarton > 0 && qty >= unidadesPorCarton;
-          const volumenEsCarton = qty >= 12; // paquetes de 12+ se consideran cartón/charola
-          const esCarton = nombreEsCarton || envaseEsCarton || qtyEsCarton || volumenEsCarton;
-
-          // Monto del ítem: usar SOLO cargoFrio (costo del frío por empaque, ya es el total)
-          // NO multiplicar por qty para evitar inflar el monto
-          const montoItem = cargoFrio > 0 ? cargoFrio : (subtotal > 0 ? subtotal : 0);
-
-          console.log('EmailJS >> ítem frío clasificado:', {
-            nombre, qty, precio, cargoFrio, subtotal,
-            envaseModalidad: item.envaseModalidad,
-            unidadesPorCarton,
-            nombreEsCarton, envaseEsCarton, qtyEsCarton,
-            esCarton, montoItem
-          });
-
-          // Separación estricta: un producto frío es O pieza suelta O cartón, nunca ambos
-          if (esCarton) {
-            cartonesFriosCant += qty;
-            cartonesFriosMonto += montoItem;
-          } else {
-            piezasFriasCant += qty;
-            piezasFriasMonto += montoItem;
-          }
-        });
-      });
+      const resumenFrio = this.getColdItemsSummary(corte.transacciones);
 
       console.log('EmailJS >> totales fríos:', {
-        piezasFriasCant, piezasFriasMonto,
-        cartonesFriosCant, cartonesFriosMonto
+        piezasFriasCant: resumenFrio.piezasCant,
+        piezasFriasMonto: resumenFrio.piezasMonto,
+        cartonesFriosCant: resumenFrio.cartonesCant,
+        cartonesFriosMonto: resumenFrio.cartonesMonto
       });
 
       // ---------- Cálculo de promociones ----------
@@ -229,10 +206,10 @@ const EmailService = {
         ganancias_libres: gananciasLibres,
 
         // Desglose específico (fríos y promociones)
-        piezas_frias_cant: piezasFriasCant,
-        piezas_frias_monto: this.round2(piezasFriasMonto),
-        cartones_frios_cant: cartonesFriosCant,
-        cartones_frios_monto: this.round2(cartonesFriosMonto),
+        piezas_frias_cant: resumenFrio.piezasCant,
+        piezas_frias_monto: resumenFrio.piezasMonto,
+        cartones_frios_cant: resumenFrio.cartonesCant,
+        cartones_frios_monto: resumenFrio.cartonesMonto,
         promociones_cant: promocionesResumen.cantidad,
         promociones_monto: promocionesResumen.monto,
 
@@ -253,8 +230,8 @@ const EmailService = {
 
       // Depuración específica del desglose para confirmar valores no nulos
       console.log("Desglose:", {
-        piezas_frias_monto: this.round2(piezasFriasMonto),
-        cartones_frios_monto: this.round2(cartonesFriosMonto),
+        piezas_frias_monto: resumenFrio.piezasMonto,
+        cartones_frios_monto: resumenFrio.cartonesMonto,
         promociones_monto: promocionesResumen.monto
       });
 

@@ -1067,21 +1067,18 @@ const ReportsManager = {
     const filter = this.cutsModalFilter || 'dia';
     const cuts = this.getCutsByPeriod(filter);
     const filtered = this.getHistoricalSales(filter);
-    let piezasFrias = 0, cartonesFrios = 0, promocionesVolumen = 0;
+    let promocionesVolumen = 0;
     filtered.forEach(s => {
       (s.items || []).forEach(item => {
         const promo = item.promoVolumenAplicada;
         if (promo && promo.precio > 0) {
           promocionesVolumen += promo.precio;
         }
-        const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
-        if (!cold) return;
-        const cargoFrio = Number(item.cargoFrio || 0) || 0;
-        const isCarton = Boolean(item.isCarton || item.carton || item.charola);
-        if (isCarton) cartonesFrios += cargoFrio;
-        else piezasFrias += cargoFrio > 0 ? cargoFrio : 0;
       });
     });
+    const resumenFrio = EmailService.getColdItemsSummary(filtered);
+    const piezasFrias = resumenFrio.piezasMonto;
+    const cartonesFrios = resumenFrio.cartonesMonto;
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = cuts.reduce((sum, c) => sum + (Number(c.cantidadVentas) || 0), 0);
     const groups = this.buildCutsGroups(filter);
@@ -1162,25 +1159,22 @@ const ReportsManager = {
         let productLabel = '';
         let tipoLinea = '';
 
-        const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
-        const qty = Number(item.quantity || item.cantidad || 0) || 0;
-        const cargoFrio = Number(item.cargoFrio || 0) || 0;
-        const isCarton = Boolean(item.isCarton || item.carton || item.charola);
+        const coldBreakdown = EmailService.getColdItemBreakdown(item);
         const promo = item.promoVolumenAplicada;
 
         if (category === 'piezas-frias') {
-          if (cold && !isCarton && cargoFrio > 0) {
-            amount = cargoFrio;
+          if (coldBreakdown.piezasMonto > 0) {
+            amount = coldBreakdown.piezasMonto;
             show = true;
             productLabel = item.nombre || 'Producto';
-            tipoLinea = cold ? 'Frío (pieza suelta)' : 'Frío';
+            tipoLinea = 'Frío (' + coldBreakdown.piezasCant + ' pzas)';
           }
         } else if (category === 'cartones-frios') {
-          if (cold && isCarton && cargoFrio > 0) {
-            amount = cargoFrio;
+          if (coldBreakdown.cartonesMonto > 0) {
+            amount = coldBreakdown.cartonesMonto;
             show = true;
             productLabel = item.nombre || 'Producto';
-            tipoLinea = 'Frío (cartón ' + qty + ' pzas)';
+            tipoLinea = 'Frío (cartón ' + coldBreakdown.cartonesCant + ' pzas)';
           }
         } else if (category === 'promociones') {
           if (promo && promo.precio > 0) {
@@ -1303,29 +1297,11 @@ const ReportsManager = {
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = turnSales.reduce((sum, s) => sum + (s.total || 0), 0);
     const transacciones = turnSales.length;
-    let promocionesVolumen = 0;
-    turnSales.forEach(s => {
-      (s.items || []).forEach(item => {
-        const promo = item.promoVolumenAplicada;
-        if (promo && promo.precio > 0) {
-          promocionesVolumen += promo.precio;
-        }
-      });
-    });
+    const promocionesVolumen = EmailService.getVolumePromotionsSummary(turnSales).monto;
 
-    let piezasFrias = 0;
-    let cartonesFrios = 0;
-    turnSales.forEach(s => {
-      (s.items || []).forEach(item => {
-        const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
-        if (!cold) return;
-        const qty = Number(item.quantity || item.cantidad || 0) || 0;
-        const cargoFrio = Number(item.cargoFrio || 0) || 0;
-        const isCarton = Boolean(item.isCarton || item.carton || item.charola);
-        if (isCarton) cartonesFrios += cargoFrio;
-        else piezasFrias += cargoFrio > 0 ? cargoFrio : 0;
-      });
-    });
+    const resumenFrio = EmailService.getColdItemsSummary(turnSales);
+    const piezasFrias = resumenFrio.piezasMonto;
+    const cartonesFrios = resumenFrio.cartonesMonto;
 
     // Datos históricos del periodo (excluye el turno activo): gráficas y acordeones.
     const historical = this.getHistoricalSales();

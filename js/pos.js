@@ -109,6 +109,8 @@ const SalesLog = {
       envaseFaltante: Boolean(item.envaseFaltante),
       envaseModalidad: item.envaseModalidad || 'pieza',
       envaseCargo: Number(item.envaseCargo || 0),
+      isCarton: Boolean(item.isCarton || item.carton || item.charola),
+      unidadesPorCarton: Number(item.unidadesPorCarton || 0),
       promoVolumenAplicada: item.promoVolumenAplicada ? {
         cantidad: Number(item.promoVolumenAplicada.cantidad) || 0,
         precio: Number(item.promoVolumenAplicada.precio) || 0
@@ -160,6 +162,8 @@ const SalesLog = {
           envaseFaltante: Boolean(item.envaseFaltante),
           envaseModalidad: item.envaseModalidad || 'pieza',
           envaseCargo: Number(item.envaseCargo || 0),
+          isCarton: Boolean(item.isCarton || item.carton || item.charola),
+          unidadesPorCarton: Number(item.unidadesPorCarton || 0),
           promoVolumenAplicada: item.promoVolumenAplicada ? {
             cantidad: Number(item.promoVolumenAplicada.cantidad) || 0,
             precio: Number(item.promoVolumenAplicada.precio) || 0
@@ -1951,7 +1955,12 @@ if (other) {
         const isCold = this.normalizeColdFlag(item.piezaFria);
         const qty = Number(item.quantity) || 0;
         const envaseCargo = this.getItemEnvaseCharge(item);
-        const promoInfo = this.getVolumePromoInfo(item);
+        const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
+        const precioCarton = Number(item.precioCarton || 0);
+        const esCartonCompleto = unidadesPorCarton > 0
+          && precioCarton > 0
+          && qty >= unidadesPorCarton;
+        const promoInfo = esCartonCompleto ? null : this.getVolumePromoInfo(item);
         return {
           ...item,
           quantity: qty,
@@ -2321,43 +2330,6 @@ if (other) {
     return { efectivo, tarjeta, transferencia };
   },
 
-  // Promociones aplicadas durante el turno: descuento total y detalle por promoción
-  getTurnPromotions(ventas) {
-    let total = 0;
-    const porPromo = new Map();
-
-    (ventas || []).forEach(sale => {
-      if (!sale) return;
-      const descuento = Number(sale.promoDiscount) || 0;
-      if (descuento <= 0) return;
-
-      total += descuento;
-
-      const aplicadas = Array.isArray(sale.promosAplicados) ? sale.promosAplicados : [];
-      if (!aplicadas.length) {
-        const general = porPromo.get('Promociones') || { nombre: 'Promociones', veces: 0, descuento: 0 };
-        general.veces += 1;
-        general.descuento = this.round2(general.descuento + descuento);
-        porPromo.set('Promociones', general);
-        return;
-      }
-
-      aplicadas.forEach(app => {
-        const nombre = (app && app.nombre) || 'Promoción';
-        const monto = (Number(app && app.discount) || 0) || descuento;
-        const actual = porPromo.get(nombre) || { nombre: nombre, veces: 0, descuento: 0 };
-        actual.veces += 1;
-        actual.descuento = this.round2(actual.descuento + monto);
-        porPromo.set(nombre, actual);
-      });
-    });
-
-    return {
-      total: this.round2(total),
-      aplicadas: Array.from(porPromo.values()).sort((a, b) => b.descuento - a.descuento)
-    };
-  },
-
   // Reparte el importe cobrado con tarjeta por forma de cobro (NFC, QR o terminal)
   sumCardChannels(sales) {
     const channels = { nfc: 0, qr: 0, terminal: 0 };
@@ -2394,7 +2366,12 @@ if (other) {
     const pagos = this.sumPayments(ventas);
     const fondoInicial = Number(session.cashOpening) || 0;
     const totalVentas = ventas.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-    const promociones = this.getTurnPromotions(ventas);
+    const promocionesResumen = EmailService.getVolumePromotionsSummary(ventas);
+    const promocionesAplicadas = promocionesResumen.cantidad > 0 ? [{
+      nombre: 'Promociones',
+      veces: promocionesResumen.cantidad,
+      descuento: promocionesResumen.monto
+    }] : [];
     const canales = this.sumCardChannels(ventas);
     const totalEsperado = this.round2(fondoInicial + pagos.efectivo);
 
@@ -2405,8 +2382,9 @@ if (other) {
       ventasTarjeta: this.round2(pagos.tarjeta),
       ventasTransferencia: this.round2(pagos.transferencia),
       ventasPorCanal: canales,
-      descuentosPromociones: promociones.total,
-      promocionesAplicadas: promociones.aplicadas,
+      descuentosPromociones: promocionesResumen.monto,
+      promocionesResumen: promocionesResumen,
+      promocionesAplicadas: promocionesAplicadas,
       totalVentas: this.round2(totalVentas),
       cantidadVentas: ventas.length,
       totalEsperado: totalEsperado,
@@ -2479,10 +2457,9 @@ if (other) {
                 <div class="payment-summary-row"><span>Cobro con código QR</span><span id="pos-cut-qr">$0.00</span></div>
                 <div class="payment-summary-row"><span>Cobro en terminal física</span><span id="pos-cut-terminal">$0.00</span></div>
               </div>
-              <div class="payment-summary-row"><span>Promociones (descuento)</span><span id="pos-cut-promociones">$0.00</span></div>
+              <div class="payment-summary-row"><span>Promociones</span><span id="pos-cut-promociones">$0.00</span></div>
               <div class="payment-summary-row"><span>Piezas frías</span><span id="pos-cut-piezas-frias">$0.00</span></div>
               <div class="payment-summary-row"><span>Cartones fríos</span><span id="pos-cut-cartones-frios">$0.00</span></div>
-              <div class="payment-summary-row"><span>Promociones aplicadas</span><span id="pos-cut-promos-aplicadas">$0.00</span></div>
               <div class="payment-summary-row"><span>Total de ventas del turno</span><span id="pos-cut-ventas">$0.00</span></div>
               <div class="payment-summary-row is-change"><span>Total en caja</span><span id="pos-cut-total-caja">$0.00</span></div>
             </div>
@@ -2660,46 +2637,15 @@ if (other) {
     if (channelsBox) {
       channelsBox.hidden = !(canales.qr > 0 || canales.terminal > 0);
     }
-    setText('pos-cut-promociones', mPromosMonto > 0
-      ? currency + mPromosMonto.toFixed(2)
-      : currency + '0.00');
-    setText('pos-cut-ventas', currency + summary.totalVentas.toFixed(2));
 
-    // Desglose de frío y promociones para el modal (desde ventas del turno)
-    let mPiezasFriasCant = 0, mPiezasFriasMonto = 0;
-    let mCartonesFriosCant = 0, mCartonesFriosMonto = 0;
-    let mPromosCant = 0, mPromosMonto = 0;
-    (summary.ventas || []).forEach(venta => {
-      (venta.items || []).forEach(item => {
-        if (!item) return;
-        const cargoFrio = Number(item.cargoFrio || 0);
-        const qty = Number(item.cantidad || item.quantity || 0);
-        if (cargoFrio <= 0) return;
-        const montoItem = cargoFrio > 0 ? cargoFrio : 0;
-        const nombre = String(item.nombre || item.productName || '').toUpperCase();
-        const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
-        const nombreEsCarton = nombre.includes('MEGA') || nombre.includes('CARTON') || nombre.includes('CHAROLA') || nombre.includes('PAQUETE') || nombre.includes('PACK');
-        const envaseEsCarton = item.envaseModalidad === 'carton';
-        const qtyEsCarton = unidadesPorCarton > 0 && qty >= unidadesPorCarton;
-        const volumenEsCarton = qty >= 12;
-        const esCarton = nombreEsCarton || envaseEsCarton || qtyEsCarton || volumenEsCarton;
-        if (esCarton) {
-          mCartonesFriosCant += qty;
-          mCartonesFriosMonto += montoItem;
-        } else {
-          mPiezasFriasCant += qty;
-          mPiezasFriasMonto += montoItem;
-        }
-        const promo = item.promoVolumenAplicada;
-        if (promo && Number(promo.precio || 0) > 0) {
-          mPromosCant += 1;
-          mPromosMonto += Number(promo.precio);
-        }
-      });
-    });
-    setText('pos-cut-piezas-frias', currency + mPiezasFriasMonto.toFixed(2));
-    setText('pos-cut-cartones-frios', currency + mCartonesFriosMonto.toFixed(2));
-    setText('pos-cut-promos-aplicadas', currency + mPromosMonto.toFixed(2));
+    const resumenFrio = EmailService.getColdItemsSummary(summary.ventas);
+
+    const promocionesResumen = EmailService.getVolumePromotionsSummary(summary.ventas);
+    const montoPromociones = promocionesResumen.monto;
+    setText('pos-cut-promociones', montoPromociones > 0 ? currency + montoPromociones.toFixed(2) : currency + '0.00');
+    setText('pos-cut-piezas-frias', currency + resumenFrio.piezasMonto.toFixed(2));
+    setText('pos-cut-cartones-frios', currency + resumenFrio.cartonesMonto.toFixed(2));
+    setText('pos-cut-ventas', currency + summary.totalVentas.toFixed(2));
     setText('pos-cut-expected', currency + summary.totalEnCaja.toFixed(2));
     setText('pos-cut-total-caja', currency + summary.totalEnCaja.toFixed(2));
 
@@ -2866,39 +2812,8 @@ if (other) {
     const tickets = this.getTurnTickets();
 
     // Desglose de frío y promociones desde las transacciones del turno
-    let piezasFriasCant = 0, piezasFriasMonto = 0;
-    let cartonesFriosCant = 0, cartonesFriosMonto = 0;
-    let promocionesCant = 0, promocionesPiezas = 0, promocionesMonto = 0;
-    (tickets || []).forEach(ticket => {
-      (ticket.items || []).forEach(item => {
-        if (!item) return;
-        const nombre = String(item.nombre || item.productName || '').toUpperCase().trim();
-        const cargoFrio = Number(item.cargoFrio || 0);
-        const qty = Number(item.cantidad || item.quantity || 0);
-        const subtotal = Number(item.subtotal || 0);
-        const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
-        if (cargoFrio <= 0) return;
-        const montoItem = cargoFrio > 0 ? cargoFrio : (subtotal > 0 ? subtotal : 0);
-        const nombreEsCarton = nombre.includes('MEGA') || nombre.includes('CARTON') || nombre.includes('CHAROLA') || nombre.includes('PAQUETE') || nombre.includes('PACK');
-        const envaseEsCarton = item.envaseModalidad === 'carton';
-        const qtyEsCarton = unidadesPorCarton > 0 && qty >= unidadesPorCarton;
-        const volumenEsCarton = qty >= 12;
-        const esCarton = nombreEsCarton || envaseEsCarton || qtyEsCarton || volumenEsCarton;
-        if (esCarton) {
-          cartonesFriosCant += qty;
-          cartonesFriosMonto += montoItem;
-        } else {
-          piezasFriasCant += qty;
-          piezasFriasMonto += montoItem;
-        }
-        const promo = item.promoVolumenAplicada;
-        if (promo && Number(promo.precio || 0) > 0) {
-          promocionesCant += 1;
-          promocionesPiezas += Number(promo.cantidad || 1);
-          promocionesMonto += Number(promo.precio);
-        }
-      });
-    });
+    const resumenFrio = EmailService.getColdItemsSummary(tickets);
+    const promocionesResumen = EmailService.getVolumePromotionsSummary(tickets);
 
     return {
       tipo: 'cierre',
@@ -2922,8 +2837,12 @@ if (other) {
         qr: summary.ventasPorCanal.qr,
         terminal: summary.ventasPorCanal.terminal
       },
-      descuentosPromociones: summary.descuentosPromociones,
-      promocionesAplicadas: summary.promocionesAplicadas,
+      descuentosPromociones: promocionesResumen.monto,
+      promocionesAplicadas: promocionesResumen.cantidad > 0 ? [{
+        nombre: 'Promociones',
+        veces: promocionesResumen.cantidad,
+        descuento: promocionesResumen.monto
+      }] : [],
       totalVentas: summary.totalVentas,
       totalGeneral: summary.totalVentas,
       cantidadVentas: summary.cantidadVentas,
@@ -2946,14 +2865,14 @@ if (other) {
           qr: summary.ventasPorCanal.qr,
           terminal: summary.ventasPorCanal.terminal
         },
-        promociones: summary.descuentosPromociones,
-        promocionesCant: promocionesCant,
-        promocionesPiezas: promocionesPiezas,
-        promocionesMonto: this.round2(promocionesMonto),
-        piezasFriasCant: piezasFriasCant,
-        piezasFriasMonto: this.round2(piezasFriasMonto),
-        cartonesFriosCant: cartonesFriosCant,
-        cartonesFriosMonto: this.round2(cartonesFriosMonto),
+        promociones: promocionesResumen.monto,
+        promocionesCant: promocionesResumen.cantidad,
+        promocionesPiezas: promocionesResumen.piezas,
+        promocionesMonto: promocionesResumen.monto,
+        piezasFriasCant: resumenFrio.piezasCant,
+        piezasFriasMonto: resumenFrio.piezasMonto,
+        cartonesFriosCant: resumenFrio.cartonesCant,
+        cartonesFriosMonto: resumenFrio.cartonesMonto,
         totalVentas: summary.totalVentas,
         totalEnCaja: esperado,
         efectivoContado: this.round2(counted),
