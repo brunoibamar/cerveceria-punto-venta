@@ -388,18 +388,30 @@ const POS = {
         this.cart = [];
         return;
       }
-      this.cart = parsed.map(item => ({
-        productId: item.productId || item.id || null,
-        nombre: item.nombre || '',
-        marca: item.marca || '',
-        precio: Number(item.precio) || 0,
-        quantity: Number(item.quantity) || 0,
-        piezaFria: this.normalizeColdFlag(item.piezaFria),
-        envaseFaltante: this.normalizeColdFlag(item.envaseFaltante),
-        envaseModalidad: item.envaseModalidad || 'pieza',
-        envaseCargoPieza: Number(item.envaseCargoPieza || 0),
-        envaseCargoCarton: Number(item.envaseCargoCarton || 0)
-      })).filter(item => item.quantity > 0);
+      this.cart = parsed.map(item => {
+        const cantidad = Number(item.quantity) || 0;
+        const unidadesPorCarton = Number(item.unidadesPorCarton || 0);
+        const precioCarton = Number(item.precioCarton || 0);
+        const isCarton = unidadesPorCarton > 0 && precioCarton > 0 && cantidad >= unidadesPorCarton;
+        const chargeRate = this.getColdChargeRate();
+        const isCold = this.normalizeColdFlag(item.piezaFria);
+        return {
+          productId: item.productId || item.id || null,
+          nombre: item.nombre || '',
+          marca: item.marca || '',
+          precio: Number(item.precio) || 0,
+          precioCarton: precioCarton,
+          unidadesPorCarton: unidadesPorCarton,
+          quantity: cantidad,
+          isCarton: isCarton,
+          piezaFria: isCold,
+          cargoFrio: isCold ? chargeRate * cantidad : Number(item.cargoFrio || 0),
+          envaseFaltante: this.normalizeColdFlag(item.envaseFaltante),
+          envaseModalidad: item.envaseModalidad || 'pieza',
+          envaseCargoPieza: Number(item.envaseCargoPieza || 0),
+          envaseCargoCarton: Number(item.envaseCargoCarton || 0)
+        };
+      }).filter(item => item.quantity > 0);
     } catch (e) {
       console.error('[POS] No se pudo cargar el carrito guardado:', e);
       this.cart = [];
