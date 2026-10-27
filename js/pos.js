@@ -1008,12 +1008,12 @@ if (other) {
         const envaseUnitLabel = item.envaseModalidad === 'carton'
           ? Number(item.envaseCargoCarton || 0)
           : Number(item.envaseCargoPieza || 0);
+        const hasEnvaseCargo = envaseUnitLabel > 0;
 
-        let envaseHtml = '';
-        if (envaseChecked) {
+        if (hasEnvaseCargo) {
           envaseHtml = `
             <label class="cart-envase" style="display:inline-flex;align-items:center;gap:6px;">
-              <input type="checkbox" class="cart-envase-checkbox" checked
+              <input type="checkbox" class="cart-envase-checkbox" ${envaseChecked ? 'checked' : ''}
                 onchange="POS.toggleEnvaseFaltante('${idArg}', ${coldArg})"
                 title="Marcar si el cliente no devuelve el envase" />
               <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseUnitLabel.toFixed(2)})</span>
