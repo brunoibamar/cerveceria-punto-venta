@@ -161,30 +161,32 @@ const EmailService = {
         cantidadVentas: corte.cantidadVentas
       });
 
-      // ---------- Lectura directa de promociones del turno ----------
-      // Lee el valor consolidado global que la interfaz visual ya muestra,
-      // sin recalcular ni iterar el inventario.
-      const descuentosPromocionesRaw = Number(corte.descuentosPromociones || 0);
-
+      // ---------- Cálculo de promociones desde transacciones del corte ----------
+      // Fuente idéntica a la vista de Reportes (js/reports.js): suma de
+      // item.promoVolumenAplicada.precio sobre cada ítem de cada transacción del turno.
       let promocionesCant = 0;
       let promocionesMonto = 0;
       let promocionesPiezas = 0;
 
-      // Monto: valor directo del resumen global del turno (ej. $150.00)
-      if (descuentosPromocionesRaw > 0) {
-        promocionesMonto = this.round2(descuentosPromocionesRaw);
-      }
-
-      // Cantidad: suma de aplicaciones desde promocionesAplicadas del turno
-      const promosArray = Array.isArray(corte.promocionesAplicadas)
-        ? corte.promocionesAplicadas
-        : (Array.isArray(corte.promociones) ? corte.promociones : []);
-      promosArray.forEach(promo => {
-        promocionesCant += Number(promo.veces || 1);
+      (corte.transacciones || []).forEach(ticket => {
+        (ticket.items || []).forEach(item => {
+          if (!item) return;
+          const promo = item.promoVolumenAplicada;
+          if (promo && Number(promo.precio || 0) > 0) {
+            promocionesMonto += Number(promo.precio);
+            promocionesCant += 1;
+            promocionesPiezas += Number(promo.cantidad || item.cantidad || 1);
+          }
+        });
       });
 
-      // Si hay monto pero no hay arreglo de aplicaciones, contar como 1 aplicación
-      if (promocionesMonto > 0 && promocionesCant === 0) {
+      promocionesMonto = this.round2(promocionesMonto);
+
+      // Fallback: si el corte tiene descuentosPromociones consolidado pero no hay
+      // desglose por ítems, usar el valor consolidado del turno
+      const descuentosPromocionesRaw = Number(corte.descuentosPromociones || 0);
+      if (promocionesMonto === 0 && descuentosPromocionesRaw > 0) {
+        promocionesMonto = this.round2(descuentosPromocionesRaw);
         promocionesCant = 1;
       }
 
