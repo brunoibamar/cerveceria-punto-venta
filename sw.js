@@ -19,7 +19,6 @@ const PRECACHE_ASSETS = [
   './js/sales.js',
   './js/pos.js',
   './js/inventory.js',
-  './js/promos.js',
   './js/reports.js',
   './js/settings.js',
   './db/database.js',

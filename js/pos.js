@@ -925,17 +925,7 @@ if (other) {
 
   // Evalúa las promociones activas contra el carrito: combos completos, descuentos y faltantes
   getPromoEvaluation() {
-    const fallback = { subtotal: this.getSubtotal(), discount: 0, applications: [], pending: [] };
-    if (typeof PromosManager === 'undefined' || !PromosManager.evaluatePromos) return fallback;
-
-     try {
-       const evaluation = PromosManager.evaluatePromos(this.cart);
-       if (!evaluation || typeof evaluation.discount !== 'number') return fallback;
-       return evaluation;
-     } catch (error) {
-      console.error('[POS] Error al evaluar las promociones:', error);
-      return fallback;
-    }
+    return { subtotal: this.getSubtotal(), discount: 0, applications: [], pending: [] };
   },
 
   getPromoDiscount() {
