@@ -16,6 +16,7 @@ const ReportsManager = {
   chartLibRetryAt: 0,
   panelToken: 0,
   currencySymbol: '',
+  detailModalOpen: null,
   monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
   dayNames: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
 
@@ -141,13 +142,25 @@ const ReportsManager = {
       const cutsCard = target.closest('.metric-card-clickable');
       if (cutsCard) {
         event.preventDefault();
-        this.cutsModalOpen = true;
+        if (cutsCard.dataset.openCutsModal === 'true') {
+          this.cutsModalOpen = true;
+        } else if (cutsCard.dataset.detailModal) {
+          this.detailModalOpen = cutsCard.dataset.detailModal;
+        }
         this.render();
         return;
       }
 
-      const modalClose = target.closest('[data-cuts-modal-close="true"]');
-      if (modalClose) {
+      const detailModalClose = target.closest('[data-detail-modal-close="true"]');
+      if (detailModalClose) {
+        event.preventDefault();
+        this.detailModalOpen = null;
+        this.render();
+        return;
+      }
+
+      const cutsModalClose = target.closest('[data-cuts-modal-close="true"]');
+      if (cutsModalClose) {
         event.preventDefault();
         this.cutsModalOpen = false;
         this.render();
@@ -1124,6 +1137,96 @@ const ReportsManager = {
           <div class="cuts-modal-body">
             ${body}
           </div>
+      </div>
+    `;
+  },
+
+  // Construye el contenido del modal de detalle para una sección específica
+  renderDetailModal(category) {
+    const labels = {
+      'piezas-frias': { title: 'Detalle - Piezas Frías ($)', icon: '❄️' },
+      'cartones-frios': { title: 'Detalle - Cartones Fríos ($)', icon: '📦' },
+      'promociones': { title: 'Detalle - Promociones ($)', icon: '🎁' }
+    };
+    const cfg = labels[category] || labels['piezas-frias'];
+
+    const sales = this.getTurnSalesArray();
+    const rows = [];
+    let total = 0;
+
+    sales.forEach(s => {
+      const items = Array.isArray(s.items) ? s.items : [];
+      items.forEach(item => {
+        let amount = 0;
+        let show = false;
+        let productLabel = '';
+        let tipoLinea = '';
+
+        const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
+        const qty = Number(item.quantity || item.cantidad || 0) || 0;
+        const cargoFrio = Number(item.cargoFrio || 0) || 0;
+        const isCarton = Boolean(item.isCarton || item.carton || item.charola);
+        const promo = item.promoVolumenAplicada;
+
+        if (category === 'piezas-frias') {
+          if (cold && !isCarton && cargoFrio > 0) {
+            amount = cargoFrio;
+            show = true;
+            productLabel = item.nombre || 'Producto';
+            tipoLinea = cold ? 'Frío (pieza suelta)' : 'Frío';
+          }
+        } else if (category === 'cartones-frios') {
+          if (cold && isCarton && cargoFrio > 0) {
+            amount = cargoFrio;
+            show = true;
+            productLabel = item.nombre || 'Producto';
+            tipoLinea = 'Frío (cartón ' + qty + ' pzas)';
+          }
+        } else if (category === 'promociones') {
+          if (promo && promo.precio > 0) {
+            amount = promo.precio;
+            show = true;
+            productLabel = item.nombre || 'Producto';
+            tipoLinea = 'Promo ' + promo.cantidad + 'x$' + promo.precio;
+          }
+        }
+
+        if (show && amount > 0) {
+          total += amount;
+          const hora = this.formatDateTime(s.fecha);
+          rows.push(`<tr>
+            <td class="num">${hora}</td>
+            <td>${this.escapeHtml(productLabel)}</td>
+            <td>${this.escapeHtml(tipoLinea)}</td>
+            <td class="num">${this.formatCurrency(amount)}</td>
+          </tr>`);
+        }
+      });
+    });
+
+    if (!rows.length) {
+      return `
+        <div class="reports-modal reports-detail-modal" data-detail-modal-close="true">
+          <div class="reports-modal-content">
+            <button type="button" class="reports-modal-close" data-detail-modal-close="true" aria-label="Cerrar">✕</button>
+            <h3>${cfg.icon} ${cfg.title}</h3>
+            <p class="reports-empty">No hay transacciones en esta categoría para el periodo actual.</p>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="reports-modal reports-detail-modal" data-detail-modal-close="true">
+        <div class="reports-modal-content">
+          <button type="button" class="reports-modal-close" data-detail-modal-close="true" aria-label="Cerrar">✕</button>
+          <h3>${cfg.icon} ${cfg.title}</h3>
+          <div class="reports-modal-total">Total ${category === 'piezas-frias' ? 'piezas frías' : category === 'cartones-frios' ? 'cartones fríos' : 'promociones'}: <strong>${this.formatCurrency(total)}</strong></div>
+          <div class="reports-table-wrap">
+            <table class="reports-table">
+              <thead><tr><th>Hora</th><th>Producto</th><th>Tipo</th><th class="num">Monto ($)</th></tr></thead>
+              <tbody>${rows.join('')}</tbody>
+            </table>
+          </div>
         </div>
       </div>`;
   },
@@ -1246,23 +1349,26 @@ const ReportsManager = {
             <div class="metric-sub">Tarjeta y transferencia</div>
           </div>
            <div class="metric-card metric-card-clickable" data-open-cuts-modal="true">
-             <div class="metric-row"><span class="metric-label">Cortes de Caja</span><span class="metric-icon">🔒</span></div>
-             <div class="metric-value">${this.formatCurrency(totalCuts)}</div>
-             <div class="metric-sub">${cuts.length} cortes</div>
-           </div>
-
-          <div class="metric-card">
-            <div class="metric-row"><span class="metric-label">Ganancias de Promociones</span></div>
-            <div class="metric-value">${this.formatCurrency(promocionesVolumen)}</div>
-            <div class="metric-sub">Descuentos aplicados</div>
-          </div>
+              <div class="metric-row"><span class="metric-label">Cortes de Caja</span><span class="metric-icon">🔒</span></div>
+              <div class="metric-value">${this.formatCurrency(totalCuts)}</div>
+              <div class="metric-sub">${cuts.length} cortes</div>
+            </div>
         </div>
         </div>
 
         <div class="reports-metrics-grid">
-          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Piezas frías ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(piezasFrias)}</div></div>
-          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Cartones fríos ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(cartonesFrios)}</div></div>
-          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promocionesVolumen)}</div></div>
+          <div class="metric-card metric-card-clickable" data-detail-modal="piezas-frias">
+            <div style="font-size:10px;opacity:.8;">Piezas frías ($)</div>
+            <div style="font-size:13px;font-weight:700;">${this.formatCurrency(piezasFrias)}</div>
+          </div>
+          <div class="metric-card metric-card-clickable" data-detail-modal="cartones-frios">
+            <div style="font-size:10px;opacity:.8;">Cartones fríos ($)</div>
+            <div style="font-size:13px;font-weight:700;">${this.formatCurrency(cartonesFrios)}</div>
+          </div>
+          <div class="metric-card metric-card-clickable" data-detail-modal="promociones">
+            <div style="font-size:10px;opacity:.8;">Promociones ($)</div>
+            <div style="font-size:13px;font-weight:700;">${this.formatCurrency(promocionesVolumen)}</div>
+          </div>
         </div>
 
         <div class="reports-period">
@@ -1277,7 +1383,8 @@ const ReportsManager = {
         </div>
        </div>
        ${this.cutsModalOpen ? this.renderCutsModal() : ''}
-     `;
+      ${this.detailModalOpen ? this.renderDetailModal(this.detailModalOpen) : ''}
+    `;
 
 
     container.innerHTML = html;
