@@ -2,15 +2,14 @@
 // El cierre del turno (y por tanto la salida) se hace unicamente desde "Corte de Caja".
 
 const App = {
-  views: ['pos', 'inventory', 'promos', 'reports', 'settings'],
+  views: ['pos', 'inventory', 'reports', 'settings'],
   currentView: null,
   eventsBound: false,
 
   // Contenedor de tarjetas que recibe la entrada escalonada en cada vista
-  staggerTargets: {
+    staggerTargets: {
     pos: '.product-grid',
     inventory: '.inventory-grid',
-    promos: '.promos-grid',
     reports: '.reports-metrics-grid',
     settings: '.settings-grid'
   },
@@ -376,21 +375,6 @@ const App = {
             }
           } else if (!invContainer) {
             console.error('[App] Contenedor #inventory-container no existe tras render');
-          }
-          break;
-        }
-
-        case 'promos': {
-          main.innerHTML = `<div id="promos-list"></div>`;
-          const promosContainer = document.getElementById('promos-list');
-          if (promosContainer && typeof PromosManager !== 'undefined' && PromosManager.init) {
-            try {
-              PromosManager.init('promos-list');
-            } catch (promErr) {
-              console.error('[App] Error inicializando PromosManager:', promErr);
-            }
-          } else if (!promosContainer) {
-            console.error('[App] Contenedor #promos-list no existe tras render');
           }
           break;
         }
