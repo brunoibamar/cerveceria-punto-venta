@@ -853,6 +853,25 @@ if (other) {
     }, 0);
   },
 
+  // Detecta qué promoción por volumen (paquete) aplica a un ítem del carrito.
+  // Retorna { cantidad, precio } si hay coincidencia EXACTA, o null si no aplica.
+  // Es un método puro: no modifica el ítem ni tiene efectos secundarios.
+  getVolumePromoInfo(item) {
+    const qty = Number(item.quantity) || 0;
+    const product = (typeof Database !== 'undefined' && Database.getProducts)
+      ? Database.getProducts().find(p => p.id === item.productId)
+      : null;
+    const promos = (product && product.promocionesVolumen) || [];
+    for (const promo of promos) {
+      const promoQty = Number(promo.cantidad) || 0;
+      const promoPrice = Number(promo.precio) || 0;
+      if (promoQty > 0 && promoPrice > 0 && qty === promoQty) {
+        return { cantidad: promoQty, precio: promoPrice };
+      }
+    }
+    return null;
+  },
+
   // Subtotal de producto de una línea del carrito: aplica jerarquía de precios:
   // 1. Cartón/Charola Completo (mayoreo cerrado) si qty >= unidadesPorCarton.
   // 2. Promoción por Volumen (paquete) si qty coincide EXACTAMENTE con cantidad configurada.
@@ -876,16 +895,9 @@ if (other) {
 
     // 2. Promociones por Volumen: coincidencia EXACTA con cantidad configurada.
     //    Se cobra directamente el precio total del paquete configurado.
-    const product = (typeof Database !== 'undefined' && Database.getProducts)
-      ? Database.getProducts().find(p => p.id === item.productId)
-      : null;
-    const promos = (product && product.promocionesVolumen) || [];
-    for (const promo of promos) {
-      const promoQty = Number(promo.cantidad) || 0;
-      const promoPrice = Number(promo.precio) || 0;
-      if (promoQty > 0 && promoPrice > 0 && qty === promoQty) {
-        return promoPrice;
-      }
+    const promoInfo = this.getVolumePromoInfo(item);
+    if (promoInfo) {
+      return promoInfo.precio;
     }
 
     // 3. Precio unitario normal (sin promoción ni cartón)
@@ -1915,6 +1927,7 @@ if (other) {
         const envaseCargo = item.envaseModalidad === 'carton'
           ? Number(item.envaseCargoCarton || 0)
           : Number(item.envaseCargoPieza || 0);
+        const promoInfo = this.getVolumePromoInfo(item);
         return {
           ...item,
           quantity: qty,
@@ -1922,7 +1935,8 @@ if (other) {
           envaseFaltante: this.normalizeColdFlag(item.envaseFaltante),
           envaseModalidad: item.envaseModalidad || 'pieza',
           envaseCargo: this.normalizeColdFlag(item.envaseFaltante) ? envaseCargo : 0,
-          cargoFrio: isCold ? chargeRate * qty : 0
+          cargoFrio: isCold ? chargeRate * qty : 0,
+          promoVolumenAplicada: promoInfo ? { cantidad: promoInfo.cantidad, precio: promoInfo.precio } : null
         };
       });
 

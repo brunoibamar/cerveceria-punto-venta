@@ -1054,13 +1054,15 @@ const ReportsManager = {
     const filter = this.cutsModalFilter || 'dia';
     const cuts = this.getCutsByPeriod(filter);
     const filtered = this.getHistoricalSales(filter);
-    let piezasFrias = 0, cartonesFrios = 0, promoGains = 0;
-    promoGains = filtered.reduce((sum, s) => sum + (Number(s.promoDiscount) || 0), 0);
+    let piezasFrias = 0, cartonesFrios = 0, promocionesVolumen = 0;
     filtered.forEach(s => {
       (s.items || []).forEach(item => {
+        const promo = item.promoVolumenAplicada;
+        if (promo && promo.precio > 0) {
+          promocionesVolumen += promo.precio;
+        }
         const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
         if (!cold) return;
-        const qty = Number(item.quantity || item.cantidad || 0) || 0;
         const cargoFrio = Number(item.cargoFrio || 0) || 0;
         const isCarton = Boolean(item.isCarton || item.carton || item.charola);
         if (isCarton) cartonesFrios += cargoFrio;
@@ -1111,7 +1113,7 @@ const ReportsManager = {
             <div class="reports-metrics-grid">
               <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Piezas frías ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(piezasFrias)}</div></div>
               <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Cartones fríos ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(cartonesFrios)}</div></div>
-              <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promoGains)}</div></div>
+              <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promocionesVolumen)}</div></div>
             </div>
           </div>
 
@@ -1179,11 +1181,15 @@ const ReportsManager = {
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = turnSales.reduce((sum, s) => sum + (s.total || 0), 0);
     const transacciones = turnSales.length;
-    const promoGains = turnSales.reduce((sum, s) => {
-      const pd = Number(s.promoDiscount) || 0;
-      if (pd <= 0) return sum;
-      return sum + pd;
-    }, 0);
+    let promocionesVolumen = 0;
+    turnSales.forEach(s => {
+      (s.items || []).forEach(item => {
+        const promo = item.promoVolumenAplicada;
+        if (promo && promo.precio > 0) {
+          promocionesVolumen += promo.precio;
+        }
+      });
+    });
 
     let piezasFrias = 0;
     let cartonesFrios = 0;
@@ -1247,7 +1253,7 @@ const ReportsManager = {
 
           <div class="metric-card">
             <div class="metric-row"><span class="metric-label">Ganancias de Promociones</span></div>
-            <div class="metric-value">${this.formatCurrency(promoGains)}</div>
+            <div class="metric-value">${this.formatCurrency(promocionesVolumen)}</div>
             <div class="metric-sub">Descuentos aplicados</div>
           </div>
         </div>
@@ -1256,7 +1262,7 @@ const ReportsManager = {
         <div class="reports-metrics-grid">
           <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Piezas frías ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(piezasFrias)}</div></div>
           <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Cartones fríos ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(cartonesFrios)}</div></div>
-          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promoGains)}</div></div>
+          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promocionesVolumen)}</div></div>
         </div>
 
         <div class="reports-period">
