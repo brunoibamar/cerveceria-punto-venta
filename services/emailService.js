@@ -16,6 +16,31 @@ const EmailService = {
     return Math.round(amount * 100) / 100;
   },
 
+  getVolumePromotionsSummary(transacciones) {
+    let cantidad = 0;
+    let monto = 0;
+    let piezas = 0;
+
+    (Array.isArray(transacciones) ? transacciones : []).forEach(ticket => {
+      (Array.isArray(ticket && ticket.items) ? ticket.items : []).forEach(item => {
+        if (!item) return;
+        const promo = item.promoVolumenAplicada;
+        const precio = Number(promo && promo.precio);
+        if (!Number.isFinite(precio) || precio <= 0) return;
+
+        cantidad += 1;
+        monto += precio;
+        piezas += Number(promo.cantidad || item.cantidad || item.quantity || 1);
+      });
+    });
+
+    return {
+      cantidad: cantidad,
+      monto: this.round2(monto),
+      piezas: piezas
+    };
+  },
+
   /**
    * Envía el resumen de un corte de caja por correo electrónico.
    * @param {Object} corte - Datos del corte de caja (payload de sendCutByEmail).
@@ -161,37 +186,13 @@ const EmailService = {
         cantidadVentas: corte.cantidadVentas
       });
 
-      // ---------- Cálculo de promociones desde transacciones del corte ----------
-      // Fuente idéntica a la vista de Reportes (js/reports.js): suma de
-      // item.promoVolumenAplicada.precio sobre cada ítem de cada transacción del turno.
-      let promocionesCant = 0;
-      let promocionesMonto = 0;
-      let promocionesPiezas = 0;
-
-      (corte.transacciones || []).forEach(ticket => {
-        (ticket.items || []).forEach(item => {
-          if (!item) return;
-          const promo = item.promoVolumenAplicada;
-          if (promo && Number(promo.precio || 0) > 0) {
-            promocionesMonto += Number(promo.precio);
-            promocionesCant += 1;
-            promocionesPiezas += Number(promo.cantidad || item.cantidad || 1);
-          }
-        });
-      });
-
-      promocionesMonto = this.round2(promocionesMonto);
-
-      // Fallback: si el corte tiene descuentosPromociones consolidado pero no hay
-      // desglose por ítems, usar el valor consolidado del turno
-      const descuentosPromocionesRaw = Number(corte.descuentosPromociones || 0);
-      if (promocionesMonto === 0 && descuentosPromocionesRaw > 0) {
-        promocionesMonto = this.round2(descuentosPromocionesRaw);
-        promocionesCant = 1;
-      }
+      // Usa la misma propiedad por ítem que suma la tarjeta de Reportes.
+      const promocionesResumen = this.getVolumePromotionsSummary(corte.transacciones);
 
       console.log('EmailJS >> totales promociones:', {
-        promocionesCant, promocionesMonto, promocionesPiezas
+        promocionesCant: promocionesResumen.cantidad,
+        promocionesMonto: promocionesResumen.monto,
+        promocionesPiezas: promocionesResumen.piezas
       });
 
       // ---------- Resumen financiero ----------
@@ -232,8 +233,8 @@ const EmailService = {
         piezas_frias_monto: this.round2(piezasFriasMonto),
         cartones_frios_cant: cartonesFriosCant,
         cartones_frios_monto: this.round2(cartonesFriosMonto),
-        promociones_cant: promocionesCant,
-        promociones_monto: this.round2(promocionesMonto),
+        promociones_cant: promocionesResumen.cantidad,
+        promociones_monto: promocionesResumen.monto,
 
         // Campos adicionales de referencia (no entran en el template principal)
         fecha: corte.fecha || corte.fechaCierre || now.toISOString().split('T')[0],
@@ -254,7 +255,7 @@ const EmailService = {
       console.log("Desglose:", {
         piezas_frias_monto: this.round2(piezasFriasMonto),
         cartones_frios_monto: this.round2(cartonesFriosMonto),
-        promociones_monto: this.round2(promocionesMonto)
+        promociones_monto: promocionesResumen.monto
       });
 
       // Enviar el correo
