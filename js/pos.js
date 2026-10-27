@@ -109,6 +109,10 @@ const SalesLog = {
       envaseFaltante: Boolean(item.envaseFaltante),
       envaseModalidad: item.envaseModalidad || 'pieza',
       envaseCargo: Number(item.envaseCargo || 0),
+      promoVolumenAplicada: item.promoVolumenAplicada ? {
+        cantidad: Number(item.promoVolumenAplicada.cantidad) || 0,
+        precio: Number(item.promoVolumenAplicada.precio) || 0
+      } : null,
       subtotal: Number(item.subtotal) || 0
     })) : [];
     return {
@@ -156,6 +160,10 @@ const SalesLog = {
           envaseFaltante: Boolean(item.envaseFaltante),
           envaseModalidad: item.envaseModalidad || 'pieza',
           envaseCargo: Number(item.envaseCargo || 0),
+          promoVolumenAplicada: item.promoVolumenAplicada ? {
+            cantidad: Number(item.promoVolumenAplicada.cantidad) || 0,
+            precio: Number(item.promoVolumenAplicada.precio) || 0
+          } : null,
           subtotal: this.round2(precio * cantidad)
         };
       });
