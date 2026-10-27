@@ -835,14 +835,33 @@ if (other) {
   },
 
   getEnvaseChargeTotal() {
-    return this.cart.reduce((sum, item) => {
-      if (!this.normalizeColdFlag(item.envaseFaltante)) return sum;
-      const qty = Number(item.quantity) || 0;
-      const cargo = item.envaseModalidad === 'carton'
-        ? Number(item.envaseCargoCarton || 0)
-        : Number(item.envaseCargoPieza || 0);
-      return sum + cargo * qty;
-    }, 0);
+    return this.cart.reduce((sum, item) => sum + this.getItemEnvaseCharge(item), 0);
+  },
+
+  // Cargo de envase por ítem individual:
+  // - Cartón completo: tarifa fija por cartón (ej. $100), sin multiplicar por piezas contenidas
+  // - Piezas sueltas: tarifa por pieza (ej. $10) multiplicada por cantidad
+  getItemEnvaseCharge(item) {
+    if (!this.normalizeColdFlag(item.envaseFaltante)) return 0;
+    const qty = Number(item.quantity) || 0;
+    const cartonQty = Number(item.unidadesPorCarton || 0);
+    const cartonPrice = Number(item.precioCarton || 0);
+    const fullCartons = cartonQty > 0 ? Math.floor(qty / cartonQty) : 0;
+    const isFullCarton = fullCartons > 0 && cartonPrice > 0;
+
+    if (isFullCarton) {
+      const cargoCarton = Number(item.envaseCargoCarton || 0);
+      let total = fullCartons * cargoCarton;
+      const remainder = qty % cartonQty;
+      if (remainder > 0) {
+        const cargoPieza = Number(item.envaseCargoPieza || 0);
+        total += remainder * cargoPieza;
+      }
+      return total;
+    }
+    // Piezas sueltas: cargo por pieza
+    const cargoPieza = Number(item.envaseCargoPieza || 0);
+    return qty * cargoPieza;
   },
 
   // ---------- Totales ----------
@@ -980,28 +999,29 @@ if (other) {
         const productSubtotal = this.getItemSubtotal(item);
 
         // ---------- Control de envase faltante ----------
-        const envaseCargoUnit = item.envaseModalidad === 'carton'
-          ? Number(item.envaseCargoCarton || 0)
-          : Number(item.envaseCargoPieza || 0);
-        const hasEnvaseCargo = envaseCargoUnit > 0;
         const envaseChecked = this.normalizeColdFlag(item.envaseFaltante);
-        const envaseQtyCharge = envaseChecked ? envaseCargoUnit * qty : 0;
+        const envaseLineCharge = envaseChecked ? this.getItemEnvaseCharge(item) : 0;
 
-        const lineTotal = productSubtotal + lineCharge + envaseQtyCharge;
+        const lineTotal = productSubtotal + lineCharge + envaseLineCharge;
 
         let envaseHtml = '';
-        if (hasEnvaseCargo) {
+        const envaseUnitLabel = item.envaseModalidad === 'carton'
+          ? Number(item.envaseCargoCarton || 0)
+          : Number(item.envaseCargoPieza || 0);
+
+        let envaseHtml = '';
+        if (envaseChecked) {
           envaseHtml = `
             <label class="cart-envase" style="display:inline-flex;align-items:center;gap:6px;">
-              <input type="checkbox" class="cart-envase-checkbox" ${envaseChecked ? 'checked' : ''}
+              <input type="checkbox" class="cart-envase-checkbox" checked
                 onchange="POS.toggleEnvaseFaltante('${idArg}', ${coldArg})"
                 title="Marcar si el cliente no devuelve el envase" />
-              <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseCargoUnit.toFixed(2)})</span>
+              <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseUnitLabel.toFixed(2)})</span>
             </label>`;
         }
 
-        const envaseLineHtml = envaseQtyCharge > 0
-          ? `<span class="cart-tag cart-tag-envase">+${this.escapeHtml(currency)}${envaseQtyCharge.toFixed(2)} envase</span>`
+        const envaseLineHtml = envaseLineCharge > 0
+          ? `<span class="cart-tag cart-tag-envase">+${this.escapeHtml(currency)}${envaseLineCharge.toFixed(2)} envase</span>`
           : '';
 
         const tempHtml = isCold
@@ -1932,9 +1952,7 @@ if (other) {
       const items = this.cart.map(item => {
         const isCold = this.normalizeColdFlag(item.piezaFria);
         const qty = Number(item.quantity) || 0;
-        const envaseCargo = item.envaseModalidad === 'carton'
-          ? Number(item.envaseCargoCarton || 0)
-          : Number(item.envaseCargoPieza || 0);
+        const envaseCargo = this.getItemEnvaseCharge(item);
         const promoInfo = this.getVolumePromoInfo(item);
         return {
           ...item,
@@ -3397,7 +3415,7 @@ Productos:
       }
       const envaseCargo = Number(item.envaseCargo || 0);
       if (this.normalizeColdFlag(item.envaseFaltante) && Number.isFinite(envaseCargo) && envaseCargo > 0) {
-        ticket += `      + Importe envase (${qty}): ${currency}${(envaseCargo * qty).toFixed(2)}\n`;
+        ticket += `      + Importe envase: ${currency}${envaseCargo.toFixed(2)}\n`;
       }
     });
 
