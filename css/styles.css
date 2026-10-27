@@ -3728,25 +3728,43 @@ PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
   background: rgba(224, 169, 109, 0.1);
 }
 
+.cart-table td:last-child {
+  width: 48px;
+  min-width: 48px;
+  text-align: center;
+  padding: 9px 4px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .btn-delete {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid rgba(248, 113, 113, 0.5);
   color: #fca5a5;
-  background: transparent;
-  font-size: 17px;
+  background: rgba(15, 12, 10, 0.6);
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
   transition: var(--transition-smooth);
+  position: relative;
+  z-index: 2;
 }
 
 .btn-delete:hover {
   border-color: rgba(248, 113, 113, 0.9);
-  background: rgba(248, 113, 113, 0.15);
+  background: rgba(248, 113, 113, 0.2);
+  transform: scale(1.05);
+}
+
+.btn-delete:active {
+  transform: scale(0.95);
 }
 
 .cart-cold-charge {
@@ -6536,10 +6554,19 @@ PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
 
   .btn-qty,
   .btn-delete {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-    border-radius: 5px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+
+  .cart-table td:last-child {
+    width: 44px;
+    min-width: 44px;
+    padding: 6px 4px;
+    text-align: center;
   }
 
   .cart-cold-charge {
