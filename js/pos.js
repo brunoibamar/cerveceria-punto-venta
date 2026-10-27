@@ -106,6 +106,9 @@ const SalesLog = {
       precio: Number(item.precio !== undefined ? item.precio : item.price) || 0,
       cold: Boolean(item.cold === true || item.piezaFria === true || item.piezaFria === 'true'),
       cargoFrio: Number(item.cargoFrio) || 0,
+      envaseFaltante: Boolean(item.envaseFaltante),
+      envaseModalidad: item.envaseModalidad || 'pieza',
+      envaseCargo: Number(item.envaseCargo || 0),
       subtotal: Number(item.subtotal) || 0
     })) : [];
     return {
@@ -137,22 +140,25 @@ const SalesLog = {
     const fecha = source.fecha || new Date().toISOString();
     const rawItems = Array.isArray(source.items) ? source.items : [];
 
-    const items = rawItems.map(item => {
-      const cantidad = Number(item.quantity) || 0;
-      const precio = Number(item.precio !== undefined ? item.precio : item.price) || 0;
-      const cold = this.isColdItem(item);
-      const cargoFrio = Number(item.cargoFrio) || 0;
-      return {
-        productId: item.productId || null,
-        nombre: item.nombre || item.productName || 'Producto',
-        marca: item.marca || '',
-        cantidad,
-        precio,
-        cold,
-        cargoFrio,
-        subtotal: this.round2(precio * cantidad)
-      };
-    });
+      const items = rawItems.map(item => {
+        const cantidad = Number(item.quantity) || 0;
+        const precio = Number(item.precio !== undefined ? item.precio : item.price) || 0;
+        const cold = this.isColdItem(item);
+        const cargoFrio = Number(item.cargoFrio) || 0;
+        return {
+          productId: item.productId || null,
+          nombre: item.nombre || item.productName || 'Producto',
+          marca: item.marca || '',
+          cantidad,
+          precio,
+          cold,
+          cargoFrio,
+          envaseFaltante: Boolean(item.envaseFaltante),
+          envaseModalidad: item.envaseModalidad || 'pieza',
+          envaseCargo: Number(item.envaseCargo || 0),
+          subtotal: this.round2(precio * cantidad)
+        };
+      });
 
     const computedColdUnits = items.reduce((sum, item) => sum + (item.cold ? item.cantidad : 0), 0);
     const computedColdCharge = items.reduce((sum, item) => sum + (item.cold ? item.cargoFrio : 0), 0);
@@ -388,7 +394,11 @@ const POS = {
         marca: item.marca || '',
         precio: Number(item.precio) || 0,
         quantity: Number(item.quantity) || 0,
-        piezaFria: this.normalizeColdFlag(item.piezaFria)
+        piezaFria: this.normalizeColdFlag(item.piezaFria),
+        envaseFaltante: this.normalizeColdFlag(item.envaseFaltante),
+        envaseModalidad: item.envaseModalidad || 'pieza',
+        envaseCargoPieza: Number(item.envaseCargoPieza || 0),
+        envaseCargoCarton: Number(item.envaseCargoCarton || 0)
       })).filter(item => item.quantity > 0);
     } catch (e) {
       console.error('[POS] No se pudo cargar el carrito guardado:', e);
@@ -629,14 +639,24 @@ const POS = {
 
     if (existing) {
       existing.quantity = (Number(existing.quantity) || 0) + 1;
+      const cartonQty = Number(existing.unidadesPorCarton || 0);
+      existing.isCarton = cartonQty > 0 && existing.quantity >= cartonQty;
     } else {
+      const cartonQty = Number(product.unidadesPorCarton || 0);
       this.cart.push({
         productId: product.id,
         nombre: product.nombre,
         marca: product.marca,
         precio: Number(product.precio) || 0,
+        precioCarton: Number(product.precioCarton || 0),
+        unidadesPorCarton: cartonQty,
         quantity: 1,
-        piezaFria: isCold
+        isCarton: cartonQty > 0 && 1 >= cartonQty,
+        piezaFria: isCold,
+        envaseFaltante: false,
+        envaseModalidad: 'pieza',
+        envaseCargoPieza: Number(product.cobroExtraEnvaseFaltantePieza || 0),
+        envaseCargoCarton: Number(product.cobroExtraEnvaseFaltanteCarton || 0)
       });
     }
 
@@ -733,6 +753,8 @@ const POS = {
     }
 
     item.quantity = next;
+    const cartonQty = Number(product && product.unidadesPorCarton || 0);
+    item.isCarton = cartonQty > 0 && next >= cartonQty;
     this.saveCart();
     this.renderCart();
     this.renderProductList();
@@ -788,12 +810,74 @@ if (other) {
     return coldStock > 0 || this.getFridgeStock() > 0;
   },
 
+  // ---------- Control de envase faltante ----------
+
+  toggleEnvaseFaltante(productId, isCold) {
+    const cold = this.normalizeColdFlag(isCold);
+    const item = this.findCartItem(productId, cold) || this.cart.find(i => i.productId === productId);
+    if (!item) return;
+    item.envaseFaltante = !this.normalizeColdFlag(item.envaseFaltante);
+    this.saveCart();
+    this.renderCart();
+    this.renderSummaryTotals();
+  },
+
+  getEnvaseChargeTotal() {
+    return this.cart.reduce((sum, item) => {
+      if (!this.normalizeColdFlag(item.envaseFaltante)) return sum;
+      const qty = Number(item.quantity) || 0;
+      const cargo = item.envaseModalidad === 'carton'
+        ? Number(item.envaseCargoCarton || 0)
+        : Number(item.envaseCargoPieza || 0);
+      return sum + cargo * qty;
+    }, 0);
+  },
+
   // ---------- Totales ----------
 
   getSubtotal() {
     return this.cart.reduce((sum, item) => {
-      return sum + (Number(item.precio) || 0) * (Number(item.quantity) || 0);
+      return sum + this.getItemSubtotal(item);
     }, 0);
+  },
+
+  // Subtotal de producto de una línea del carrito: aplica jerarquía de precios:
+  // 1. Cartón/Charola Completo (mayoreo cerrado) si qty >= unidadesPorCarton.
+  // 2. Promoción por Volumen (paquete) si qty coincide EXACTAMENTE con cantidad configurada.
+  // 3. Precio unitario normal si no aplica promoción ni cartón.
+  // Cada nivel se cobra como precio fijo total, sin descuentos traslapados.
+  getItemSubtotal(item) {
+    const qty = Number(item.quantity) || 0;
+    const unitPrice = Number(item.precio) || 0;
+    const cartonQty = Number(item.unidadesPorCarton || 0);
+    const cartonPrice = Number(item.precioCarton || 0);
+
+    // 1. Cartón/Charola Completo: máxima prioridad (mayoreo cerrado)
+    if (cartonQty > 0 && cartonPrice > 0 && qty >= cartonQty) {
+      const fullCartons = Math.floor(qty / cartonQty);
+      const remainder = qty % cartonQty;
+      const remainderSubtotal = remainder > 0
+        ? this.getItemSubtotal({ ...item, quantity: remainder })
+        : 0;
+      return fullCartons * cartonPrice + remainderSubtotal;
+    }
+
+    // 2. Promociones por Volumen: coincidencia EXACTA con cantidad configurada.
+    //    Se cobra directamente el precio total del paquete configurado.
+    const product = (typeof Database !== 'undefined' && Database.getProducts)
+      ? Database.getProducts().find(p => p.id === item.productId)
+      : null;
+    const promos = (product && product.promocionesVolumen) || [];
+    for (const promo of promos) {
+      const promoQty = Number(promo.cantidad) || 0;
+      const promoPrice = Number(promo.precio) || 0;
+      if (promoQty > 0 && promoPrice > 0 && qty === promoQty) {
+        return promoPrice;
+      }
+    }
+
+    // 3. Precio unitario normal (sin promoción ni cartón)
+    return unitPrice * qty;
   },
 
   // Evalúa las promociones activas contra el carrito: combos completos, descuentos y faltantes
@@ -815,8 +899,17 @@ if (other) {
     return Math.max(0, Number(this.getPromoEvaluation().discount) || 0);
   },
 
+  // ---------- Promociones por volumen por producto (paquetes: ej. 2x$50, 6x$150) ----------
+
+  // Las promociones por volumen se aplican directamente como precio fijo del paquete
+  // dentro de getItemSubtotal(). No hay descuentos adicionales que aplicar aquí,
+  // evitando doble conteo o cálculos de descuento automáticos extraños.
+  getVolumePromoDiscount() {
+    return 0;
+  },
+
   getTotal() {
-    return Math.max(0, this.getSubtotal() + this.getColdChargeTotal() - this.getPromoDiscount());
+    return Math.max(0, this.getSubtotal() + this.getColdChargeTotal() + this.getEnvaseChargeTotal() - this.getPromoDiscount() - this.getVolumePromoDiscount());
   },
 
   getCurrencySymbol() {
@@ -853,8 +946,39 @@ if (other) {
         const coldArg = isCold ? 'true' : 'false';
         const qty = Number(item.quantity) || 0;
         const price = Number(item.precio) || 0;
-        const lineTotal = price * qty;
         const lineCharge = isCold ? chargeRate * qty : 0;
+
+        // ---------- Detección automática de cartón/charola completo (dinámica) ----------
+        const cartonQty = Number(item.unidadesPorCarton || 0);
+        const cartonPrice = Number(item.precioCarton || 0);
+        const fullCartons = cartonQty > 0 ? Math.floor(qty / cartonQty) : 0;
+        const isFullCarton = fullCartons > 0 && cartonPrice > 0;
+        const productSubtotal = this.getItemSubtotal(item);
+
+        // ---------- Control de envase faltante ----------
+        const envaseCargoUnit = item.envaseModalidad === 'carton'
+          ? Number(item.envaseCargoCarton || 0)
+          : Number(item.envaseCargoPieza || 0);
+        const hasEnvaseCargo = envaseCargoUnit > 0;
+        const envaseChecked = this.normalizeColdFlag(item.envaseFaltante);
+        const envaseQtyCharge = envaseChecked ? envaseCargoUnit * qty : 0;
+
+        const lineTotal = productSubtotal + lineCharge + envaseQtyCharge;
+
+        let envaseHtml = '';
+        if (hasEnvaseCargo) {
+          envaseHtml = `
+            <label class="cart-envase" style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;">
+              <input type="checkbox" class="cart-envase-checkbox" ${envaseChecked ? 'checked' : ''}
+                onchange="POS.toggleEnvaseFaltante('${idArg}', ${coldArg})"
+                title="Marcar si el cliente no devuelve el envase" />
+              <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseCargoUnit.toFixed(2)})</span>
+            </label>`;
+        }
+
+        const envaseLineHtml = envaseQtyCharge > 0
+          ? `<div class="cart-envase-charge">+ ${this.escapeHtml(currency)}${envaseQtyCharge.toFixed(2)} envase</div>`
+          : '';
 
         const tempHtml = isCold
           ? `<span class="temp-indicator temp-cold" role="button" tabindex="0" onclick="POS.toggleCold('${idArg}', true)" onkeydown="if(event.key==='Enter'||event.key===' '){POS.toggleCold('${idArg}', true);}" title="Pieza fría (toca para quitar la marca)">❄️ <span class="temp-check">✓</span> Frío</span>`
@@ -864,10 +988,14 @@ if (other) {
           ? `<div class="cart-cold-charge">+ ${this.escapeHtml(currency)}${lineCharge.toFixed(2)} frío</div>`
           : '';
 
+        const cartonBadge = isFullCarton
+          ? `<span class="cart-carton-badge">📦 ${fullCartons} cartón${fullCartons > 1 ? 'es' : ''} completo (${qty} piezas) · ${this.escapeHtml(currency)}${cartonPrice.toFixed(2)} c/u</span>`
+          : '';
+
         html += `
           <tr class="${isCold ? 'cart-row-cold is-freezing' : ''}">
-            <td>${this.escapeHtml(item.nombre || '')}${chargeHtml}</td>
-            <td>${this.escapeHtml(currency)}${price.toFixed(2)}</td>
+            <td>${this.escapeHtml(item.nombre || '')}${chargeHtml}${envaseHtml}${cartonBadge}</td>
+            <td>${this.escapeHtml(currency)}${isFullCarton ? cartonPrice.toFixed(2) : price.toFixed(2)}</td>
             <td>
               <div class="cart-qty">
                 <button type="button" class="btn-qty" onclick="POS.changeQuantity('${idArg}', -1, ${coldArg})">-</button>
@@ -876,7 +1004,7 @@ if (other) {
               </div>
             </td>
             <td class="cart-temp">${tempHtml}</td>
-            <td>${this.escapeHtml(currency)}${lineTotal.toFixed(2)}</td>
+            <td>${this.escapeHtml(currency)}${lineTotal.toFixed(2)}${envaseLineHtml}</td>
             <td><button type="button" class="btn-delete" onclick="POS.removeFromCart('${idArg}', ${coldArg})">×</button></td>
           </tr>
         `;
@@ -904,7 +1032,9 @@ if (other) {
     const evaluation = this.getPromoEvaluation();
     const applications = evaluation.applications || [];
     const pending = evaluation.pending || [];
-    if (!applications.length && !pending.length) return '';
+    const volumeDiscount = this.getVolumePromoDiscount();
+
+    if (!applications.length && !pending.length && volumeDiscount <= 0) return '';
 
     let html = '<div class="cart-promos">';
 
@@ -921,6 +1051,16 @@ if (other) {
         </div>
       `;
     });
+
+    if (volumeDiscount > 0) {
+      html += `
+        <div class="cart-promo">
+          <span class="cart-promo-tag">📦 Descuento por volumen</span>
+          <span class="cart-promo-detail">Paquetes aplicados automáticamente</span>
+          <span class="cart-promo-value">-${this.escapeHtml(currency)}${volumeDiscount.toFixed(2)}</span>
+        </div>
+      `;
+    }
 
     pending.forEach(entry => {
       const faltan = (entry.faltan || []).map(f => f.cantidad + 'x ' + f.nombre).join(', ');
@@ -949,6 +1089,7 @@ if (other) {
     const coldCharge = this.getColdChargeTotal();
     const evaluation = this.getPromoEvaluation();
     const promoDiscount = Math.max(0, Number(evaluation.discount) || 0);
+    const volumeDiscount = this.getVolumePromoDiscount();
 
     const subtotalEl = document.getElementById('pos-subtotal');
     if (subtotalEl) {
@@ -965,6 +1106,7 @@ if (other) {
     if (coldEl) coldEl.textContent = this.formatMoney(coldCharge);
 
     this.renderPromoDiscountRow(evaluation, promoDiscount);
+    this.renderVolumePromoDiscountRow(volumeDiscount);
 
     const totalEl = document.getElementById('pos-total');
     if (totalEl) {
@@ -1007,6 +1149,38 @@ if (other) {
     row.className = 'pos-totals-row pos-totals-promo';
     row.hidden = true;
     row.innerHTML = '<span class="pos-totals-label">Descuento promo</span><span class="pos-totals-value">-$0.00</span>';
+
+    if (grandRow && grandRow.parentNode) {
+      grandRow.parentNode.insertBefore(row, grandRow);
+    } else {
+      totals.appendChild(row);
+    }
+
+    return row;
+  },
+
+  // Fila de descuento por promociones de volumen por producto (paquetes: ej. 2x$50)
+  renderVolumePromoDiscountRow(volumeDiscount) {
+    const row = this.ensureVolumePromoDiscountRow();
+    if (!row) return;
+    row.hidden = volumeDiscount <= 0;
+    const valueEl = row.querySelector('.pos-totals-value');
+    if (valueEl) valueEl.textContent = '-' + this.formatMoney(volumeDiscount);
+  },
+
+  ensureVolumePromoDiscountRow() {
+    const existing = document.getElementById('pos-volume-promo-discount-row');
+    if (existing) return existing;
+
+    const totals = document.querySelector('.pos-totals');
+    if (!totals) return null;
+
+    const grandRow = totals.querySelector('.pos-totals-grand');
+    const row = document.createElement('div');
+    row.id = 'pos-volume-promo-discount-row';
+    row.className = 'pos-totals-row pos-totals-volume-promo';
+    row.hidden = true;
+    row.innerHTML = '<span class="pos-totals-label">Descuento por volumen</span><span class="pos-totals-value">-$0.00</span>';
 
     if (grandRow && grandRow.parentNode) {
       grandRow.parentNode.insertBefore(row, grandRow);
@@ -1726,10 +1900,16 @@ if (other) {
       const items = this.cart.map(item => {
         const isCold = this.normalizeColdFlag(item.piezaFria);
         const qty = Number(item.quantity) || 0;
+        const envaseCargo = item.envaseModalidad === 'carton'
+          ? Number(item.envaseCargoCarton || 0)
+          : Number(item.envaseCargoPieza || 0);
         return {
           ...item,
           quantity: qty,
           piezaFria: isCold,
+          envaseFaltante: this.normalizeColdFlag(item.envaseFaltante),
+          envaseModalidad: item.envaseModalidad || 'pieza',
+          envaseCargo: this.normalizeColdFlag(item.envaseFaltante) ? envaseCargo : 0,
           cargoFrio: isCold ? chargeRate * qty : 0
         };
       });
@@ -1746,6 +1926,7 @@ if (other) {
         coldUnits: this.getColdUnits(),
         total: this.getTotal(),
         promoDiscount: promoDiscount,
+        volumenPromoDiscount: Math.max(0, Number(this.getVolumePromoDiscount()) || 0),
         promoName: (evaluation.applications && evaluation.applications.length) ? evaluation.applications.map(a=>a.nombre).join(', ') : '',
         promosAplicados: (evaluation.applications || []).map(app => ({
           id: app.id,
@@ -3179,6 +3360,10 @@ Productos:
       const amount = Number(item.cargoFrio);
       if (isCold && Number.isFinite(amount) && amount > 0) {
         ticket += `      + Cargo bebida fría (${qty}): ${currency}${amount.toFixed(2)}\n`;
+      }
+      const envaseCargo = Number(item.envaseCargo || 0);
+      if (this.normalizeColdFlag(item.envaseFaltante) && Number.isFinite(envaseCargo) && envaseCargo > 0) {
+        ticket += `      + Importe envase (${qty}): ${currency}${(envaseCargo * qty).toFixed(2)}\n`;
       }
     });
 

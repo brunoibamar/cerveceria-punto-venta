@@ -220,6 +220,39 @@ const ReportsManager = {
     });
   },
 
+  // Ventas del turno/caja activo (por id de turno o desde la hora de apertura).
+  getTurnSalesArray() {
+    try {
+      if (typeof POS !== 'undefined' && typeof POS.getTurnSales === 'function') {
+        return POS.getTurnSales() || [];
+      }
+    } catch (e) {}
+    return [];
+  },
+
+  // Ventas históricas del periodo, excluyendo el turno activo para no mezclar
+  // turnos cerrados con el turno en curso.
+  getHistoricalSales(filter = this.currentFilter) {
+    const all = (typeof Database !== 'undefined' && Database.getSales) ? (Database.getSales() || []) : [];
+    let session = null;
+    try {
+      if (typeof POS !== 'undefined' && typeof POS.getSessionInfo === 'function') session = POS.getSessionInfo();
+    } catch (e) { session = null; }
+    const turnoId = session && session.turnoId ? String(session.turnoId) : null;
+    const openedTime = session && session.openedAt ? new Date(session.openedAt).getTime() : NaN;
+    const { start, end } = this.getDateRange(filter);
+    return all.filter(s => {
+      if (!s) return false;
+      if (turnoId && s.turnoId && String(s.turnoId) === turnoId) return false;
+      if (!turnoId && !isNaN(openedTime)) {
+        const t = s.fecha ? new Date(s.fecha).getTime() : NaN;
+        if (!isNaN(t) && t >= openedTime) return false;
+      }
+      const d = new Date(s.fecha);
+      return !isNaN(d) && d >= start && d <= end;
+    });
+  },
+
   dateKey(value) {
     const date = value instanceof Date ? value : new Date(value || Date.now());
     if (isNaN(date.getTime())) return '';
@@ -1020,6 +1053,20 @@ const ReportsManager = {
   renderCutsModal() {
     const filter = this.cutsModalFilter || 'dia';
     const cuts = this.getCutsByPeriod(filter);
+    const filtered = this.getHistoricalSales(filter);
+    let piezasFrias = 0, cartonesFrios = 0, promoGains = 0;
+    promoGains = filtered.reduce((sum, s) => sum + (Number(s.promoDiscount) || 0), 0);
+    filtered.forEach(s => {
+      (s.items || []).forEach(item => {
+        const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
+        if (!cold) return;
+        const qty = Number(item.quantity || item.cantidad || 0) || 0;
+        const cargoFrio = Number(item.cargoFrio || 0) || 0;
+        const isCarton = Boolean(item.isCarton || item.carton || item.charola);
+        if (isCarton) cartonesFrios += cargoFrio;
+        else piezasFrias += cargoFrio > 0 ? cargoFrio : 0;
+      });
+    });
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = cuts.reduce((sum, c) => sum + (Number(c.cantidadVentas) || 0), 0);
     const groups = this.buildCutsGroups(filter);
@@ -1058,8 +1105,13 @@ const ReportsManager = {
               <span class="cuts-modal-total-label">Total del periodo</span>
             </div>
             <div class="cuts-modal-badges">
-              <span class="cuts-modal-badge">🔒 ${cuts.length} ${cuts.length === 1 ? 'corte' : 'cortes'}</span>
-              <span class="cuts-modal-badge">🧾 ${totalVentas} ${totalVentas === 1 ? 'venta' : 'ventas'}</span>
+              <span class="cuts-modal-badge">Cortes ${cuts.length}</span>
+              <span class="cuts-modal-badge">Ventas ${totalVentas}</span>
+            </div>
+            <div class="reports-metrics-grid">
+              <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Piezas frías ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(piezasFrias)}</div></div>
+              <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Cartones fríos ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(cartonesFrios)}</div></div>
+              <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promoGains)}</div></div>
             </div>
           </div>
 
@@ -1119,19 +1171,36 @@ const ReportsManager = {
     const scroller = document.getElementById('app-main');
     const scrollTop = scroller ? scroller.scrollTop : 0;
 
-    const filtered = this.getFilteredSales();
-    const { efectivo, electronico } = this.paymentTotals(filtered);
+    const turnSales = this.getTurnSalesArray();
+    const { efectivo, electronico } = this.paymentTotals(turnSales);
     const apertura = this.getOpeningAmount();
     const efectivoEnCaja = Number(apertura || 0) + Number(efectivo || 0);
     const cuts = this.getCutsByPeriod(this.currentFilter);
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
-    const totalVentas = filtered.reduce((sum, s) => sum + (s.total || 0), 0);
-    const transacciones = filtered.length;
-    const promoGains = filtered.reduce((sum, s) => {
+    const totalVentas = turnSales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const transacciones = turnSales.length;
+    const promoGains = turnSales.reduce((sum, s) => {
       const pd = Number(s.promoDiscount) || 0;
       if (pd <= 0) return sum;
       return sum + pd;
     }, 0);
+
+    let piezasFrias = 0;
+    let cartonesFrios = 0;
+    turnSales.forEach(s => {
+      (s.items || []).forEach(item => {
+        const cold = item.cold === true || item.piezaFria === true || item.piezaFria === 'true';
+        if (!cold) return;
+        const qty = Number(item.quantity || item.cantidad || 0) || 0;
+        const cargoFrio = Number(item.cargoFrio || 0) || 0;
+        const isCarton = Boolean(item.isCarton || item.carton || item.charola);
+        if (isCarton) cartonesFrios += cargoFrio;
+        else piezasFrias += cargoFrio > 0 ? cargoFrio : 0;
+      });
+    });
+
+    // Datos históricos del periodo (excluye el turno activo): gráficas y acordeones.
+    const historical = this.getHistoricalSales();
 
     let html = `
       <div class="reports-view">
@@ -1177,10 +1246,17 @@ const ReportsManager = {
            </div>
 
           <div class="metric-card">
-            <div class="metric-row"><span class="metric-label">Ganancias de Promociones</span><span class="metric-icon">🎁</span></div>
+            <div class="metric-row"><span class="metric-label">Ganancias de Promociones</span></div>
             <div class="metric-value">${this.formatCurrency(promoGains)}</div>
             <div class="metric-sub">Descuentos aplicados</div>
           </div>
+        </div>
+        </div>
+
+        <div class="reports-metrics-grid">
+          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Piezas frías ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(piezasFrias)}</div></div>
+          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Cartones fríos ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(cartonesFrios)}</div></div>
+          <div class="metric-card" style="padding:7px 9px;min-width:0;margin-bottom:18px;"><div style="font-size:10px;opacity:.8;">Promociones ($)</div><div style="font-size:13px;font-weight:700;">${this.formatCurrency(promoGains)}</div></div>
         </div>
 
         <div class="reports-period">
@@ -1191,7 +1267,7 @@ const ReportsManager = {
         </div>
 
         <div class="reports-accordion">
-          ${this.renderAccordionItems(filtered)}
+          ${this.renderAccordionItems(historical)}
         </div>
        </div>
        ${this.cutsModalOpen ? this.renderCutsModal() : ''}
@@ -1208,14 +1284,19 @@ const ReportsManager = {
   },
 
   // Arma los bloques del acordeón con su contenido ya calculado
-  renderAccordionItems(filtered) {
+  renderAccordionItems(historical) {
     const hoursLabel = this.currentFilter === 'dia'
       ? 'Horarios Pico'
       : (this.currentFilter === 'semana' ? 'Ventas por Día' : (this.currentFilter === 'mes' ? 'Ventas por Semana' : 'Ventas por Mes'));
 
+    const turnSales = this.getTurnSalesArray();
+    // El panel "Historial de Turno" muestra el turno activo cuando hay caja abierta;
+    // en caso contrario muestra las ventas históricas del periodo.
+    const salesForPanel = turnSales.length ? turnSales : historical;
+
     const items = [];
     if (this.currentFilter === 'dia') {
-      items.push(this.renderAccordionItem('sales', '📋', 'Historial de Turno', this.renderSalesPanel(filtered)));
+      items.push(this.renderAccordionItem('sales', '📋', 'Historial de Turno', this.renderSalesPanel(salesForPanel)));
     }
     items.push(this.renderAccordionItem('hours', '🕒', hoursLabel,
       `<div class="reports-chart-wrap"><canvas id="reports-chart-hours" height="250"></canvas>${this.renderChartNote('hours')}</div>`));
@@ -1239,7 +1320,7 @@ const ReportsManager = {
       try { this.chartHours.destroy(); } catch (e) {}
       this.chartHours = null;
     }
-    const filtered = this.getFilteredSales();
+    const filtered = this.getHistoricalSales();
     const filter = this.currentFilter;
     let labels = [];
     let data = [];
@@ -1308,7 +1389,7 @@ const ReportsManager = {
       try { this.chartProducts.destroy(); } catch (e) {}
       this.chartProducts = null;
     }
-    const filtered = this.getFilteredSales();
+    const filtered = this.getHistoricalSales();
     const stats = this.getProductStats(filtered).slice(0, 10);
     const labels = stats.map(s => s.nombre.length > 18 ? s.nombre.substring(0, 18) + '…' : s.nombre);
     const data = stats.map(s => s.cantidad);

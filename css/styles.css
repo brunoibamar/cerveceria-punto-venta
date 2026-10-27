@@ -1128,6 +1128,44 @@ body {
   font-weight: 400;
 }
 
+.inv-stock-adjust {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.inv-stock-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.inv-stock-btn:hover {
+  border-color: rgba(224, 169, 109, 0.5);
+  color: var(--accent);
+}
+
+.inv-stock-btn.inv-stock-plus:hover {
+  color: #34d399;
+}
+
+.inv-stock-btn.inv-stock-minus:hover {
+  color: #fb7185;
+}
+
 .inv-actions {
   display: flex;
   gap: 10px;
@@ -1368,6 +1406,62 @@ body {
   background: #1e1915;
 }
 
+/* --- Tarjetas de sección del formulario de producto --- */
+.inv-section {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.05) 0%, transparent 100%), linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  box-shadow: var(--shadow-elegant);
+  overflow: visible;
+  margin-bottom: 16px;
+}
+
+.inv-section:last-child {
+  margin-bottom: 0;
+}
+
+.inv-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.12) 0%, transparent 100%);
+  flex-shrink: 0;
+}
+
+.inv-section-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.inv-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.inv-section-body {
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: visible;
+}
+
+.inv-field-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  display: block;
+  line-height: 1.35;
+}
+
 /* Código de barras + botón de cámara con flash */
 .inv-input-group {
   display: flex;
@@ -1558,6 +1652,70 @@ body {
 }
 
 .inv-fridge-refill:active {
+  transform: translateY(0);
+}
+
+.inv-fridge-adjust {
+  width: 100%;
+  max-width: 420px;
+  margin: 14px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+.inv-fridge-input-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  border: 1px solid rgba(224, 169, 109, 0.35);
+  background: rgba(28, 24, 21, 0.9);
+  border-radius: 16px;
+  padding: 14px 18px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.inv-fridge-input-wrap input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  padding: 8px 4px;
+  min-width: 0;
+}
+
+.inv-fridge-apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+  color: #14100b;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(224, 169, 109, 0.3);
+}
+
+.inv-fridge-apply:hover {
+  background: linear-gradient(180deg, var(--accent), #d99a5c);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(224, 169, 109, 0.4);
+}
+
+.inv-fridge-apply:active {
   transform: translateY(0);
 }
 
@@ -1839,6 +1997,7 @@ body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   width: 100%;
+  margin-bottom: 16px;
 }
 
 .metric-card {
@@ -1918,6 +2077,7 @@ body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 14px;
 }
 
 .period-btn {
@@ -3452,6 +3612,52 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   margin-top: 4px;
   line-height: 1;
 }
+
+/* Control de envase faltante en el carrito */
+.cart-envase {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cart-envase input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+.cart-envase input[type="checkbox"]:checked {
+  accent-color: var(--danger);
+}
+
+.cart-envase-charge {
+  font-size: 11px;
+  color: var(--danger);
+  margin-top: 4px;
+  line-height: 1;
+}
+
+/* Badge de cartón/charola completo en el carrito */
+.cart-carton-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(224, 169, 109, 0.5);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.18) 0%, rgba(224, 169, 109, 0.06) 100%);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
 .cart-row-cold.is-freezing {
   position: relative;
   overflow: hidden;
@@ -5334,7 +5540,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 .cuts-modal-filters {
   display: flex;
   gap: 4px;
-  margin: 0 20px 14px;
+  margin: 12px 20px 14px;
   padding: 4px;
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(224, 169, 109, 0.16);

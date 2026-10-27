@@ -154,45 +154,143 @@
         html += '      <button type="button" id="' + this.modalCloseBtnId + '" class="inv-modal-close" onclick="InventoryManager.closeModal()" aria-label="Cerrar modal">✕</button>';
         html += '    </header>';
         html += '    <form id="' + this.formId + '" class="inv-form" autocomplete="off">';
-        html += '      <div class="inv-form-grid">';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-nombre">Nombre del Producto</label>';
-        html += '          <input name="nombre" id="inv-nombre" placeholder="Ej. Cerveza IPA" required>';
+        html += '      <div class="inv-section">';
+        html += '        <div class="inv-section-header">';
+        html += '          <span class="inv-section-icon" aria-hidden="true">📦</span>';
+        html += '          <span class="inv-section-title">Datos Generales</span>';
         html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-marca">Marca</label>';
-        html += '          <input name="marca" id="inv-marca" placeholder="Cerveza Local">';
-        html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-presentacion">Presentación</label>';
-        html += '          <input name="presentacion" id="inv-presentacion" placeholder="Botella 330ml">';
-        html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-barcode-input">Código de Barras</label>';
-        html += '          <div class="inv-input-group">';
-        html += '            <input name="codigoBarras" id="inv-barcode-input" placeholder="Escanea o escribe el código" inputmode="numeric">';
-        html += '            <button type="button" id="inv-scan-form-btn" class="inv-scan-btn" onclick="InventoryManager.openInventoryScanner(document.getElementById(\'inv-barcode-input\'))" title="Escanear con la cámara (flash)"><span aria-hidden="true">📷</span><span class="inv-scan-btn-text">Cámara</span></button>';
+        html += '        <div class="inv-section-body">';
+        html += '          <div class="inv-form-grid">';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-nombre">Nombre del Producto</label>';
+        html += '              <input name="nombre" id="inv-nombre" placeholder="Ej. Cerveza IPA" required>';
+        html += '              <span class="inv-field-hint">Nombre que se mostrará en el inventario y ticket de venta.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-marca">Marca</label>';
+        html += '              <input name="marca" id="inv-marca" placeholder="Cerveza Local">';
+        html += '              <span class="inv-field-hint">Marca o cervecería del producto.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-presentacion">Presentación</label>';
+        html += '              <input name="presentacion" id="inv-presentacion" placeholder="Botella 330ml">';
+        html += '              <span class="inv-field-hint">Tamaño y tipo de envase (ej. Botella 330ml, Lata 473ml).</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-barcode-input">Código de Barras</label>';
+        html += '              <div class="inv-input-group">';
+        html += '                <input name="codigoBarras" id="inv-barcode-input" placeholder="Escanea o escribe el código" inputmode="numeric">';
+        html += '                <button type="button" id="inv-scan-form-btn" class="inv-scan-btn" onclick="InventoryManager.openInventoryScanner(document.getElementById(\'inv-barcode-input\'))" title="Escanear con la cámara (flash)"><span aria-hidden="true">📷</span><span class="inv-scan-btn-text">Cámara</span></button>';
+        html += '              </div>';
+        html += '              <span class="inv-field-hint">Código de barras del envase para escaneo rápido en ventas.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field inv-field-full">';
+        html += '              <label for="inv-imagen">URL de Imagen</label>';
+        html += '              <input name="imagen" id="inv-imagen" placeholder="https://..." inputmode="url">';
+        html += '              <span class="inv-field-hint">Enlace directo a la foto del producto.</span>';
+        html += '            </div>';
         html += '          </div>';
         html += '        </div>';
-        html += '        <div class="inv-field inv-field-full">';
-        html += '          <label for="inv-imagen">URL de Imagen</label>';
-        html += '          <input name="imagen" id="inv-imagen" placeholder="https://..." inputmode="url">';
+        html += '      </div>';
+
+        html += '      <div class="inv-section">';
+        html += '        <div class="inv-section-header">';
+        html += '          <span class="inv-section-icon" aria-hidden="true">🍺</span>';
+        html += '          <span class="inv-section-title">Modalidad Cartón / Charola (Mayoreo)</span>';
         html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-precioCompra">Precio de Compra ($)</label>';
-        html += '          <input name="precioCompra" id="inv-precioCompra" type="number" step="0.01" min="0" placeholder="0.00">';
+        html += '        <div class="inv-section-body">';
+        html += '          <div class="inv-form-grid">';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-unidadesPorCarton">Unidades por cartón / charola</label>';
+        html += '              <input name="unidadesPorCarton" id="inv-unidadesPorCarton" type="number" min="1" placeholder="24">';
+        html += '              <span class="inv-field-hint">Ej. 12 o 24 unidades que vienen dentro del cartón.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-costoCarton">Costo base de compra del cartón ($)</label>';
+        html += '              <input name="costoCarton" id="inv-costoCarton" type="number" step="0.01" min="0" placeholder="0.00">';
+        html += '              <span class="inv-field-hint">Lo que te cuesta al proveedor el cartón/charola completo.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-precioCarton">Precio de venta de cartón completo ($)</label>';
+        html += '              <input name="precioCarton" id="inv-precioCarton" type="number" step="0.01" min="0" placeholder="0.00">';
+        html += '              <span class="inv-field-hint">Precio al mayoreo cuando vendes el cartón entero.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-cobroExtraEnvaseCarton">Cobro extra por envase faltante en cartón ($)</label>';
+        html += '              <input name="cobroExtraEnvaseFaltanteCarton" id="inv-cobroExtraEnvaseCarton" type="number" step="0.01" min="0" placeholder="100.00">';
+        html += '              <span class="inv-field-hint">Ej. $100 extra si el cliente no devuelve los envases del cartón.</span>';
+        html += '            </div>';
+        html += '          </div>';
         html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-precioVenta">Precio de Venta ($)</label>';
-        html += '          <input name="precioVenta" id="inv-precioVenta" type="number" step="0.01" min="0" placeholder="0.00">';
+        html += '      </div>';
+
+        html += '      <div class="inv-section">';
+        html += '        <div class="inv-section-header">';
+        html += '          <span class="inv-section-icon" aria-hidden="true">🧊</span>';
+        html += '          <span class="inv-section-title">Modalidad Piezas Sueltas</span>';
         html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-stock">Stock Inicial</label>';
-        html += '          <input name="stock" id="inv-stock" type="number" min="0" placeholder="0">';
+        html += '        <div class="inv-section-body">';
+        html += '          <div class="inv-form-grid">';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-precioVenta">Precio de venta por pieza ($)</label>';
+        html += '              <input name="precioVenta" id="inv-precioVenta" type="number" step="0.01" min="0" placeholder="0.00">';
+        html += '              <span class="inv-field-hint">Precio unitario al detalle cuando vendes suelta.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-costoPieza">Costo base por pieza ($)</label>';
+        html += '              <input name="costoPieza" id="inv-costoPieza" type="number" step="0.01" min="0" placeholder="0.00">';
+        html += '              <span class="inv-field-hint">Lo que te cuesta cada pieza suelta.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-cobroExtraEnvasePieza">Cobro extra por envase faltante en pieza ($)</label>';
+        html += '              <input name="cobroExtraEnvaseFaltantePieza" id="inv-cobroExtraEnvasePieza" type="number" step="0.01" min="0" placeholder="10.00">';
+        html += '              <span class="inv-field-hint">Ej. $10 extra si el cliente no devuelve el envase de la pieza.</span>';
+        html += '            </div>';
+        html += '          </div>';
         html += '        </div>';
-        html += '        <div class="inv-field">';
-        html += '          <label for="inv-stockMinimo">Stock Mínimo</label>';
-        html += '          <input name="stockMinimo" id="inv-stockMinimo" type="number" min="0" placeholder="5">';
+        html += '      </div>';
+
+        html += '      <div class="inv-section">';
+        html += '        <div class="inv-section-header">';
+        html += '          <span class="inv-section-icon" aria-hidden="true">🏷️</span>';
+        html += '          <span class="inv-section-title">Promociones por Volumen (Paquetes)</span>';
+        html += '        </div>';
+        html += '        <div class="inv-section-body">';
+        html += '          <div class="inv-form-grid">';
+        for (var lvl = 1; lvl <= 3; lvl++) {
+          html += '            <div class="inv-field">';
+          html += '              <label for="inv-promo' + lvl + '-cantidad">Promoción ' + lvl + ' - Cantidad de piezas</label>';
+          html += '              <input name="promo' + lvl + 'Cantidad" id="inv-promo' + lvl + '-cantidad" type="number" min="1" placeholder="' + (lvl === 1 ? '2' : lvl === 2 ? '6' : '12') + '">';
+          html += '              <span class="inv-field-hint">Piezas requeridas para aplicar la promoción ' + lvl + '.</span>';
+          html += '            </div>';
+          html += '            <div class="inv-field">';
+          html += '              <label for="inv-promo' + lvl + '-precio">Promoción ' + lvl + ' - Precio especial ($)</label>';
+          html += '              <input name="promo' + lvl + 'Precio" id="inv-promo' + lvl + '-precio" type="number" step="0.01" min="0" placeholder="0.00">';
+          html += '              <span class="inv-field-hint">Precio total para el paquete de la promoción ' + lvl + '.</span>';
+          html += '            </div>';
+        }
+        html += '          </div>';
+        html += '        </div>';
+        html += '      </div>';
+
+        html += '      <div class="inv-section">';
+        html += '        <div class="inv-section-header">';
+        html += '          <span class="inv-section-icon" aria-hidden="true">📊</span>';
+        html += '          <span class="inv-section-title">Stock y Control</span>';
+        html += '        </div>';
+        html += '        <div class="inv-section-body">';
+        html += '          <div class="inv-form-grid">';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-stock">Stock Actual</label>';
+        html += '              <input name="stock" id="inv-stock" type="number" min="0" placeholder="0">';
+        html += '              <span class="inv-field-hint">Conteo real actual de unidades (botellas, piezas sueltas, etc.). Edítalo libremente para reflejar lo que hay en la nevera.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-stockMinimo">Stock Mínimo</label>';
+        html += '              <input name="stockMinimo" id="inv-stockMinimo" type="number" min="0" placeholder="5">';
+        html += '              <span class="inv-field-hint">Nivel a partir del cual se activa la alerta de reposición.</span>';
+        html += '            </div>';
+        html += '          </div>';
         html += '        </div>';
         html += '      </div>';
 
@@ -263,7 +361,7 @@
           var stockMin = (product.stockMinimo === undefined || product.stockMinimo === null) ? 5 : product.stockMinimo;
           var lowStock = stock <= stockMin;
           var precioVenta = (product.precioVenta !== undefined && product.precioVenta !== null) ? product.precioVenta : ((product.precio !== undefined && product.precio !== null) ? product.precio : 0);
-          var precioCompra = product.precioCompra || 0;
+          var precioCompra = (product.costoPieza !== undefined && product.costoPieza !== null) ? Number(product.costoPieza) : (product.precioCompra || 0);
           var codigo = product.codigoBarras || product.codigo || '';
           var imagen = product.imagen || product.imagenUrl || product.foto || '';
 
@@ -281,6 +379,10 @@
           html += '  <div class="inv-prices"><div><span>Compra</span>' + currencySymbol + parseFloat(precioCompra).toFixed(2) + '</div><div><span>Venta</span>' + currencySymbol + parseFloat(precioVenta).toFixed(2) + '</div></div>';
           if (codigo) html += '  <div class="inv-code"><span>Código</span> ' + this.escapeHtml(codigo) + '</div>';
           html += '  <div class="inv-stock ' + (lowStock ? 'low-stock' : '') + '">Stock: ' + stock + (lowStock ? ' ⚠️ Rellenar' : '') + ' <span class="inv-stock-min">(mín. ' + stockMin + ')</span></div>';
+          html += '  <div class="inv-stock-adjust">';
+          html += '    <button class="inv-stock-btn inv-stock-minus" onclick="InventoryManager.adjustStock(\'' + id + '\', -1)" title="Quitar 1 unidad">−</button>';
+          html += '    <button class="inv-stock-btn inv-stock-plus" onclick="InventoryManager.adjustStock(\'' + id + '\', 1)" title="Agregar 1 unidad">+</button>';
+          html += '  </div>';
           html += '  <div class="inv-actions">';
           html += '    <button class="inv-edit" onclick="InventoryManager.editProduct(\'' + id + '\')">Editar</button>';
           html += '    <button class="inv-delete" onclick="InventoryManager.deleteProduct(\'' + id + '\')" title="Eliminar" aria-label="Eliminar"><span class="trash-icon">&#128465;</span></button>';
@@ -325,6 +427,25 @@
               precioCompra: parseFloat((form.precioCompra && form.precioCompra.value) || 0) || 0,
               precioVenta: precioVenta,
               precio: precioVenta,
+              costoPieza: parseFloat((form.costoPieza && form.costoPieza.value) || 0) || 0,
+              cobroExtraEnvaseFaltantePieza: parseFloat((form.cobroExtraEnvaseFaltantePieza && form.cobroExtraEnvaseFaltantePieza.value) || 0) || 0,
+              precioCarton: parseFloat((form.precioCarton && form.precioCarton.value) || 0) || 0,
+              costoCarton: parseFloat((form.costoCarton && form.costoCarton.value) || 0) || 0,
+              unidadesPorCarton: parseInt((form.unidadesPorCarton && form.unidadesPorCarton.value) || 0, 10) || 0,
+              cobroExtraEnvaseFaltanteCarton: parseFloat((form.cobroExtraEnvaseFaltanteCarton && form.cobroExtraEnvaseFaltanteCarton.value) || 0) || 0,
+              precioPromo: parseFloat((form.precioPromo && form.precioPromo.value) || 0) || 0,
+              costoPromo: parseFloat((form.costoPromo && form.costoPromo.value) || 0) || 0,
+              promocionesVolumen: (function () {
+                var levels = [];
+                for (var l = 1; l <= 3; l++) {
+                  var cant = parseInt((form['promo' + l + 'Cantidad'] && form['promo' + l + 'Cantidad'].value) || 0, 10);
+                  var prec = parseFloat((form['promo' + l + 'Precio'] && form['promo' + l + 'Precio'].value) || 0) || 0;
+                  if (cant > 0 && prec > 0) levels.push({ cantidad: cant, precio: prec });
+                }
+                levels.sort(function (a, b) { return a.cantidad - b.cantidad; });
+                return levels;
+              })(),
+              promocionesPorPieza: (form.promocionesPorPieza && form.promocionesPorPieza.value) || '',
               stock: parseInt((form.stock && form.stock.value) || 0, 10) || 0,
               stockMinimo: parseInt((form.stockMinimo && form.stockMinimo.value) || 5, 10) || 5,
               activo: true
@@ -447,6 +568,21 @@
         if (form.imagen) form.imagen.value = product.imagen || product.imagenUrl || product.foto || '';
         if (form.precioCompra) form.precioCompra.value = product.precioCompra || 0;
         if (form.precioVenta) form.precioVenta.value = product.precioVenta !== undefined ? product.precioVenta : (product.precio || 0);
+        if (form.costoPieza) form.costoPieza.value = product.costoPieza || 0;
+        if (form.cobroExtraEnvaseFaltantePieza) form.cobroExtraEnvaseFaltantePieza.value = product.cobroExtraEnvaseFaltantePieza || 0;
+        if (form.precioCarton) form.precioCarton.value = product.precioCarton || 0;
+        if (form.costoCarton) form.costoCarton.value = product.costoCarton || 0;
+        if (form.unidadesPorCarton) form.unidadesPorCarton.value = product.unidadesPorCarton || 0;
+        if (form.cobroExtraEnvaseFaltanteCarton) form.cobroExtraEnvaseFaltanteCarton.value = product.cobroExtraEnvaseFaltanteCarton || 0;
+        if (form.precioPromo) form.precioPromo.value = product.precioPromo || 0;
+        if (form.costoPromo) form.costoPromo.value = product.costoPromo || 0;
+        var promosVol = product.promocionesVolumen || [];
+        for (var l = 1; l <= 3; l++) {
+          var p = promosVol[l - 1];
+          if (form['promo' + l + 'Cantidad']) form['promo' + l + 'Cantidad'].value = p ? p.cantidad : '';
+          if (form['promo' + l + 'Precio']) form['promo' + l + 'Precio'].value = p ? p.precio : '';
+        }
+        if (form.promocionesPorPieza) form.promocionesPorPieza.value = product.promocionesPorPieza || '';
         if (form.stock) form.stock.value = product.stock || 0;
         if (form.stockMinimo) form.stockMinimo.value = product.stockMinimo !== undefined ? product.stockMinimo : 5;
 
@@ -479,6 +615,26 @@
         }
       } catch (e) {
         console.error('Inventory deleteProduct error:', e);
+      }
+    },
+
+    // Suma o resta unidades sueltas al stock de un producto (entrada parcial / ajuste rápido).
+    adjustStock: function (id, delta) {
+      try {
+        var products = this.getActiveProducts();
+        var product = products.find(function (p) { return String(p.id) === String(id); });
+        if (!product) return;
+        var current = Number(product.stock || 0);
+        var next = Math.max(0, current + Number(delta || 0));
+        var updated = Object.assign({}, product, { stock: next });
+        if (typeof Database !== 'undefined' && Database.updateProduct) {
+          Database.updateProduct(String(id), updated);
+        }
+        this.renderGrid();
+        this.notifyInventoryUpdated();
+      } catch (e) {
+        console.error('Inventory adjustStock error:', e);
+        showErrorAlert(e && e.message ? e.message : String(e));
       }
     },
 
@@ -590,8 +746,45 @@
       html += '    <strong>Piezas en nevera: ' + stock + ' / ' + capacity + '</strong>';
       html += '  </div>';
       html += '</div>';
+      html += '<div class="inv-fridge-adjust">';
+      html += '  <div class="inv-fridge-input-wrap">';
+      html += '    <input type="number" id="inv-fridge-adjust-input" inputmode="numeric" min="-999" max="999" value="0" placeholder="0">';
+      html += '    <button type="button" class="inv-fridge-apply" onclick="InventoryManager.adjustFridgeStockByInput()">Aplicar</button>';
+      html += '  </div>';
+      html += '</div>';
       html += '<button type="button" class="inv-fridge-refill" onclick="InventoryManager.refillFridge()">❄️ Rellenar Nevera</button>';
       return html;
+    },
+
+    // Ajuste rápido de ±1 unidad en el stock frío de la nevera.
+    adjustFridgeStock: function (delta) {
+      try {
+        const capacity = this.getFridgeCapacity();
+        const current = this.getFridgeStock();
+        const next = Math.max(0, Math.min(capacity, current + Number(delta || 0)));
+        this.setFridgeStock(next);
+        this.render();
+        this.notifyInventoryUpdated();
+        this.buildFridgePanel();
+      } catch (e) {
+        console.error('Inventory adjustFridgeStock error:', e);
+        showErrorAlert(e && e.message ? e.message : String(e));
+      }
+    },
+
+    // Ajuste del stock frío usando el valor libre del campo numérico del modal.
+    adjustFridgeStockByInput: function () {
+      try {
+        const input = document.getElementById('inv-fridge-adjust-input');
+        const delta = input ? parseInt(input.value || 0, 10) : 0;
+        if (!Number.isFinite(delta) || delta === 0) return;
+        this.adjustFridgeStock(delta);
+        if (input) input.value = 0;
+        this.openFridgeModal();
+      } catch (e) {
+        console.error('Inventory adjustFridgeStockByInput error:', e);
+        showErrorAlert(e && e.message ? e.message : String(e));
+      }
     },
 
 
