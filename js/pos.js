@@ -2660,8 +2660,8 @@ if (other) {
     if (channelsBox) {
       channelsBox.hidden = !(canales.qr > 0 || canales.terminal > 0);
     }
-    setText('pos-cut-promociones', summary.descuentosPromociones > 0
-      ? '-' + currency + summary.descuentosPromociones.toFixed(2)
+    setText('pos-cut-promociones', mPromosMonto > 0
+      ? currency + mPromosMonto.toFixed(2)
       : currency + '0.00');
     setText('pos-cut-ventas', currency + summary.totalVentas.toFixed(2));
 
@@ -2699,7 +2699,7 @@ if (other) {
     });
     setText('pos-cut-piezas-frias', currency + mPiezasFriasMonto.toFixed(2));
     setText('pos-cut-cartones-frios', currency + mCartonesFriosMonto.toFixed(2));
-    setText('pos-cut-promos-aplicadas', '-' + currency + mPromosMonto.toFixed(2));
+    setText('pos-cut-promos-aplicadas', currency + mPromosMonto.toFixed(2));
     setText('pos-cut-expected', currency + summary.totalEnCaja.toFixed(2));
     setText('pos-cut-total-caja', currency + summary.totalEnCaja.toFixed(2));
 
@@ -3119,10 +3119,10 @@ if (other) {
     ticket += linea('Ventas por transferencia', monto(desglose.ventasTransferencia !== undefined ? desglose.ventasTransferencia : data.ventasTransferencia)) + '\n';
     ticket += linea('Cobro con código QR', monto(desglose.ventasPorCanal?.qr || 0)) + '\n';
     ticket += linea('Cobro en terminal física', monto(desglose.ventasPorCanal?.terminal || 0)) + '\n';
-    ticket += linea('Promociones (descuento)', '-' + monto(desglose.promociones !== undefined ? desglose.promociones : data.descuentosPromociones)) + '\n';
+    ticket += linea('Promociones (descuento)', monto(desglose.promocionesMonto !== undefined ? desglose.promocionesMonto : desglose.promociones !== undefined ? desglose.promociones : data.descuentosPromociones)) + '\n';
     ticket += linea('Piezas frías', (desglose.piezasFriasCant || 0) + ' x ' + monto(desglose.piezasFriasMonto || 0)) + '\n';
     ticket += linea('Cartones fríos', (desglose.cartonesFriosCant || 0) + ' x ' + monto(desglose.cartonesFriosMonto || 0)) + '\n';
-    ticket += linea('Promociones aplicadas', (desglose.promocionesCant || 0) + ' x ' + '-' + monto(desglose.promocionesMonto || 0)) + '\n';
+    ticket += linea('Promociones aplicadas', (desglose.promocionesCant || 0) + ' x ' + monto(desglose.promocionesMonto || 0)) + '\n';
     ticket += linea('Total de ventas', monto(desglose.totalVentas !== undefined ? desglose.totalVentas : data.totalVentas)) + '\n';
     ticket += '----------------------------------------\n';
     ticket += linea('Total en caja', monto(data.totalEnCaja !== undefined ? data.totalEnCaja : data.totalEsperado)) + '\n';
