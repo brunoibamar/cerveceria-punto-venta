@@ -3,11 +3,11 @@
 
 const EmailService = {
   // Configuración de EmailJS
-  config: {
+  config: Object.freeze({
     publicKey: 'SqbjTPIS_U8CAwQTw',
     serviceId: 'service_1576q89', // Service ID oficial de EmailJS
     templateId: 'template_dkl2n9i' // Template ID oficial de EmailJS
-  },
+  }),
 
   // Redondeo a 2 decimales (mismo criterio que POS.round2)
   round2(value) {
@@ -288,27 +288,24 @@ const EmailService = {
       });
 
       // Enviar el correo
-      const response = await emailjs.send(
-        this.config.serviceId,
-        this.config.templateId,
+      return emailjs.send(
+        'service_1576q89',
+        'template_dkl2n9i',
         templateParams,
-        this.config.publicKey
-      );
-
-      const responseMessage = this.getResponseMessage(response, 'Correo enviado correctamente.');
-      console.log('Email de respaldo enviado correctamente:', responseMessage);
-      return { success: true, response };
+        'SqbjTPIS_U8CAwQTw'
+      ).then(response => {
+        console.log('SUCCESS!', response.status, response.text);
+        return { success: true, response };
+      }).catch(err => {
+        const errorMessage = this.getResponseMessage(err, 'Error al enviar el correo de respaldo.');
+        console.log('FAILED...', errorMessage);
+        return { success: false, error: errorMessage };
+      });
     } catch (error) {
       const errorMessage = this.getResponseMessage(error, 'Error al enviar el correo de respaldo.');
       console.error('Error al enviar el email de respaldo:', errorMessage);
       return { success: false, error: errorMessage };
     }
-  },
-
-  setConfig(creds) {
-    if (creds.publicKey) this.config.publicKey = creds.publicKey;
-    if (creds.serviceId) this.config.serviceId = creds.serviceId;
-    if (creds.templateId) this.config.templateId = creds.templateId;
   }
 };
 

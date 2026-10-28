@@ -3102,45 +3102,19 @@ if (other) {
     return 'Cajero';
   },
 
-  // Credenciales EmailJS guardadas en Ajustes, con valores predeterminados del servicio
+  // Credenciales EmailJS fijas en el servicio
   getEmailConfig() {
-    let settings = {};
-    try {
-      settings = Database.getSettings() || {};
-    } catch (e) {
-      settings = {};
-    }
-
     if (typeof emailjs === 'undefined') {
       return { ok: false, error: 'La librería de EmailJS no está disponible. Revisa tu conexión a internet.' };
     }
 
     const defaults = EmailService.config;
-    const publicKey = String(settings.emailPublicKey || settings.publicKey || defaults.publicKey).trim();
-    const serviceId = String(settings.emailServiceId || settings.serviceId || defaults.serviceId).trim();
-    const templateId = String(settings.emailTemplateId || settings.templateId || defaults.templateId).trim();
-    if (!publicKey || !serviceId || !templateId) {
-      return { ok: false, error: 'Completa el Service ID, Template ID y Public Key de EmailJS en Ajustes.' };
-    }
-
-    // Correo de destino predeterminado: reportes van directo a esta bandeja
-    let destino = String(settings.backupEmail || 'tonitocerverciapunto@gmail.com').trim();
-    if (!destino) {
-      destino = 'tonitocerverciapunto@gmail.com';
-      try {
-        settings.backupEmail = destino;
-        Database.saveSettings(settings);
-      } catch (e) {
-        console.error('[POS] No se pudo guardar el correo de respaldo:', e);
-      }
-    }
-
     return {
       ok: true,
-      destino: destino,
-      publicKey: publicKey,
-      serviceId: serviceId,
-      templateId: templateId
+      destino: 'tonitocerverciapunto@gmail.com',
+      publicKey: defaults.publicKey,
+      serviceId: defaults.serviceId,
+      templateId: defaults.templateId
     };
   },
 
@@ -3156,12 +3130,6 @@ if (other) {
     }
 
     try {
-      EmailService.setConfig({
-        publicKey: credenciales.publicKey,
-        serviceId: credenciales.serviceId,
-        templateId: credenciales.templateId
-      });
-
       const payload = {
         id: cut.id || 'N/A',
         fecha: cut.fechaCierre || new Date().toISOString().split('T')[0],
