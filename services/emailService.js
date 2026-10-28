@@ -53,12 +53,10 @@ const EmailService = {
 
     try {
       const templateParams = this.getTemplateParams(corte);
-      emailjs.init({
-        publicKey: 'SqbjTPIS_U8CAwQTw',
-      });
+      emailjs.init('SqbjTPIS_U8CAwQTw');
       const response = await emailjs.send(
-        this.config.serviceId,
-        this.config.templateId,
+        'service_1576q89',
+        'template_dkl2n9i',
         templateParams
       );
       return { success: true, response: response.text };
