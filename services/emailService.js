@@ -1,9 +1,9 @@
 // Envío del resumen del corte mediante EmailJS.
 const EmailService = {
   config: Object.freeze({
-    serviceId: 'service_1576q89',
-    templateId: 'template_dkl2n9i',
-    publicKey: 'SqbjTPIS_U8CAwQTw',
+    serviceId: 'service_mij9pos',
+    templateId: 'template_dxhxffr',
+    publicKey: 'kABVDciMNsPEg2y_-',
     // The EmailJS template uses this fixed recipient directly.
     destination: 'tonitocerveceriapunto@gmail.com'
   }),
@@ -53,10 +53,10 @@ const EmailService = {
 
     try {
       const templateParams = this.getTemplateParams(corte);
-      emailjs.init('SqbjTPIS_U8CAwQTw');
+      emailjs.init('kABVDciMNsPEg2y_-');
       const response = await emailjs.send(
-        'service_1576q89',
-        'template_dkl2n9i',
+        'service_mij9pos',
+        'template_dxhxffr',
         templateParams
       );
       return { success: true, response: response.text };
