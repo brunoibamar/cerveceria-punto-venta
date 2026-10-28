@@ -4591,6 +4591,39 @@ PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
   gap: 10px;
 }
 
+#pos-cut-modal .payment-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+#pos-cut-modal .cut-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: 8px;
+  margin: 0;
+}
+
+#pos-cut-modal .cut-footer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  width: 100%;
+  gap: 8px;
+}
+
+#pos-cut-modal .cut-actions .btn,
+#pos-cut-modal .cut-footer-row .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 9px 10px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* Los elementos ocultos nunca deben reaparecer por reglas de display */
 .payment-modal [hidden],
 .settings-modal [hidden],
@@ -4678,13 +4711,37 @@ PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
   .cut-footer-row {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  #pos-cut-modal .payment-footer {
+    gap: 10px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #pos-cut-modal .cut-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #pos-cut-modal .cut-footer-row {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   }
 
   .cut-actions .btn,
   .cut-footer-row .btn {
     width: 100%;
+  }
+
+  #pos-cut-modal .cut-actions .btn {
+    min-height: 54px;
+    padding: 7px 5px;
+    font-size: 10px;
+  }
+
+  #pos-cut-modal .cut-footer-row .btn {
+    min-height: 50px;
+    padding: 9px 8px;
+    font-size: 12px;
   }
 }
 

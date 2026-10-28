@@ -32,7 +32,7 @@ const SettingsManager = {
     },
     email: {
       title: 'Correo de Respaldo (EmailJS)',
-      subtitle: 'Credenciales usadas por “Corte de Caja → Enviar a correo”.',
+      subtitle: 'Configura las credenciales de EmailJS para los envíos del corte de caja.',
       icon: '📧'
     },
     mp: {
@@ -199,17 +199,17 @@ const SettingsManager = {
       return `
         <div class="modal-field">
           <label for="m-serviceId">Service ID</label>
-          <input type="text" id="m-serviceId" value="${this.escapeAttr(settings.emailServiceId || settings.serviceId || '')}" />
+          <input type="text" id="m-serviceId" value="${this.escapeAttr(settings.emailServiceId || settings.serviceId || EmailService.config.serviceId)}" autocomplete="off" />
         </div>
         <div class="modal-field">
           <label for="m-templateId">Template ID</label>
-          <input type="text" id="m-templateId" value="${this.escapeAttr(settings.emailTemplateId || settings.templateId || '')}" />
+          <input type="text" id="m-templateId" value="${this.escapeAttr(settings.emailTemplateId || settings.templateId || EmailService.config.templateId)}" autocomplete="off" />
         </div>
         <div class="modal-field">
           <label for="m-publicKey">Public Key</label>
-          <input type="text" id="m-publicKey" value="${this.escapeAttr(settings.emailPublicKey || settings.publicKey || '')}" />
+          <input type="text" id="m-publicKey" value="${this.escapeAttr(settings.emailPublicKey || settings.publicKey || EmailService.config.publicKey)}" autocomplete="off" />
         </div>
-        <p class="form-hint">Credenciales de EmailJS usadas por “Corte de Caja → Enviar a correo”.</p>
+        <p class="form-hint">Las credenciales se guardan en este dispositivo y se usan en el siguiente envío del corte.</p>
       `;
     }
 
@@ -318,9 +318,9 @@ const SettingsManager = {
       const v = parseInt(document.getElementById('m-fridgeCapacity').value, 10);
       settings.fridgeCapacity = Number.isFinite(v) && v > 0 ? v : 24;
     } else if (type === 'email') {
-      settings.emailServiceId = document.getElementById('m-serviceId').value;
-      settings.emailTemplateId = document.getElementById('m-templateId').value;
-      settings.emailPublicKey = document.getElementById('m-publicKey').value;
+      settings.emailServiceId = document.getElementById('m-serviceId').value.trim();
+      settings.emailTemplateId = document.getElementById('m-templateId').value.trim();
+      settings.emailPublicKey = document.getElementById('m-publicKey').value.trim();
     } else if (type === 'mp') {
       settings.mercadoPagoCobroUrl = document.getElementById('m-mercadoPagoCobroUrl').value.trim();
     }

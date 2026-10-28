@@ -4,7 +4,7 @@
 const EmailService = {
   // Configuración de EmailJS
   config: {
-    publicKey: 'SqbTPIS_U8CAwQTw', // Public Key oficial de EmailJS
+    publicKey: 'SqbjTPIS_U8CAwQTw',
     serviceId: 'service_1576q89', // Service ID oficial de EmailJS
     templateId: 'template_dkl2n9i' // Template ID oficial de EmailJS
   },
@@ -39,6 +39,48 @@ const EmailService = {
       monto: this.round2(monto),
       piezas: piezas
     };
+  },
+
+  getProductTemplateVariables(productos) {
+    const variables = {
+      tecate_cartones: 0,
+      tecate_piezas: 0,
+      solsandia_cartones: 0,
+      solsandia_piezas: 0
+    };
+
+    (Array.isArray(productos) ? productos : []).forEach(producto => {
+      const key = String(producto && producto.nombre || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+      if (!key) return;
+      variables[key + '_cartones'] =
+        (Number(variables[key + '_cartones']) || 0) + (Number(producto.cartones) || 0);
+      variables[key + '_piezas'] =
+        (Number(variables[key + '_piezas']) || 0) + (Number(producto.piezas) || 0);
+    });
+
+    return variables;
+  },
+
+  getResponseMessage(value, fallback) {
+    if (typeof value === 'string' && value.trim()) return value;
+    if (value && typeof value === 'object') {
+      if (typeof value.text === 'string' && value.text.trim()) return value.text;
+      if (typeof value.message === 'string' && value.message.trim()) return value.message;
+      if (value.response) {
+        const responseMessage = this.getResponseMessage(value.response, '');
+        if (responseMessage) return responseMessage;
+      }
+      try {
+        return JSON.stringify(value);
+      } catch (serializationError) {
+        return fallback;
+      }
+    }
+    return fallback;
   },
 
   getColdItemBreakdown(item) {
@@ -180,6 +222,8 @@ const EmailService = {
       const fondoInicial = this.round2(Number(corte.fondoInicial || corte.montoApertura || corte.desglose?.fondoInicial || 0));
       const descuentosPromociones = this.round2(Number(corte.descuentosPromociones || 0));
       const cantidadVentas = Number(corte.cantidadVentas || (corte.transacciones ? corte.transacciones.length : 0));
+      const productos = Array.isArray(corte.productos) ? corte.productos : [];
+      const variablesProductos = this.getProductTemplateVariables(productos);
 
       const capitalReinversion = this.round2(totalVentas - descuentosPromociones);
       const gananciasLibres = this.round2(totalVentas - descuentosPromociones);
@@ -218,11 +262,19 @@ const EmailService = {
         hora: corte.hora || corte.horaCierre || now.toLocaleTimeString(),
         corte_id: corte.id || 'N/A',
         vendedor: corte.ventas || corte.usuario || 'Sistema',
-        productos: corte.productos ? JSON.stringify(corte.productos) : '[]',
+        productos: productos.length ? JSON.stringify(productos) : '[]',
+        detalle_productos: productos.map(producto => {
+          const cartones = Number(producto.cartones) || 0;
+          const piezas = Number(producto.piezas) || 0;
+          return (producto.nombre || 'Producto') + ': ' +
+            cartones + (cartones === 1 ? ' cartón/paquete, ' : ' cartones/paquetes, ') +
+            piezas + (piezas === 1 ? ' pieza suelta' : ' piezas sueltas');
+        }).join('\n'),
         total_efectivo: this.round2(Number(corte.totalEfectivo || 0)),
         total_tarjeta: this.round2(Number(corte.totalTarjeta || 0)),
         total_general: this.round2(Number(corte.totalGeneral || 0)),
-        numero_transacciones: Number(corte.numero_transacciones || cantidadVentas)
+        numero_transacciones: Number(corte.numero_transacciones || cantidadVentas),
+        ...variablesProductos
       };
 
       // Log previo al envío para verificación local
@@ -243,18 +295,16 @@ const EmailService = {
         this.config.publicKey
       );
 
-      console.log('Email de respaldo enviado correctamente:', response);
+      const responseMessage = this.getResponseMessage(response, 'Correo enviado correctamente.');
+      console.log('Email de respaldo enviado correctamente:', responseMessage);
       return { success: true, response };
     } catch (error) {
-      console.error('Error al enviar el email de respaldo:', error);
-      return { success: false, error: error.message || error };
+      const errorMessage = this.getResponseMessage(error, 'Error al enviar el correo de respaldo.');
+      console.error('Error al enviar el email de respaldo:', errorMessage);
+      return { success: false, error: errorMessage };
     }
   },
 
-  /**
-   * Configura las credenciales de EmailJS.
-   * @param {Object} creds - Objeto con publicKey, serviceId y templateId.
-   */
   setConfig(creds) {
     if (creds.publicKey) this.config.publicKey = creds.publicKey;
     if (creds.serviceId) this.config.serviceId = creds.serviceId;

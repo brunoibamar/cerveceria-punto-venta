@@ -2757,7 +2757,7 @@ if (other) {
       return '<li class="cut-promos-item">' +
         '<span class="cut-promos-name">' + this.escapeHtml(item.nombre || 'Promoción') +
         '<span class="cut-promos-times"> x' + veces + '</span></span>' +
-        '<span class="cut-promos-value">-' + this.escapeHtml(currency) + descuento.toFixed(2) + '</span>' +
+        '<span class="cut-promos-value">' + this.escapeHtml(currency) + Math.abs(descuento).toFixed(2) + '</span>' +
         '</li>';
     }).join('');
 
@@ -2810,6 +2810,8 @@ if (other) {
 
     const diferencia = this.round2(counted - esperado);
     const tickets = this.getTurnTickets();
+    const ticketsCorte = tickets.map(ticket => SalesLog.compactTicket(ticket));
+    const productos = this.getCutProducts({ tickets: ticketsCorte });
 
     // Desglose de frío y promociones desde las transacciones del turno
     const resumenFrio = EmailService.getColdItemsSummary(tickets);
@@ -2847,7 +2849,8 @@ if (other) {
       totalGeneral: summary.totalVentas,
       cantidadVentas: summary.cantidadVentas,
       ventasIds: tickets.map(ticket => ticket.id),
-      tickets: tickets.map(ticket => SalesLog.compactTicket(ticket)),
+      tickets: ticketsCorte,
+      productos: productos,
       efectivoContado: this.round2(counted),
       totalEsperado: esperado,
       totalEnCaja: esperado,
@@ -2873,6 +2876,7 @@ if (other) {
         piezasFriasMonto: resumenFrio.piezasMonto,
         cartonesFriosCant: resumenFrio.cartonesCant,
         cartonesFriosMonto: resumenFrio.cartonesMonto,
+        productos: productos,
         totalVentas: summary.totalVentas,
         totalEnCaja: esperado,
         efectivoContado: this.round2(counted),
@@ -2931,7 +2935,11 @@ if (other) {
       } else if (action === 'email') {
         const result = await this.sendCutByEmail(saved, emailConfig);
         ok = result.success;
-        if (!ok) alert(result.error);
+        if (ok) {
+          alert('¡Correo enviado con éxito!');
+        } else {
+          alert(result.error);
+        }
       }
     } catch (error) {
       console.error('[POS] Error al ejecutar la acción del corte:', error);
@@ -3042,6 +3050,20 @@ if (other) {
     ticket += linea('Piezas frías', (desglose.piezasFriasCant || 0) + ' x ' + monto(desglose.piezasFriasMonto || 0)) + '\n';
     ticket += linea('Cartones fríos', (desglose.cartonesFriosCant || 0) + ' x ' + monto(desglose.cartonesFriosMonto || 0)) + '\n';
     ticket += linea('Promociones aplicadas', (desglose.promocionesCant || 0) + ' x ' + monto(desglose.promocionesMonto || 0)) + '\n';
+    const productos = Array.isArray(data.productos)
+      ? data.productos
+      : (Array.isArray(desglose.productos) ? desglose.productos : this.getCutProducts(data));
+    if (productos.length) {
+      ticket += '----------------------------------------\n';
+      ticket += ' SALIDA DE PRODUCTOS\n';
+      productos.forEach(producto => {
+        const cartones = Number(producto.cartones) || 0;
+        const piezas = Number(producto.piezas) || 0;
+        ticket += ' ' + (producto.nombre || 'Producto') + ': ' +
+          cartones + (cartones === 1 ? ' cartón/paquete, ' : ' cartones/paquetes, ') +
+          piezas + (piezas === 1 ? ' pieza suelta\n' : ' piezas sueltas\n');
+      });
+    }
     ticket += linea('Total de ventas', monto(desglose.totalVentas !== undefined ? desglose.totalVentas : data.totalVentas)) + '\n';
     ticket += '----------------------------------------\n';
     ticket += linea('Total en caja', monto(data.totalEnCaja !== undefined ? data.totalEnCaja : data.totalEsperado)) + '\n';
@@ -3080,7 +3102,7 @@ if (other) {
     return 'Cajero';
   },
 
-  // Credenciales de EmailJS configuradas en el módulo de Ajustes
+  // Credenciales EmailJS guardadas en Ajustes, con valores predeterminados del servicio
   getEmailConfig() {
     let settings = {};
     try {
@@ -3089,17 +3111,16 @@ if (other) {
       settings = {};
     }
 
-    // Credenciales oficiales de EmailJS (valor por defecto si no hay en ajustes)
-    const publicKey = String(settings.emailPublicKey || 'SqbTPIS_U8CAwQTw').trim();
-    const serviceId = String(settings.emailServiceId || 'service_1576q89').trim();
-    const templateId = String(settings.emailTemplateId || 'template_dkl2n9i').trim();
-
-    if (!publicKey || !serviceId || !templateId) {
-      return { ok: false, error: 'No se pudieron cargar las credenciales de EmailJS.' };
-    }
-
     if (typeof emailjs === 'undefined') {
       return { ok: false, error: 'La librería de EmailJS no está disponible. Revisa tu conexión a internet.' };
+    }
+
+    const defaults = EmailService.config;
+    const publicKey = String(settings.emailPublicKey || settings.publicKey || defaults.publicKey).trim();
+    const serviceId = String(settings.emailServiceId || settings.serviceId || defaults.serviceId).trim();
+    const templateId = String(settings.emailTemplateId || settings.templateId || defaults.templateId).trim();
+    if (!publicKey || !serviceId || !templateId) {
+      return { ok: false, error: 'Completa el Service ID, Template ID y Public Key de EmailJS en Ajustes.' };
     }
 
     // Correo de destino predeterminado: reportes van directo a esta bandeja
@@ -3114,7 +3135,13 @@ if (other) {
       }
     }
 
-    return { ok: true, destino: destino, publicKey: publicKey, serviceId: serviceId, templateId: templateId };
+    return {
+      ok: true,
+      destino: destino,
+      publicKey: publicKey,
+      serviceId: serviceId,
+      templateId: templateId
+    };
   },
 
   // Envía el reporte del corte de caja por correo con las credenciales de EmailJS
@@ -3170,35 +3197,74 @@ if (other) {
     }
   },
 
-  // Productos vendidos en el corte (agregados por nombre)
+  // Productos vendidos en el corte (agrupados por artículo)
   getCutProducts(cut) {
     const agregados = new Map();
+    const tickets = Array.isArray(cut && cut.tickets)
+      ? cut.tickets
+      : (cut ? [] : this.getTurnTickets());
 
-    this.getTurnTickets().forEach(ticket => {
-      const items = (ticket && ticket.items) || [];
+    tickets.forEach(ticket => {
+      const items = Array.isArray(ticket && ticket.items) ? ticket.items : [];
       items.forEach(item => {
         if (!item) return;
         const nombre = item.nombre || 'Producto';
-        const cantidad = Number(item.cantidad) || 0;
+        const cantidad = Math.max(
+          0,
+          Math.floor(Number(item.cantidad !== undefined ? item.cantidad : item.quantity) || 0)
+        );
         const importe = Number(item.subtotal) || 0;
-        const actual = agregados.get(nombre) || { nombre: nombre, cantidad: 0, importe: 0 };
+        const clave = item.productId ? String(item.productId) : nombre.toLocaleLowerCase();
+        const actual = agregados.get(clave) || {
+          nombre: nombre,
+          cantidad: 0,
+          cartones: 0,
+          piezas: 0,
+          importe: 0,
+          unidadesPorCarton: 0
+        };
         actual.cantidad += cantidad;
         actual.importe = this.round2(actual.importe + importe);
-        agregados.set(nombre, actual);
+        const unidadesPorCarton = Number(item.unidadesPorCarton) || 0;
+        const esCarton = Boolean(item.isCarton || item.carton || item.charola);
+        const cartones = esCarton && unidadesPorCarton > 0
+          ? Math.floor(cantidad / unidadesPorCarton)
+          : 0;
+        actual.cartones += cartones;
+        actual.piezas += Math.max(0, cantidad - cartones * unidadesPorCarton);
+        actual.unidadesPorCarton = Math.max(actual.unidadesPorCarton, unidadesPorCarton);
+        agregados.set(clave, actual);
       });
     });
 
     if (!agregados.size) {
-      ((cut && cut.tickets) || []).forEach(ticket => {
+      (Array.isArray(cut && cut.tickets) ? cut.tickets : []).forEach(ticket => {
         if (!ticket) return;
         const nombre = ticket.detalle || 'Productos';
-        const actual = agregados.get(nombre) || { nombre: nombre, cantidad: ticket.unidades || 0, importe: 0 };
+        const clave = nombre.toLocaleLowerCase();
+        const actual = agregados.get(clave) || {
+          nombre: nombre,
+          cantidad: Number(ticket.unidades) || 0,
+          cartones: 0,
+          piezas: Number(ticket.unidades) || 0,
+          importe: 0,
+          unidadesPorCarton: 0
+        };
         actual.importe = this.round2(actual.importe + (Number(ticket.total) || 0));
-        agregados.set(nombre, actual);
+        agregados.set(clave, actual);
       });
     }
 
-    return Array.from(agregados.values());
+    return Array.from(agregados.values()).map(producto => {
+      return {
+        nombre: producto.nombre,
+        cantidad: Math.max(0, Math.floor(producto.cantidad)),
+        cartones: producto.cartones,
+        piezas: producto.piezas,
+        unidadesPorCarton: producto.unidadesPorCarton,
+        importe: producto.importe
+      };
+    });
   },
 
   // Cierra por completo la sesión del turno y regresa al login (apertura de caja)
