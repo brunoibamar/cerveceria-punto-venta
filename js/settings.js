@@ -32,7 +32,7 @@ const SettingsManager = {
     },
     email: {
       title: 'Correo de Respaldo (EmailJS)',
-      subtitle: 'Credenciales usadas por “Corte de Caja → Enviar a correo”.',
+      subtitle: 'El servicio de correo está configurado automáticamente para los cortes de caja.',
       icon: '📧'
     },
     mp: {
@@ -142,7 +142,7 @@ const SettingsManager = {
         <h3 class="settings-modal-title" id="settings-modal-title">${meta.icon} ${this.escapeHtml(meta.title)}</h3>
         <p class="settings-modal-sub">${this.escapeHtml(meta.subtitle)}</p>
         ${body}
-        ${(type !== 'backup' && type !== 'mplink') ? '<button type="button" class="settings-modal-save" id="settings-modal-save">Guardar</button>' : ''}
+        ${(type !== 'backup' && type !== 'mplink' && type !== 'email') ? '<button type="button" class="settings-modal-save" id="settings-modal-save">Guardar</button>' : ''}
       </div>
     `;
 
@@ -197,19 +197,7 @@ const SettingsManager = {
 
     if (type === 'email') {
       return `
-        <div class="modal-field">
-          <label for="m-serviceId">Service ID</label>
-          <input type="text" id="m-serviceId" value="${this.escapeAttr(settings.emailServiceId || settings.serviceId || '')}" />
-        </div>
-        <div class="modal-field">
-          <label for="m-templateId">Template ID</label>
-          <input type="text" id="m-templateId" value="${this.escapeAttr(settings.emailTemplateId || settings.templateId || '')}" />
-        </div>
-        <div class="modal-field">
-          <label for="m-publicKey">Public Key</label>
-          <input type="text" id="m-publicKey" value="${this.escapeAttr(settings.emailPublicKey || settings.publicKey || '')}" />
-        </div>
-        <p class="form-hint">Credenciales de EmailJS usadas por “Corte de Caja → Enviar a correo”.</p>
+        <p class="form-hint">El correo de respaldo está configurado y no requiere ingresar credenciales en este dispositivo.</p>
       `;
     }
 
@@ -317,10 +305,6 @@ const SettingsManager = {
     } else if (type === 'fridge') {
       const v = parseInt(document.getElementById('m-fridgeCapacity').value, 10);
       settings.fridgeCapacity = Number.isFinite(v) && v > 0 ? v : 24;
-    } else if (type === 'email') {
-      settings.emailServiceId = document.getElementById('m-serviceId').value;
-      settings.emailTemplateId = document.getElementById('m-templateId').value;
-      settings.emailPublicKey = document.getElementById('m-publicKey').value;
     } else if (type === 'mp') {
       settings.mercadoPagoCobroUrl = document.getElementById('m-mercadoPagoCobroUrl').value.trim();
     }

@@ -2938,7 +2938,7 @@ if (other) {
         if (ok) {
           alert('¡Correo enviado con éxito!');
         } else {
-          alert(result.error);
+          alert(EmailService.getResponseMessage(result.error, 'No se pudo enviar el correo del corte.'));
         }
       }
     } catch (error) {
@@ -3102,7 +3102,7 @@ if (other) {
     return 'Cajero';
   },
 
-  // Credenciales EmailJS guardadas en Ajustes, con valores predeterminados del servicio
+  // Credenciales EmailJS fijas en el servicio; solo el destinatario viene de Ajustes
   getEmailConfig() {
     let settings = {};
     try {
@@ -3113,14 +3113,6 @@ if (other) {
 
     if (typeof emailjs === 'undefined') {
       return { ok: false, error: 'La librería de EmailJS no está disponible. Revisa tu conexión a internet.' };
-    }
-
-    const publicKey = String(settings.emailPublicKey || 'SqbTPIS_U8CAwQTw').trim();
-    const serviceId = String(settings.emailServiceId || 'service_1576q89').trim();
-    const templateId = String(settings.emailTemplateId || 'template_dkl2n9i').trim();
-
-    if (!publicKey || !serviceId || !templateId) {
-      return { ok: false, error: 'No se pudieron cargar las credenciales de EmailJS.' };
     }
 
     let destino = String(settings.backupEmail || 'tonitocerverciapunto@gmail.com').trim();
@@ -3137,9 +3129,9 @@ if (other) {
     return {
       ok: true,
       destino: destino,
-      publicKey: publicKey,
-      serviceId: serviceId,
-      templateId: templateId
+      publicKey: EmailService.config.publicKey,
+      serviceId: EmailService.config.serviceId,
+      templateId: EmailService.config.templateId
     };
   },
 
@@ -3155,12 +3147,6 @@ if (other) {
     }
 
     try {
-      EmailService.setConfig({
-        publicKey: credenciales.publicKey,
-        serviceId: credenciales.serviceId,
-        templateId: credenciales.templateId
-      });
-
       const payload = {
         id: cut.id || 'N/A',
         fecha: cut.fechaCierre || new Date().toISOString().split('T')[0],
@@ -3192,7 +3178,10 @@ if (other) {
       return { success: true };
     } catch (error) {
       console.error('[POS] Error al enviar el corte por correo:', error);
-      return { success: false, error: error.message || 'Error al enviar el corte por correo.' };
+      return {
+        success: false,
+        error: EmailService.getResponseMessage(error, 'Error al enviar el corte por correo.')
+      };
     }
   },
 

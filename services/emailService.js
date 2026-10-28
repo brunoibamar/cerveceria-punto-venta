@@ -3,17 +3,35 @@
 
 const EmailService = {
   // Configuración de EmailJS
-  config: {
-    publicKey: 'SqbTPIS_U8CAwQTw', // Public Key oficial de EmailJS
-    serviceId: 'service_1576q89', // Service ID oficial de EmailJS
-    templateId: 'template_dkl2n9i' // Template ID oficial de EmailJS
-  },
+  config: Object.freeze({
+    publicKey: 'SqbTPIS_U8CAwQTw',
+    serviceId: 'service_1576q89',
+    templateId: 'template_dkl2n9i'
+  }),
 
   // Redondeo a 2 decimales (mismo criterio que POS.round2)
   round2(value) {
     const amount = Number(value);
     if (!Number.isFinite(amount)) return 0;
     return Math.round(amount * 100) / 100;
+  },
+
+  getResponseMessage(value, fallback) {
+    if (typeof value === 'string' && value.trim()) return value;
+    if (value && typeof value === 'object') {
+      if (typeof value.text === 'string' && value.text.trim()) return value.text;
+      if (typeof value.message === 'string' && value.message.trim()) return value.message;
+      if (value.response) {
+        const responseMessage = this.getResponseMessage(value.response, '');
+        if (responseMessage) return responseMessage;
+      }
+      try {
+        return JSON.stringify(value);
+      } catch (serializationError) {
+        return fallback;
+      }
+    }
+    return fallback;
   },
 
   getVolumePromotionsSummary(transacciones) {
@@ -243,22 +261,13 @@ const EmailService = {
         this.config.publicKey
       );
 
-      console.log('Email de respaldo enviado correctamente:', response);
+      console.log('SUCCESS!', response.status, response.text);
       return { success: true, response };
     } catch (error) {
-      console.error('Error al enviar el email de respaldo:', error);
-      return { success: false, error: error.message || error };
+      const errorMessage = this.getResponseMessage(error, 'Error al enviar el correo de respaldo.');
+      console.error('FAILED...', errorMessage);
+      return { success: false, error: errorMessage };
     }
-  },
-
-  /**
-   * Configura las credenciales de EmailJS.
-   * @param {Object} creds - Objeto con publicKey, serviceId y templateId.
-   */
-  setConfig(creds) {
-    if (creds.publicKey) this.config.publicKey = creds.publicKey;
-    if (creds.serviceId) this.config.serviceId = creds.serviceId;
-    if (creds.templateId) this.config.templateId = creds.templateId;
   }
 };
 
