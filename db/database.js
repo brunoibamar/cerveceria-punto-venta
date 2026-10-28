@@ -7,7 +7,8 @@ const STORAGE_KEYS = {
   CUTS: 'cerveceria_cuts',
   PROMOS: 'cerveceria_promos',
   SETTINGS: 'cerveceria_settings',
-  SESSION: 'cerveceria_session'
+  SESSION: 'cerveceria_session',
+  INVENTORY_CYCLES: 'cerveceria_inventory_cycles'
 };
 
 const DEFAULT_PRODUCTS = [
@@ -199,25 +200,308 @@ const Database = {
     };
     newProduct.id = newProduct.id || 'p' + Date.now();
     products.push(newProduct);
-    return this.saveProducts(products);
+
+    const cycles = this.getInventoryCycles();
+    const openCycle = cycles.find(cycle => cycle.status === 'open');
+    if (!openCycle) return this.saveProducts(products);
+
+    const stock = Math.max(0, Number(newProduct.stock) || 0);
+    openCycle.initialStock[newProduct.id] = 0;
+    openCycle.products[newProduct.id] = this.getInventoryProductSnapshot(newProduct);
+    if (stock > 0) {
+      openCycle.entries.push({
+        id: 'ie' + Date.now(),
+        productId: newProduct.id,
+        units: stock,
+        packages: 0,
+        unitsPerPackage: Number(newProduct.unidadesPorCarton) || 0,
+        occurredAt: new Date().toISOString(),
+        source: 'product-setup'
+      });
+    }
+    this.saveInventoryState(products, cycles);
+    return products;
   },
 
   updateProduct(id, updates) {
     const products = this.getProducts();
     const index = products.findIndex(p => p.id === id);
     if (index === -1) return null;
+    const previousStock = Math.max(0, Number(products[index].stock) || 0);
     products[index] = {
       coldStock: products[index].coldStock ?? 0,
       coldCapacity: products[index].coldCapacity ?? 24,
       ...products[index],
       ...updates
     };
+    const nextStock = Math.max(0, Number(products[index].stock) || 0);
+    if (nextStock > previousStock) {
+      const cycles = this.getInventoryCycles();
+      const cycle = cycles.find(item => item.status === 'open');
+      if (cycle) {
+        const key = String(products[index].id);
+        if (cycle.initialStock[key] === undefined) {
+          cycle.initialStock[key] = 0;
+          cycle.products[key] = this.getInventoryProductSnapshot(products[index]);
+        }
+        cycle.entries.push({
+          id: 'ie' + Date.now(),
+          productId: key,
+          units: nextStock - previousStock,
+          packages: 0,
+          unitsPerPackage: Number(products[index].unidadesPorCarton) || 0,
+          occurredAt: new Date().toISOString(),
+          source: 'stock-adjustment'
+        });
+        this.saveInventoryState(products, cycles);
+        return products;
+      }
+    }
     return this.saveProducts(products);
   },
 
   deleteProduct(id) {
     const products = this.getProducts().filter(p => p.id !== id);
     return this.saveProducts(products);
+  },
+
+  getInventoryCycles() {
+    const data = localStorage.getItem(STORAGE_KEYS.INVENTORY_CYCLES);
+    return data ? JSON.parse(data) : [];
+  },
+
+  saveInventoryCycles(cycles) {
+    localStorage.setItem(STORAGE_KEYS.INVENTORY_CYCLES, JSON.stringify(cycles));
+    return cycles;
+  },
+
+  getInventoryProductSnapshot(product) {
+    return {
+      nombre: product.nombre || 'Producto',
+      presentacion: product.presentacion || '',
+      unidadesPorCarton: Number(product.unidadesPorCarton) || 0
+    };
+  },
+
+  saveInventoryState(products, cycles) {
+    const oldProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    const oldCycles = localStorage.getItem(STORAGE_KEYS.INVENTORY_CYCLES);
+    try {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+      localStorage.setItem(STORAGE_KEYS.INVENTORY_CYCLES, JSON.stringify(cycles));
+    } catch (error) {
+      try {
+        if (oldProducts === null) localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
+        else localStorage.setItem(STORAGE_KEYS.PRODUCTS, oldProducts);
+        if (oldCycles === null) localStorage.removeItem(STORAGE_KEYS.INVENTORY_CYCLES);
+        else localStorage.setItem(STORAGE_KEYS.INVENTORY_CYCLES, oldCycles);
+      } catch (rollbackError) {
+        console.error('[Database] No se pudo revertir la actualización del inventario:', rollbackError);
+      }
+      throw error;
+    }
+  },
+
+  createInventoryCycle(startDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      throw new Error('La fecha inicial del ciclo no es válida.');
+    }
+    const cycles = this.getInventoryCycles();
+    if (cycles.some(cycle => cycle.status === 'open')) {
+      throw new Error('Ya existe un ciclo de inventario abierto.');
+    }
+    const start = new Date(startDate + 'T00:00:00Z');
+    if (isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== startDate) {
+      throw new Error('La fecha inicial del ciclo no es válida.');
+    }
+    start.setUTCDate(start.getUTCDate() + 7);
+    const endDate = start.toISOString().slice(0, 10);
+    const products = this.getProducts();
+    const initialStock = {};
+    const productSnapshots = {};
+    products.forEach(product => {
+      initialStock[String(product.id)] = Math.max(0, Number(product.stock) || 0);
+      productSnapshots[String(product.id)] = this.getInventoryProductSnapshot(product);
+    });
+
+    const snapshotAt = new Date().toISOString();
+    const cycle = {
+      id: 'ic' + Date.now(),
+      startDate: startDate,
+      endDate: endDate,
+      status: 'open',
+      startedAt: snapshotAt,
+      snapshotAt: snapshotAt,
+      closedAt: null,
+      initialStock: initialStock,
+      products: productSnapshots,
+      entries: [],
+      finalStockDraft: {},
+      finalStock: null,
+      results: null
+    };
+    cycles.push(cycle);
+    this.saveInventoryCycles(cycles);
+    return cycle;
+  },
+
+  rebaseInventoryCycle(cycleId, startDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      throw new Error('La fecha inicial del ciclo no es válida.');
+    }
+    const start = new Date(startDate + 'T00:00:00Z');
+    if (isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== startDate) {
+      throw new Error('La fecha inicial del ciclo no es válida.');
+    }
+    const cycles = this.getInventoryCycles();
+    const cycle = cycles.find(item => item.id === cycleId && item.status === 'open');
+    if (!cycle) throw new Error('El ciclo ya no está abierto. Actualiza el inventario.');
+
+    const products = this.getProducts();
+    const initialStock = {};
+    const productSnapshots = {};
+    products.forEach(product => {
+      const key = String(product.id);
+      initialStock[key] = Math.max(0, Number(product.stock) || 0);
+      productSnapshots[key] = this.getInventoryProductSnapshot(product);
+    });
+
+    const timestamp = new Date().toISOString();
+    cycle.startDate = startDate;
+    start.setUTCDate(start.getUTCDate() + 7);
+    cycle.endDate = start.toISOString().slice(0, 10);
+    cycle.startedAt = timestamp;
+    cycle.snapshotAt = timestamp;
+    cycle.initialStock = initialStock;
+    cycle.products = productSnapshots;
+    cycle.entries = [];
+    cycle.finalStockDraft = {};
+    cycle.finalStock = null;
+    cycle.results = null;
+    this.saveInventoryCycles(cycles);
+    return cycle;
+  },
+
+  reopenInventoryCycle(cycleId) {
+    const cycles = this.getInventoryCycles();
+    const latestClosedCycle = cycles
+      .filter(cycle => cycle.status === 'closed')
+      .sort((a, b) => String(b.closedAt || b.startedAt || '').localeCompare(String(a.closedAt || a.startedAt || '')))[0];
+    if (!latestClosedCycle || latestClosedCycle.id !== cycleId) {
+      throw new Error('Solo se puede reabrir el último ciclo cerrado.');
+    }
+
+    latestClosedCycle.status = 'open';
+    latestClosedCycle.startedAt = new Date().toISOString();
+    latestClosedCycle.closedAt = null;
+    latestClosedCycle.finalStock = null;
+    latestClosedCycle.finalStockDraft = {};
+    latestClosedCycle.results = null;
+    const endDate = new Date(latestClosedCycle.startDate + 'T00:00:00Z');
+    endDate.setUTCDate(endDate.getUTCDate() + 7);
+    latestClosedCycle.endDate = endDate.toISOString().slice(0, 10);
+    this.saveInventoryCycles(cycles);
+    return latestClosedCycle;
+  },
+
+  saveInventoryCycleFinalCount(cycleId, productId, units) {
+    const count = Number(units);
+    if (!Number.isInteger(count) || count < 0) {
+      throw new Error('El conteo físico debe ser un entero no negativo.');
+    }
+    const cycles = this.getInventoryCycles();
+    const cycle = cycles.find(item => item.id === cycleId && item.status === 'open');
+    if (!cycle) throw new Error('El ciclo ya no está abierto. Actualiza el inventario.');
+    const key = String(productId);
+    if (cycle.initialStock[key] === undefined) {
+      throw new Error('El producto no pertenece a este ciclo.');
+    }
+    cycle.finalStockDraft = cycle.finalStockDraft || {};
+    cycle.finalStockDraft[key] = count;
+    this.saveInventoryCycles(cycles);
+    return cycle;
+  },
+
+  recordInventoryRestock(cycleId, productId, units, packages) {
+    const amount = Number(units);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new Error('Ingresa una cantidad positiva de piezas para el surtido.');
+    }
+    const products = this.getProducts();
+    const product = products.find(item => String(item.id) === String(productId));
+    if (!product) throw new Error('El producto seleccionado ya no existe.');
+    const cycles = this.getInventoryCycles();
+    const cycle = cycles.find(item => item.id === cycleId && item.status === 'open');
+    if (!cycle) throw new Error('El ciclo ya no está abierto. Actualiza el inventario.');
+
+    const key = String(product.id);
+    if (cycle.initialStock[key] === undefined) {
+      cycle.initialStock[key] = 0;
+      cycle.products[key] = this.getInventoryProductSnapshot(product);
+    }
+    cycle.entries.push({
+      id: 'ie' + Date.now(),
+      productId: key,
+      units: amount,
+      packages: Math.max(0, Number(packages) || 0),
+      unitsPerPackage: Number(product.unidadesPorCarton) || 0,
+      occurredAt: new Date().toISOString(),
+      source: 'restock'
+    });
+    cycle.finalStockDraft = cycle.finalStockDraft || {};
+    delete cycle.finalStockDraft[key];
+    product.stock = Math.max(0, Number(product.stock) || 0) + amount;
+    this.saveInventoryState(products, cycles);
+    return cycle;
+  },
+
+  closeInventoryCycle(cycleId, finalStock) {
+    if (!finalStock || typeof finalStock !== 'object') {
+      throw new Error('Se requiere el conteo físico final de inventario.');
+    }
+    const cycles = this.getInventoryCycles();
+    const cycleIndex = cycles.findIndex(item => item.id === cycleId && item.status === 'open');
+    if (cycleIndex < 0) throw new Error('El ciclo ya no está abierto. Actualiza el inventario.');
+    const cycle = cycles[cycleIndex];
+    const closedAt = new Date();
+    const closeDate = [
+      closedAt.getFullYear(),
+      String(closedAt.getMonth() + 1).padStart(2, '0'),
+      String(closedAt.getDate()).padStart(2, '0')
+    ].join('-');
+    const products = this.getProducts();
+    const counts = {};
+    const results = {};
+
+    Object.keys(cycle.initialStock).forEach(productId => {
+      const count = Number(finalStock[productId]);
+      if (!Number.isInteger(count) || count < 0) {
+        throw new Error('Captura el conteo físico final de todos los productos.');
+      }
+      counts[productId] = count;
+      const entries = cycle.entries
+        .filter(entry => String(entry.productId) === productId)
+        .reduce((sum, entry) => sum + (Number(entry.units) || 0), 0);
+      results[productId] = {
+        inicial: Number(cycle.initialStock[productId]) || 0,
+        entradas: entries,
+        final: count,
+        ventas: (Number(cycle.initialStock[productId]) || 0) + entries - count
+      };
+    });
+
+    cycle.status = 'closed';
+    cycle.closedAt = closedAt.toISOString();
+    cycle.endDate = closeDate;
+    cycle.finalStock = counts;
+    cycle.finalStockDraft = counts;
+    cycle.results = results;
+    products.forEach(product => {
+      const key = String(product.id);
+      if (counts[key] !== undefined) product.stock = counts[key];
+    });
+    this.saveInventoryState(products, cycles);
+    return cycle;
   },
 
   // ---------- Ventas ----------

@@ -1,4 +1,4 @@
-/* Cervecería POS - Diseño nativo Android de alta gama */
+/* Cervecerï¿½a POS - Diseï¿½o nativo Android de alta gama */
 :root {
   --bg-primary: #12100E;
   --bg-secondary: #1C1815;
@@ -18,11 +18,11 @@
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --modal-backdrop-blur: 4px;
-  /* Altura oculta por el teclado numérico del celular (la actualiza
+  /* Altura oculta por el teclado numï¿½rico del celular (la actualiza
      js inline de index.html con window.visualViewport). */
   --kb-inset: 0px;
 
-  /* Glassmorphism · login / apertura de caja */
+  /* Glassmorphism ï¿½ login / apertura de caja */
   --glass-bg: rgba(20, 17, 14, 0.70);
   --glass-bg-hover: rgba(36, 30, 26, 0.78);
   --glass-border: rgba(224, 169, 109, 0.42);
@@ -129,7 +129,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Botón/tarjeta independiente de nevera: solo copo de nieve + capacidad */
+/* Botï¿½n/tarjeta independiente de nevera: solo copo de nieve + capacidad */
 .inv-btn.fridge.wide {
   display: inline-flex;
   align-items: center;
@@ -267,44 +267,6 @@ body {
   font-weight: 400;
 }
 
-.inv-stock-adjust {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.inv-stock-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border-soft);
-  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
-  color: var(--text-primary);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  transition: var(--transition-smooth);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.inv-stock-btn:hover {
-  border-color: rgba(224, 169, 109, 0.5);
-  color: var(--accent);
-}
-
-.inv-stock-btn.inv-stock-plus:hover {
-  color: #34d399;
-}
-
-.inv-stock-btn.inv-stock-minus:hover {
-  color: #fb7185;
-}
-
 .inv-actions {
   display: flex;
   gap: 10px;
@@ -345,9 +307,9 @@ body {
 }
 
 /* =========================================================
-   INVENTARIO · MODAL FLOTANTE DE PRODUCTO
+   INVENTARIO ï¿½ MODAL FLOTANTE DE PRODUCTO
    Modal centrado con fondo difuminado (backdrop-filter),
-   formulario en grid de dos columnas, botón de cámara con
+   formulario en grid de dos columnas, botï¿½n de cï¿½mara con
    flash y control de nevera como tarjeta independiente.
    Paleta "Midnight & Amber".
    ========================================================= */
@@ -367,7 +329,7 @@ body {
   display: flex;
 }
 
-/* Fondo difuminado: difumina la vista de inventario detrás del modal */
+/* Fondo difuminado: difumina la vista de inventario detrï¿½s del modal */
 .inv-modal-backdrop {
   position: absolute;
   inset: 0;
@@ -545,7 +507,7 @@ body {
   background: #1e1915;
 }
 
-/* --- Tarjetas de sección del formulario de producto --- */
+/* --- Tarjetas de secciï¿½n del formulario de producto --- */
 .inv-section {
   display: flex;
   flex-direction: column;
@@ -601,7 +563,7 @@ body {
   line-height: 1.35;
 }
 
-/* Código de barras + botón de cámara con flash */
+/* Cï¿½digo de barras + botï¿½n de cï¿½mara con flash */
 .inv-input-group {
   display: flex;
   align-items: stretch;
@@ -859,7 +821,7 @@ body {
 }
 
 /* =========================================================
-   ESCÁNER DE CÓDIGO DE BARRAS (inventario y punto de venta)
+   ESCï¿½NER DE Cï¿½DIGO DE BARRAS (inventario y punto de venta)
    ========================================================= */
 .scanner-modal {
   position: fixed;
@@ -1072,7 +1034,7 @@ body {
   }
 }
 
-/* --- Adaptación a pantallas pequeñas --- */
+/* --- Adaptaciï¿½n a pantallas pequeï¿½as --- */
 @media (max-width: 560px) {
   .inv-modal {
     padding: 0;
@@ -1103,9 +1065,9 @@ body {
   }
 }
 
-/* ---------- REPORTES · REDISEÑO MINIMALISTA ---------- */
-/* Cuadrícula de métricas compactas, acordeones por botón y
-   gráficas con altura máxima acotada. Paleta "Midnight & Amber". */
+/* ---------- REPORTES ï¿½ REDISEï¿½O MINIMALISTA ---------- */
+/* Cuadrï¿½cula de mï¿½tricas compactas, acordeones por botï¿½n y
+   grï¿½ficas con altura mï¿½xima acotada. Paleta "Midnight & Amber". */
 
 .reports-view {
   display: flex;
@@ -1130,7 +1092,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Cuadrícula de métricas compactas */
+/* Cuadrï¿½cula de mï¿½tricas compactas */
 .reports-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1248,8 +1210,8 @@ body {
   background: linear-gradient(180deg, rgba(224, 169, 109, 0.16) 0%, transparent 100%);
 }
 
-/* Acordeones: cada botón y su panel forman un solo bloque, así el panel
-   se despliega justo debajo de su botón y empuja al resto hacia abajo. */
+/* Acordeones: cada botï¿½n y su panel forman un solo bloque, asï¿½ el panel
+   se despliega justo debajo de su botï¿½n y empuja al resto hacia abajo. */
 .reports-accordion {
   display: flex;
   flex-direction: column;
@@ -1328,7 +1290,7 @@ body {
 }
 
 /* Panel desplegable: la altura la calcula el JS con la medida real del
-   contenido, de modo que no quedan huecos vacíos al terminar la animación. */
+   contenido, de modo que no quedan huecos vacï¿½os al terminar la animaciï¿½n. */
 .reports-acc-panel {
   min-width: 0;
 }
@@ -1356,7 +1318,7 @@ body {
   transform: translateY(0);
 }
 
-/* Aviso de gráfica no disponible */
+/* Aviso de grï¿½fica no disponible */
 .reports-chart-note {
   margin: 0;
   padding: 10px 4px 4px;
@@ -1437,8 +1399,8 @@ body {
   white-space: nowrap;
 }
 
-/* Gráficas: altura máxima estricta, nunca gigantes.
-   El máximo contempla el padding del marco para que el lienzo no quede cortado. */
+/* Grï¿½ficas: altura mï¿½xima estricta, nunca gigantes.
+   El mï¿½ximo contempla el padding del marco para que el lienzo no quede cortado. */
 .reports-chart-wrap {
   position: relative;
   width: 100%;
@@ -1538,9 +1500,9 @@ body {
 }
 
 /* =========================================================
-   AJUSTES · GRID DE TARJETAS-BOTÓN
-   Cada opción de ajuste es una tarjeta interactiva con
-   fondo oscuro, borde ámbar y efecto hover suave.
+   AJUSTES ï¿½ GRID DE TARJETAS-BOTï¿½N
+   Cada opciï¿½n de ajuste es una tarjeta interactiva con
+   fondo oscuro, borde ï¿½mbar y efecto hover suave.
    Paleta "Midnight & Amber".
    ========================================================= */
 .settings-header {
@@ -1675,7 +1637,7 @@ body {
 }
 
 /* =========================================================
-   ESTRUCTURA DE LA APLICACIÓN (cabecera + área principal)
+   ESTRUCTURA DE LA APLICACIï¿½N (cabecera + ï¿½rea principal)
    Sin estas reglas el <svg class="brand-logo"> se dibuja al
    100% del ancho del contenedor y desborda la pantalla.
    ========================================================= */
@@ -1710,7 +1672,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Logotipo de la marca: tamaño fijo, nunca se estira ni desborda */
+/* Logotipo de la marca: tamaï¿½o fijo, nunca se estira ni desborda */
 .brand-logo {
   display: block;
   flex: 0 0 auto;
@@ -1787,7 +1749,7 @@ body {
   transform: translateY(-1px);
 }
 
-/* Área principal: contenedor con scroll propio para que la
+/* ï¿½rea principal: contenedor con scroll propio para que la
    pantalla de login pueda centrarse sin salirse de la vista */
 .app-main {
   flex: 1 1 auto;
@@ -1799,7 +1761,7 @@ body {
   padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Barra de navegación inferior */
+/* Barra de navegaciï¿½n inferior */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -1934,7 +1896,7 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
   text-align: center;
 }
 
-/* Copa de bienvenida: tamaño máximo controlado (nunca gigante) */
+/* Copa de bienvenida: tamaï¿½o mï¿½ximo controlado (nunca gigante) */
 .login-brand .brand-logo {
   width: 88px;
   height: 88px;
@@ -1990,7 +1952,7 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
   margin: 0;
 }
 
-/* --- Selección de rol --- */
+/* --- Selecciï¿½n de rol --- */
 .login-roles {
   display: flex;
   flex-wrap: wrap;
@@ -2261,7 +2223,7 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
   background: rgba(26, 22, 19, 0.75);
 }
 
-/* --- Resumen del último corte --- */
+/* --- Resumen del ï¿½ltimo corte --- */
 .login-cut-banner {
   width: 100%;
   max-width: 420px;
@@ -2301,7 +2263,7 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
   margin-top: 8px;
 }
 
-/* --- Adaptación a pantallas pequeñas / bajas --- */
+/* --- Adaptaciï¿½n a pantallas pequeï¿½as / bajas --- */
 @media (max-width: 520px) {
   .login-screen {
     gap: 20px;
@@ -2347,9 +2309,9 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
 }
 
 /* =========================================================
-   GLASSY LOGIN · CONTENEDOR CRISTAL ESMERILADO Y TOGGLE
+   GLASSY LOGIN ï¿½ CONTENEDOR CRISTAL ESMERILADO Y TOGGLE
    Formularios "Welcome Back" (Sign In) y "Create Account"
-   con animación de despliegue fluida (escala + opacidad).
+   con animaciï¿½n de despliegue fluida (escala + opacidad).
    ========================================================= */
 
 /* Contenedor principal del login glassy */
@@ -2399,7 +2361,7 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
   color: var(--text-secondary);
 }
 
-/* Panel único de autenticación */
+/* Panel ï¿½nico de autenticaciï¿½n */
 .auth-panel {
   width: 100%;
   max-width: 360px;
@@ -2417,7 +2379,7 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
   text-align: center;
 }
 
-/* Adaptación móvil */
+/* Adaptaciï¿½n mï¿½vil */
 @media (max-width: 480px) {
   .glassy-login {
     padding: 24px 16px;
@@ -2430,10 +2392,10 @@ LOGIN / APERTURA DE CAJA Â· GLASSMORPHISM + SOLAPAS (COMPUERTA)
 }
 
 /* =========================================================
-   LOGIN · KEYFRAMES DE APERTURA (efecto compuerta / solapas)
+   LOGIN ï¿½ KEYFRAMES DE APERTURA (efecto compuerta / solapas)
    Se reproducen en cada paso del asistente al renderizar el
-   panel, dando la sensación de apertura y cierre de solapas
-   tipo compuerta entre la selección de usuario, el NIP y el
+   panel, dando la sensaciï¿½n de apertura y cierre de solapas
+   tipo compuerta entre la selecciï¿½n de usuario, el NIP y el
    fondo inicial de caja.
    ========================================================= */
 
@@ -2514,7 +2476,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   box-sizing: border-box;
 }
 
-/* ---------- Columna izquierda: búsqueda + catálogo + historial ---------- */
+/* ---------- Columna izquierda: bï¿½squeda + catï¿½logo + historial ---------- */
 .pos-sidebar {
   display: flex;
   flex-direction: column;
@@ -2736,7 +2698,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   height: 64px;
 }
 
-/* Columna producto: columna rígida que reserva espacio para el cargo de frío
+/* Columna producto: columna rï¿½gida que reserva espacio para el cargo de frï¿½o
    sin alterar las dimensiones de la fila. */
 .cart-table td:first-child {
   display: flex;
@@ -2780,7 +2742,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   line-height: 1;
 }
 
-/* Badge de cartón/charola completo en el carrito */
+/* Badge de cartï¿½n/charola completo en el carrito */
 .cart-carton-badge {
   display: inline-flex;
   align-items: center;
@@ -2935,10 +2897,15 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 .cart-item-card.is-cold {
-  border-left: 3px solid rgba(147, 197, 253, 0.55);
+  border-color: rgba(178, 222, 255, 0.38);
+  border-left: 3px solid rgba(147, 197, 253, 0.7);
   position: relative;
   overflow: hidden;
-  background: rgba(20, 40, 80, 0.05);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(119, 190, 235, 0.11), transparent 68%),
+    linear-gradient(135deg, rgba(28, 57, 78, 0.42), rgba(17, 26, 38, 0.68)),
+    var(--bg-card);
+  box-shadow: inset 0 0 22px rgba(145, 210, 255, 0.08), 0 0 14px rgba(92, 176, 230, 0.12), var(--shadow-elegant);
 }
 
 .cart-item-card.is-cold > * {
@@ -2949,9 +2916,42 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 .cart-item-card.is-cold::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  box-shadow: inset 0 0 14px 3px rgba(220, 245, 255, 0.85), inset 0 0 26px 6px rgba(160, 210, 255, 0.4);
+  inset: 0 0 auto;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(247, 253, 255, 0.92) 0 5px, rgba(183, 226, 250, 0.66) 10px, transparent 24px),
+    radial-gradient(ellipse at 100% 0%, rgba(247, 253, 255, 0.88) 0 6px, rgba(183, 226, 250, 0.62) 12px, transparent 26px),
+    radial-gradient(ellipse at 0% 100%, rgba(247, 253, 255, 0.9) 0 6px, rgba(183, 226, 250, 0.64) 12px, transparent 25px),
+    radial-gradient(ellipse at 100% 100%, rgba(247, 253, 255, 0.94) 0 7px, rgba(183, 226, 250, 0.68) 13px, transparent 27px),
+    radial-gradient(ellipse at 18% 0%, rgba(238, 250, 255, 0.92) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 36% 1%, rgba(186, 229, 255, 0.86) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 56% 0%, rgba(247, 253, 255, 0.9) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 76% 1%, rgba(186, 229, 255, 0.88) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 22% 100%, rgba(238, 250, 255, 0.9) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 44% 99%, rgba(186, 229, 255, 0.86) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 68% 100%, rgba(247, 253, 255, 0.9) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 0% 25%, rgba(238, 250, 255, 0.9) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 1% 48%, rgba(186, 229, 255, 0.86) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 0% 72%, rgba(247, 253, 255, 0.9) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 100% 28%, rgba(238, 250, 255, 0.92) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 99% 52%, rgba(186, 229, 255, 0.88) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 100% 76%, rgba(247, 253, 255, 0.9) 0 2px, transparent 5px),
+    linear-gradient(180deg, rgba(232, 249, 255, 0.88), rgba(174, 221, 249, 0.62) 28%, rgba(192, 230, 251, 0.74) 72%, rgba(234, 250, 255, 0.9)) left / 5px 100% no-repeat,
+    linear-gradient(180deg, rgba(238, 251, 255, 0.9), rgba(178, 224, 250, 0.68) 32%, rgba(194, 231, 251, 0.76) 70%, rgba(242, 252, 255, 0.92)) right / 5px 100% no-repeat,
+    linear-gradient(90deg, rgba(242, 252, 255, 0.96), rgba(176, 224, 251, 0.72) 24%, rgba(198, 232, 251, 0.75) 72%, rgba(242, 252, 255, 0.92)) top / 100% 5px no-repeat,
+    linear-gradient(90deg, rgba(240, 252, 255, 0.94), rgba(177, 225, 251, 0.68) 25%, rgba(194, 231, 251, 0.74) 72%, rgba(243, 252, 255, 0.95)) bottom / 100% 5px no-repeat,
+    repeating-linear-gradient(118deg, transparent 0 4px, rgba(246, 253, 255, 0.7) 5px, rgba(178, 225, 251, 0.4) 6px, transparent 8px 11px) top / 100% 10px no-repeat,
+    repeating-linear-gradient(62deg, transparent 0 5px, rgba(246, 253, 255, 0.68) 6px, rgba(178, 225, 251, 0.38) 7px, transparent 9px 12px) bottom / 100% 10px no-repeat,
+    repeating-linear-gradient(28deg, transparent 0 5px, rgba(246, 253, 255, 0.65) 6px, rgba(178, 225, 251, 0.36) 7px, transparent 9px 12px) left / 10px 100% no-repeat,
+    repeating-linear-gradient(152deg, transparent 0 5px, rgba(246, 253, 255, 0.68) 6px, rgba(178, 225, 251, 0.4) 7px, transparent 9px 12px) right / 10px 100% no-repeat;
+  box-shadow:
+    inset 0 0 0 1px rgba(237, 250, 255, 0.7),
+    inset 0 4px 10px rgba(216, 245, 255, 0.62),
+    inset 0 -4px 10px rgba(216, 245, 255, 0.6),
+    inset 4px 0 10px rgba(183, 226, 250, 0.5),
+    inset -4px 0 10px rgba(183, 226, 250, 0.52);
+  filter: drop-shadow(0 0 3px rgba(204, 239, 255, 0.48));
   pointer-events: none;
   z-index: 1;
 }
@@ -2959,13 +2959,41 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 .cart-item-card.is-cold::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.6) 0%, rgba(190, 230, 255, 0.3) 40%, transparent 75%), linear-gradient(to top, rgba(255,255,255,0.45) 0%, transparent 70%);
-  filter: blur(6px);
-  animation: smokeDrift 5s ease-in-out infinite;
+  inset: 12% 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 32% 62%, rgba(218, 243, 255, 0.18), transparent 48%),
+    radial-gradient(ellipse at 66% 38%, rgba(163, 216, 248, 0.2), transparent 52%),
+    radial-gradient(ellipse at 52% 72%, rgba(236, 249, 255, 0.14), transparent 56%);
+  filter: blur(9px);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  animation: coldMistDrift 6s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.7;
+  opacity: 0.72;
+}
+
+@keyframes coldMistDrift {
+  0% {
+    transform: translate3d(-3%, 5%, 0) scale(0.94);
+    opacity: 0.32;
+  }
+  50% {
+    transform: translate3d(2%, -2%, 0) scale(1.04);
+    opacity: 0.68;
+  }
+  100% {
+    transform: translate3d(4%, -5%, 0) scale(1.08);
+    opacity: 0.42;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-item-card.is-cold::after {
+    animation: none;
+  }
 }
 
 .cart-item-card .cart-item-body {
@@ -3139,7 +3167,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   line-height: 1.3;
 }
 
-/* Móvil: tarjetas apiladas y botones táctiles */
+/* Mï¿½vil: tarjetas apiladas y botones tï¿½ctiles */
 @media (max-width: 600px) {
   .cart-item-card {
     padding: 8px 34px 8px 8px;
@@ -3314,7 +3342,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 /* El atributo [hidden] debe ganarle a "display: flex" de las filas:
-   sin esto, "Cargo bebida fría" y "Descuento promo" se muestran
+   sin esto, "Cargo bebida frï¿½a" y "Descuento promo" se muestran
    siempre, aunque no tengan importe. */
 .pos-totals-row[hidden] {
   display: none !important;
@@ -3407,7 +3435,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   box-shadow: none;
 }
 
-/* ---------- Historial de ventas · acordeón (columna izquierda) ---------- */
+/* ---------- Historial de ventas ï¿½ acordeï¿½n (columna izquierda) ---------- */
 .live-sales {
   flex: 0 0 auto;
   border-radius: 14px;
@@ -3576,26 +3604,26 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     -webkit-overflow-scrolling: touch;
   }
 
-  /* El botón de Cobrar siempre queda al final, por encima de la nav bar */
+  /* El botï¿½n de Cobrar siempre queda al final, por encima de la nav bar */
   .pos-summary-bar {
     flex-shrink: 0;
   }
 }
 
 /* =========================================================
-   COBRO · MODAL FLOTANTE MULTIMÉTODO
+   COBRO ï¿½ MODAL FLOTANTE MULTIMï¿½TODO
    Ventana flotante centrada sobre un fondo oscuro difuminado
    (backdrop-filter). Contiene, en orden: total a pagar y
-   resumen de productos, selector de método de pago
+   resumen de productos, selector de mï¿½todo de pago
    (Efectivo / Tarjeta / Transferencia / Mixto), denominaciones
-   rápidas, cálculo del cambio y confirmación del pago.
+   rï¿½pidas, cï¿½lculo del cambio y confirmaciï¿½n del pago.
    Paleta "Midnight & Amber".
    ========================================================= */
 .payment-modal {
   position: fixed;
   inset: 0;
   /* Por encima de la barra fija de totales + COBRAR (z-index 9999) para
-     que el modal nunca quede encimado sobre ella en móvil. */
+     que el modal nunca quede encimado sobre ella en mï¿½vil. */
   z-index: 10050;
   display: none;
   align-items: center;
@@ -3609,7 +3637,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   display: flex;
 }
 
-/* Fondo difuminado: difumina la vista del POS detrás del modal */
+/* Fondo difuminado: difumina la vista del POS detrï¿½s del modal */
 .payment-backdrop {
   position: absolute;
   inset: 0;
@@ -3634,7 +3662,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   animation: payModalIn 0.3s var(--ease-smooth) both;
 }
 
-/* --- Pantallas del modal (cobro / confirmación) --- */
+/* --- Pantallas del modal (cobro / confirmaciï¿½n) --- */
 .payment-screen {
   display: flex;
   flex: 1 1 auto;
@@ -3805,7 +3833,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   font-size: 12px;
 }
 
-/* --- Selector de método de pago --- */
+/* --- Selector de mï¿½todo de pago --- */
 .payment-tabs {
   flex: 0 0 auto;
   display: grid;
@@ -3926,7 +3954,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   background: #1e1915;
 }
 
-/* --- Denominaciones rápidas --- */
+/* --- Denominaciones rï¿½pidas --- */
 .payment-quick-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4094,10 +4122,10 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 /* =========================================================
-   COBRO CON TARJETA · OPCIONES DE MERCADO PAGO
+   COBRO CON TARJETA ï¿½ OPCIONES DE MERCADO PAGO
    Selector compacto con las tres formas de cobro: NFC /
-   Contactless (Tap to Pay), cobro con código QR y terminal
-   física. Paleta "Midnight & Amber".
+   Contactless (Tap to Pay), cobro con cï¿½digo QR y terminal
+   fï¿½sica. Paleta "Midnight & Amber".
    ========================================================= */
 .pay-card-options {
   display: flex;
@@ -4115,8 +4143,8 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 
 .pay-card-options-grid {
   display: grid;
-  /* Una columna por opción (js/sales.js ajusta el número real):
-     todas las tarjetas miden exactamente lo mismo y quedan simétricas. */
+  /* Una columna por opciï¿½n (js/sales.js ajusta el nï¿½mero real):
+     todas las tarjetas miden exactamente lo mismo y quedan simï¿½tricas. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   gap: 8px;
@@ -4178,8 +4206,8 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   align-items: center;
   justify-content: center;
   width: 100%;
-  /* Se reservan dos renglones para que "Código QR" y "Terminal física"
-     ocupen exactamente el mismo alto y las tarjetas queden simétricas. */
+  /* Se reservan dos renglones para que "Cï¿½digo QR" y "Terminal fï¿½sica"
+     ocupen exactamente el mismo alto y las tarjetas queden simï¿½tricas. */
   min-height: 2.3em;
   font-size: 11px;
   font-weight: 700;
@@ -4602,7 +4630,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   }
 }
 
-/* --- Adaptación a pantallas pequeñas --- */
+/* --- Adaptaciï¿½n a pantallas pequeï¿½as --- */
 @media (max-width: 560px) {
   .payment-modal {
     padding: 0;
@@ -4661,10 +4689,10 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 /* =========================================================
-   AJUSTES · MODAL FLOTANTE
-   Cada tarjeta-botón de Ajustes abre una ventana flotante
-   centrada con fondo difuminado que contiene únicamente sus
-   campos. Ningún bloque se despliega plano bajo las tarjetas.
+   AJUSTES ï¿½ MODAL FLOTANTE
+   Cada tarjeta-botï¿½n de Ajustes abre una ventana flotante
+   centrada con fondo difuminado que contiene ï¿½nicamente sus
+   campos. Ningï¿½n bloque se despliega plano bajo las tarjetas.
    Paleta "Midnight & Amber".
    ========================================================= */
 .settings-modal-backdrop {
@@ -4840,8 +4868,8 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   }
 }
 /* ==========================================================
-   Modal de Cortes de Caja — Midnight & Amber
-   Tarjetas-botón desplegables por sección
+   Modal de Cortes de Caja ï¿½ Midnight & Amber
+   Tarjetas-botï¿½n desplegables por secciï¿½n
    ========================================================== */
 .cuts-modal-overlay {
   position: fixed;
@@ -4988,7 +5016,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   border-radius: 999px;
 }
 
-/* Pestañas de periodo */
+/* Pestaï¿½as de periodo */
 .cuts-modal-filters {
   display: flex;
   gap: 4px;
@@ -5054,7 +5082,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 /* =========================================================
-   MODAL FLOTANTE: DETALLE DE REPORTES (Piezas/Cartones Fríos, Promociones)
+   MODAL FLOTANTE: DETALLE DE REPORTES (Piezas/Cartones Frï¿½os, Promociones)
    ========================================================= */
 .reports-detail-modal-overlay {
   position: fixed;
@@ -5192,7 +5220,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   gap: 6px;
 }
 
-/* Tarjeta-botón principal */
+/* Tarjeta-botï¿½n principal */
 .cuts-card {
   display: flex;
   align-items: center;
@@ -5665,7 +5693,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   50% { opacity: 0.55; box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
 }
 
-/* Acceso rápido desde la tarjeta de reportes */
+/* Acceso rï¿½pido desde la tarjeta de reportes */
 .metric-card-clickable { cursor: pointer; }
 .metric-card-clickable:hover { transform: translateY(-2px); transition: transform 0.15s; }
 
@@ -5701,11 +5729,11 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 /* =========================================================
-   AJUSTES MÓVIL: header compacto, vista de ventas compacta
-   y anclaje seguro del botón COBRAR
+   AJUSTES Mï¿½VIL: header compacto, vista de ventas compacta
+   y anclaje seguro del botï¿½n COBRAR
    ========================================================= */
 @media (max-width: 600px) {
-  /* Encabezado superior más compacto: no recorta "Cervecería" */
+  /* Encabezado superior mï¿½s compacto: no recorta "Cervecerï¿½a" */
   .app-header {
     padding: 8px 12px;
     padding-top: calc(8px + env(safe-area-inset-top, 0px));
@@ -5735,11 +5763,11 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     height: 32px;
   }
 
-  /* ---------- Vista de ventas: un único scroll vertical ----------
-     La tarjeta de totales y el botón COBRAR salen del flujo y quedan
-     fijados por encima de la barra de navegación; el resto del contenido
+  /* ---------- Vista de ventas: un ï¿½nico scroll vertical ----------
+     La tarjeta de totales y el botï¿½n COBRAR salen del flujo y quedan
+     fijados por encima de la barra de navegaciï¿½n; el resto del contenido
      fluye en el scroll principal, con 120px de aire al final para que
-     ningún producto quede oculto bajo la barra fija. */
+     ningï¿½n producto quede oculto bajo la barra fija. */
    .pos-view {
      height: auto;
      min-height: 100%;
@@ -5750,7 +5778,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
      padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
    }
 
-  /* Sin scrolls anidados: el catálogo, el historial y el ticket fluyen
+  /* Sin scrolls anidados: el catï¿½logo, el historial y el ticket fluyen
      en el mismo contenedor con scroll. */
   .pos-sidebar,
   .pos-main {
@@ -5779,7 +5807,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     display: none;
   }
 
-  /* Palomita "Pieza Fría": cabe en la misma línea que el buscador */
+  /* Palomita "Pieza Frï¿½a": cabe en la misma lï¿½nea que el buscador */
   .cold-toggle {
     display: inline-flex;
     align-items: center;
@@ -5845,7 +5873,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     margin: 0 0 1px;
   }
 
-  /* Columnas más angostas: caben más productos por fila en el celular */
+  /* Columnas mï¿½s angostas: caben mï¿½s productos por fila en el celular */
   .product-grid {
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
     gap: 5px;
@@ -5875,10 +5903,10 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     font-size: 8px;
   }
 
-  /* ---------- Historial de ventas (acordeón) ----------
-     Se reduce a una barra delgadísima: título y resumen en una sola línea
-     con tipografía de 11px, de modo que no roba espacio vertical al
-     catálogo ni al ticket actual. */
+  /* ---------- Historial de ventas (acordeï¿½n) ----------
+     Se reduce a una barra delgadï¿½sima: tï¿½tulo y resumen en una sola lï¿½nea
+     con tipografï¿½a de 11px, de modo que no roba espacio vertical al
+     catï¿½logo ni al ticket actual. */
   .live-sales {
     border-radius: 10px;
     box-shadow: none;
@@ -5959,7 +5987,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     max-height: none;
     overflow: visible;
     padding: 0;
-    /* Colchón extra: la última fila del ticket nunca queda bajo la barra fija */
+    /* Colchï¿½n extra: la ï¿½ltima fila del ticket nunca queda bajo la barra fija */
     padding-bottom: 36px;
   }
 
@@ -6018,7 +6046,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     font-size: 10.5px;
   }
 
-  /* ---------- Tarjeta de resumen: desgloces en una sola línea ---------- */
+  /* ---------- Tarjeta de resumen: desgloces en una sola lï¿½nea ---------- */
   .pos-totals {
     display: flex;
     flex-direction: row;
@@ -6044,8 +6072,8 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     font-size: 11px;
   }
 
-  /* Los desgloces opcionales (cargo frío / descuento promo) se alinean en
-     la misma línea horizontal, sin bordes ni saltos de línea propios. */
+  /* Los desgloces opcionales (cargo frï¿½o / descuento promo) se alinean en
+     la misma lï¿½nea horizontal, sin bordes ni saltos de lï¿½nea propios. */
   .pos-totals-row.pos-totals-cold,
   .pos-totals-row.pos-totals-promo {
     border-top: none;
@@ -6055,13 +6083,13 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 
   .pos-totals-row.pos-totals-cold::before,
   .pos-totals-row.pos-totals-promo::before {
-    content: '·';
+    content: 'ï¿½';
     margin-right: 3px;
     color: var(--text-secondary);
     opacity: 0.7;
   }
 
-  /* El total ocupa su propia línea, con tipografía reducida */
+  /* El total ocupa su propia lï¿½nea, con tipografï¿½a reducida */
   .pos-totals-row.pos-totals-grand {
     flex: 0 0 100%;
     order: 10;
@@ -6099,7 +6127,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     gap: 8px;
   }
 
-  /* Botón de cobrar: alto, táctil y siempre accesible */
+  /* Botï¿½n de cobrar: alto, tï¿½ctil y siempre accesible */
    .pos-charge-btn {
      padding: 16px 20px;
      min-height: 52px;
@@ -6110,16 +6138,16 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
    }
 
   /* ---------- Modal de cobro: compacto, sin encimados y anclado al fondo ----------
-     La ventana flotante de "Cobrar venta" se comprime al máximo (total,
-     métodos de pago y campos de efectivo) para que quepa completa en el
-     celular, y su pie queda fijo en el borde inferior: el botón final
-     nunca queda debajo del teclado numérico ni encimado sobre el modal. */
+     La ventana flotante de "Cobrar venta" se comprime al mï¿½ximo (total,
+     mï¿½todos de pago y campos de efectivo) para que quepa completa en el
+     celular, y su pie queda fijo en el borde inferior: el botï¿½n final
+     nunca queda debajo del teclado numï¿½rico ni encimado sobre el modal. */
   .payment-modal {
     padding: 0;
     padding-top: env(safe-area-inset-top, 0px);
     align-items: flex-end;
     /* Con el teclado abierto (iOS) el inset inferior empuja la ventana
-       hacia arriba para que el botón de cobro siga siendo visible. */
+       hacia arriba para que el botï¿½n de cobro siga siendo visible. */
     padding-bottom: var(--kb-inset, 0px);
   }
 
@@ -6131,7 +6159,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
   }
 
   /* Con el modal de cobro abierto, la barra fija de totales + COBRAR se
-     retira: así no queda encimada sobre la ventana flotante. */
+     retira: asï¿½ no queda encimada sobre la ventana flotante. */
   body:has(#pos-payment-modal.is-active) .pos-summary-bar {
     visibility: hidden;
     pointer-events: none;
@@ -6200,7 +6228,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     gap: 8px;
   }
 
-  /* --- Métodos de pago --- */
+  /* --- Mï¿½todos de pago --- */
   .payment-tabs {
     margin: 5px 10px 0;
     gap: 4px;
@@ -6387,7 +6415,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
     font-size: 20px;
   }
 
-  /* --- Pie del modal: botón de cobro siempre visible y al fondo --- */
+  /* --- Pie del modal: botï¿½n de cobro siempre visible y al fondo --- */
   .payment-footer {
     position: sticky;
     bottom: 0;
@@ -6416,7 +6444,7 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 }
 
 /* =========================================================
-   MODAL FLOTANTE DEL CÓDIGO QR (pantalla completa)
+   MODAL FLOTANTE DEL Cï¿½DIGO QR (pantalla completa)
    Ventana independiente en primer plano, dedicada solo al QR:
    alto contraste para que el cliente lo escanee desde lejos.
    ========================================================= */
@@ -6595,3 +6623,1421 @@ PUNTO DE VENTA Â· LAYOUT DE DOS COLUMNAS (caja registradora)
 .chart-area-gradient{fill:url(#areaGrad)}
 .chart-point-glow{filter:drop-shadow(0 0 6px #d4a373)}
 
+.inventory-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(224, 169, 109, 0.1), transparent 58%), var(--bg-card);
+  box-shadow: var(--shadow-elegant);
+}
+
+.inventory-cycle-row {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.inventory-cycle-product {
+  position: relative;
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 34px 8px 8px;
+  cursor: pointer;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+.inventory-cycle-product::-webkit-details-marker {
+  display: none;
+}
+
+.inventory-cycle-product::after {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  content: '+';
+  color: var(--accent);
+  font-size: 22px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.inventory-cycle-row[open] > .inventory-cycle-product::after {
+  content: 'âˆ’';
+}
+
+.inventory-cycle-row-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 10px 0 0;
+}
+
+.inventory-cycle-controls input,
+.inventory-cycle-start input,
+.inv-field input,
+.inv-field select {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.inventory-cycle-controls .btn,
+.inventory-cycle-start .btn,
+.inventory-cycle-close,
+.inv-edit,
+.inv-delete {
+  min-height: 46px;
+  touch-action: manipulation;
+}
+
+.inventory-cycle-rebase {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(18, 16, 14, 0.4);
+}
+
+.inventory-cycle-rebase > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inventory-cycle-rebase .inventory-cycle-start p {
+  flex-basis: 100%;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.inventory-summary-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 10px;
+  border-right: 1px solid var(--border-soft);
+}
+
+.inventory-summary-card:last-child {
+  border-right: 0;
+}
+
+.inventory-summary-card span {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.inventory-summary-card strong {
+  color: var(--text-primary);
+  font-size: 18px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.inventory-summary-total strong {
+  color: var(--accent);
+}
+
+.inventory-cycle {
+  margin: 0 0 18px;
+  padding: 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.08), transparent 55%), var(--bg-card);
+  box-shadow: var(--shadow-elegant);
+}
+
+.inventory-cycle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inventory-cycle h3 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.inventory-cycle-header p,
+.inventory-cycle-help,
+.inventory-cycle-note,
+.reports-cycle-open {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.inventory-cycle-status {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.inventory-cycle-help {
+  margin: 12px 0;
+}
+
+.inventory-cycle-start {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.inventory-cycle-start label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.inventory-cycle-start input {
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: #1a1613;
+  color: var(--text-primary);
+}
+
+.inventory-cycle-reopen {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(18, 16, 14, 0.42);
+}
+
+.inventory-cycle-reopen p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.inventory-cycle-reopen .btn {
+  min-height: 48px;
+}
+
+.inventory-cycle-list {
+  display: grid;
+  gap: 10px;
+}
+
+.inventory-cycle-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(260px, 1.25fr) minmax(260px, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(18, 16, 14, 0.55);
+}
+
+.inventory-cycle-product {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.inventory-cycle-product strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.inventory-cycle-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inventory-cycle-controls label {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.inventory-cycle-controls input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: #1a1613;
+  color: var(--text-primary);
+}
+
+.inventory-cycle-controls .btn {
+  flex: 0 0 auto;
+  padding: 9px 10px;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.inventory-cycle-close {
+  margin-top: 14px;
+}
+
+.inventory-cycle-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.inventory-cycle-note {
+  margin-top: 8px;
+}
+
+.reports-inventory-cycle {
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.08), transparent 55%), var(--bg-card);
+  box-shadow: var(--shadow-elegant);
+}
+
+.reports-cycle-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 13px 15px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reports-cycle-summary-info {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.reports-cycle-summary-info strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.reports-cycle-summary-info small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.reports-cycle-summary-total {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.reports-cycle-chevron {
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--text-secondary);
+  border-bottom: 2px solid var(--text-secondary);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 180ms ease;
+}
+
+.reports-cycle-toggle[aria-expanded="true"] .reports-cycle-chevron {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.reports-cycle-body:not([hidden]) {
+  padding: 0 15px 15px;
+  animation: inventory-cycle-expand 180ms ease-out;
+}
+
+.reports-cycle-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.reports-cycle-overview p,
+.reports-cycle-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.reports-cycle-total {
+  color: var(--accent);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.reports-cycle-products {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.reports-cycle-product {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(18, 16, 14, 0.42);
+}
+
+.reports-cycle-product > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.reports-cycle-product h4 {
+  min-width: 0;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.reports-cycle-displacement {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-cycle-displacement small {
+  color: var(--text-secondary);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.reports-cycle-displacement strong {
+  font-size: 16px;
+}
+
+.reports-cycle-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.reports-cycle-metrics > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reports-cycle-metrics dt {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.reports-cycle-metrics dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.reports-cycle-open {
+  margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .inventory-cycle-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .inventory-cycle-product {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .inventory-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .inventory-search {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+  }
+
+  .inventory-header .inv-btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .inventory-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .inventory-card {
+    min-width: 0;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .inv-stock {
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .inv-actions {
+    gap: 8px;
+  }
+
+  .inv-edit,
+  .inv-delete {
+    min-height: 48px;
+  }
+
+  .inventory-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .inventory-summary-card {
+    gap: 4px;
+    padding: 9px 6px;
+  }
+
+  .inventory-summary-card span {
+    font-size: 9px;
+  }
+
+  .inventory-summary-card strong {
+    font-size: clamp(14px, 4vw, 17px);
+  }
+
+  .inventory-cycle,
+  .reports-cycle-body {
+    padding: 13px;
+  }
+
+  .reports-cycle-body {
+    padding: 0 12px 12px;
+  }
+
+  .reports-cycle-toggle {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .reports-cycle-summary-info {
+    grid-row: 1 / span 2;
+  }
+
+  .reports-cycle-summary-info {
+    grid-row: 1 / span 2;
+  }
+
+  .reports-cycle-chevron {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .reports-cycle-summary-total {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    font-size: 11px;
+  }
+
+  .inventory-cycle-header {
+    flex-direction: column;
+  }
+
+  .inventory-cycle-row {
+    width: 100%;
+  }
+
+  .inventory-cycle-product {
+    width: 100%;
+  }
+
+  .inventory-cycle-row-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inventory-cycle-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inventory-cycle-controls .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .inventory-cycle-controls label {
+    font-size: 11px;
+  }
+
+  .inventory-cycle-controls input {
+    min-height: 48px;
+    padding: 10px;
+    font-size: 16px;
+  }
+
+  .inventory-cycle-start,
+  .inventory-cycle-start label,
+  .inventory-cycle-start input,
+  .inventory-cycle-start .btn {
+    width: 100%;
+  }
+}
+
+.inventory-cycle-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.inventory-cycle-actions .btn {
+  min-height: 48px;
+  white-space: normal;
+}
+
+.inventory-cycle-row {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px 12px;
+}
+
+.inventory-cycle-product {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  padding: 0;
+  cursor: default;
+}
+
+.inventory-cycle-product::after {
+  content: none;
+}
+
+.inventory-cycle-product strong,
+.inventory-cycle-product span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.inventory-cycle-product span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.inventory-cycle-close {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.cycle-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.cycle-picker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 10001;
+  display: flex;
+  width: min(560px, calc(100vw - 24px));
+  max-height: min(90dvh, 760px);
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--bg-card);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
+}
+
+.cycle-picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cycle-picker-header h3 {
+  margin: 0;
+}
+
+.cycle-picker-header p,
+.cycle-picker-current,
+.cycle-picker-preview {
+  margin: 4px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.cycle-picker-close {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 26px;
+}
+
+.cycle-picker-search-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cycle-picker-search,
+.cycle-picker-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  font-size: 16px;
+}
+
+.cycle-picker-list {
+  display: grid;
+  max-height: min(42dvh, 360px);
+  gap: 6px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+
+.cycle-picker-option {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.cycle-picker-option[hidden] {
+  display: none;
+}
+
+.cycle-picker-option.is-selected {
+  border-color: var(--accent);
+  background: rgba(224, 169, 109, 0.12);
+}
+
+.cycle-picker-option strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cycle-picker-option span {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.cycle-picker-form {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.cycle-picker-form h4 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cycle-picker-form .btn {
+  min-height: 48px;
+}
+
+@media (max-width: 600px) {
+  .inventory-cycle-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inventory-cycle-product {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inventory-cycle-product strong {
+    grid-column: 1 / -1;
+  }
+
+  .cycle-picker {
+    width: calc(100vw - 20px);
+    max-height: 92dvh;
+    padding: 14px;
+  }
+
+  .cycle-picker-list {
+    max-height: min(44dvh, 380px);
+  }
+
+  .cycle-picker-option {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+.inventory-cycle {
+  padding: 12px;
+}
+
+.inventory-cycle-header {
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inventory-cycle-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.inventory-cycle-title h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.inventory-cycle-title .inventory-cycle-status {
+  padding: 3px 7px;
+  font-size: 10px;
+}
+
+.inventory-cycle-sync {
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.inventory-cycle-header-actions {
+  display: grid;
+  flex: 1 1 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.inventory-cycle-header-actions .inventory-cycle-sync,
+.inventory-cycle-header-actions .inventory-cycle-count {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.inventory-cycle-actions {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.inventory-cycle-actions .btn {
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+.inventory-cycle-count {
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.inventory-cycle-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.inventory-cycle-stock-card {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.inventory-cycle-stock-summary {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 15px 40px 15px 15px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.inventory-cycle-stock-summary::-webkit-details-marker {
+  display: none;
+}
+
+.inventory-cycle-stock-summary::after {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  content: '';
+  transform: rotate(45deg);
+  transition: transform 180ms ease;
+}
+
+.inventory-cycle-stock-card[open] > .inventory-cycle-stock-summary::after {
+  transform: rotate(225deg);
+}
+
+.inventory-cycle-stock-card[open] > .inventory-cycle-stock-summary {
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(224, 169, 109, 0.035);
+}
+
+.inventory-cycle-stock-heading {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.inventory-cycle-stock-heading .inv-name {
+  min-width: 0;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.inventory-cycle-stock-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.inventory-cycle-stock-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.inventory-cycle-stock-breakdown > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.08), transparent), rgba(18, 16, 14, 0.5);
+}
+
+.inventory-cycle-stock-breakdown small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+
+.inventory-cycle-stock-breakdown strong {
+  color: var(--text-primary);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.inventory-cycle-stock-breakdown .inventory-cycle-stock-total strong {
+  color: var(--accent);
+}
+
+.inventory-cycle-stock-details {
+  display: grid;
+  gap: 10px;
+  padding: 12px 15px 15px;
+  animation: inventory-cycle-expand 180ms ease-out;
+}
+
+.inventory-cycle-detail-list {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.inventory-cycle-detail-list > div {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.75fr) minmax(0, 1.5fr);
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(18, 16, 14, 0.42);
+}
+
+.inventory-cycle-detail-list > div:last-child {
+  border-bottom: 0;
+}
+
+.inventory-cycle-detail-list span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.inventory-cycle-detail-list strong {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.inventory-cycle-count-product {
+  width: 100%;
+  min-height: 48px;
+  font-size: 13px;
+}
+
+.inventory-cycle-row {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.inventory-cycle-product-details {
+  min-width: 0;
+}
+
+.inventory-cycle-product {
+  position: relative;
+  display: flex;
+  min-height: 52px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 36px 9px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.inventory-cycle-product::-webkit-details-marker {
+  display: none;
+}
+
+.inventory-cycle-product::after {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  color: var(--accent);
+  content: '+';
+  font-size: 21px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.inventory-cycle-product-details[open] > .inventory-cycle-product::after {
+  content: 'âˆ’';
+}
+
+.inventory-cycle-product-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-cycle-product-status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-cycle-product-metrics {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.inventory-cycle-product-metrics span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.inventory-cycle-product-metrics small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.inventory-cycle-product-metrics b {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .inventory-cycle {
+    padding: 10px;
+  }
+
+  .inventory-cycle-header {
+    gap: 6px;
+  }
+
+  .inventory-cycle-title {
+    gap: 5px;
+  }
+
+  .inventory-cycle-title h3 {
+    font-size: 14px;
+  }
+
+  .inventory-cycle-sync {
+    min-height: 44px;
+    padding: 5px 8px;
+  }
+
+  .inventory-cycle-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .inventory-cycle-product-name {
+    font-size: 13px;
+  }
+
+  .inventory-cycle-product-status {
+    font-size: 10px;
+  }
+}
+
+.inventory-cycle-product-metrics small {
+  font-size: 11px;
+}
+
+.inventory-cycle-product-metrics b {
+  font-size: 12px;
+}
+
+.inventory-cycle-row-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 10px 12px;
+  animation: inventory-cycle-expand 180ms ease-out;
+}
+
+.inventory-cycle-product-metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: rgba(18, 16, 14, 0.58);
+}
+
+.inventory-cycle-product-metric small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.inventory-cycle-product-metric strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.inventory-cycle-product-actions {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.inventory-cycle-product-actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  padding: 9px 10px;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+@keyframes inventory-cycle-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inventory-cycle-close-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.inventory-cycle-close-actions p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.inventory-cycle-close-actions .inventory-cycle-close {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 150px;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 18px;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .inventory-cycle-list {
+    gap: 10px;
+  }
+
+  .inventory-cycle-stock-card {
+    padding: 0;
+  }
+
+  .inventory-cycle-stock-summary {
+    gap: 10px;
+    padding: 13px 38px 13px 13px;
+  }
+
+  .inventory-cycle-stock-summary::after {
+    top: 17px;
+    right: 15px;
+  }
+
+  .inventory-cycle-stock-subtitle {
+    font-size: 12px;
+  }
+
+  .inventory-cycle-stock-breakdown {
+    gap: 6px;
+  }
+
+  .inventory-cycle-stock-breakdown > span {
+    padding: 9px 8px;
+  }
+
+  .inventory-cycle-stock-breakdown small {
+    font-size: 11px;
+  }
+
+  .inventory-cycle-stock-details {
+    gap: 9px;
+    padding: 10px 12px 12px;
+  }
+
+  .inventory-cycle-detail-list > div {
+    grid-template-columns: minmax(78px, 0.65fr) minmax(0, 1.35fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .inventory-cycle-detail-list span {
+    font-size: 12px;
+  }
+
+  .inventory-cycle-detail-list strong {
+    font-size: 13px;
+  }
+
+  .inventory-cycle-count-product {
+    min-height: 50px;
+  }
+
+  .inventory-cycle-row-content {
+    gap: 7px;
+    padding: 0 8px 10px;
+  }
+
+  .inventory-cycle-product-metric {
+    padding: 9px;
+  }
+
+  .inventory-cycle-product-metric small {
+    font-size: 12px;
+  }
+
+  .inventory-cycle-product-metric strong {
+    font-size: 13px;
+  }
+
+  .inventory-cycle-product-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .inventory-cycle-product-actions .btn {
+    min-height: 52px;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .inventory-cycle-header {
+    align-items: flex-start;
+  }
+
+  .inventory-cycle-header-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .inventory-cycle-header-actions .inventory-cycle-sync,
+  .inventory-cycle-header-actions .inventory-cycle-count {
+    min-height: 44px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .inventory-cycle-close-actions {
+    align-items: flex-start;
+  }
+
+  .inventory-cycle-close-actions .inventory-cycle-close {
+    min-width: 130px;
+    min-height: 48px;
+    padding: 9px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-bar {
+    gap: 2px;
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .tab-btn {
+    padding-right: 1px;
+    padding-left: 1px;
+    font-size: 9px;
+  }
+}

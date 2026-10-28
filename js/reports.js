@@ -17,6 +17,7 @@ const ReportsManager = {
   panelToken: 0,
   currencySymbol: '',
   detailModalOpen: null,
+  inventoryCycleExpanded: false,
   monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
   dayNames: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
 
@@ -136,6 +137,16 @@ const ReportsManager = {
       if (accBtn) {
         event.preventDefault();
         this.toggleAccordion(accBtn.dataset.acc);
+        return;
+      }
+
+      const inventoryCycleToggle = target.closest('.reports-cycle-toggle');
+      if (inventoryCycleToggle) {
+        event.preventDefault();
+        this.inventoryCycleExpanded = inventoryCycleToggle.getAttribute('aria-expanded') !== 'true';
+        inventoryCycleToggle.setAttribute('aria-expanded', String(this.inventoryCycleExpanded));
+        const cycleBody = container.querySelector('#reports-cycle-body');
+        if (cycleBody) cycleBody.hidden = !this.inventoryCycleExpanded;
         return;
       }
 
@@ -1302,6 +1313,7 @@ const ReportsManager = {
     const resumenFrio = EmailService.getColdItemsSummary(turnSales);
     const piezasFrias = resumenFrio.piezasMonto;
     const cartonesFrios = resumenFrio.cartonesMonto;
+    const inventoryCycleSummary = this.renderInventoryCycleSummary();
 
     // Datos históricos del periodo (excluye el turno activo): gráficas y acordeones.
     const historical = this.getHistoricalSales();
@@ -1366,6 +1378,8 @@ const ReportsManager = {
           </div>
         </div>
 
+        ${inventoryCycleSummary}
+
         <div class="reports-period">
           <button class="period-btn ${this.currentFilter === 'dia' ? 'active' : ''}" data-filter="dia">Día</button>
           <button class="period-btn ${this.currentFilter === 'semana' ? 'active' : ''}" data-filter="semana">Semana</button>
@@ -1389,6 +1403,59 @@ const ReportsManager = {
     this.syncCutsModalState(false);
     this.refreshCharts();
     if (scroller) scroller.scrollTop = scrollTop;
+  },
+
+  renderInventoryCycleSummary() {
+    if (typeof Database === 'undefined' || !Database.getInventoryCycles) return '';
+    const cycles = Database.getInventoryCycles();
+    const closedCycle = cycles
+      .filter(cycle => cycle.status === 'closed' && cycle.results)
+      .sort((a, b) => String(b.closedAt || b.startedAt || '').localeCompare(String(a.closedAt || a.startedAt || '')))[0];
+    const openCycle = cycles
+      .filter(cycle => cycle.status === 'open')
+      .sort((a, b) => String(b.startedAt || '').localeCompare(String(a.startedAt || '')))[0];
+    const cycleDate = closedCycle
+      ? 'Ciclo del ' + closedCycle.startDate + ' al ' + closedCycle.endDate
+      : openCycle
+        ? 'Ciclo abierto del ' + openCycle.startDate + ' al ' + openCycle.endDate
+        : 'Sin ciclos cerrados';
+    let html = '<section class="reports-inventory-cycle">';
+    html += '<button type="button" class="reports-cycle-toggle" aria-expanded="' + this.inventoryCycleExpanded + '" aria-controls="reports-cycle-body">';
+    html += '<span class="reports-cycle-summary-info"><strong>Rendimiento de inventario semanal</strong>';
+    html += '<small>' + this.escapeHtml(cycleDate) + '</small></span>';
+    if (closedCycle) {
+      const summaryUnits = Object.keys(closedCycle.results).reduce((total, id) => total + (Number(closedCycle.results[id].ventas) || 0), 0);
+      html += '<span class="reports-cycle-summary-total">' + summaryUnits + ' piezas</span>';
+    } else {
+      html += '<span class="reports-cycle-summary-total">Pendiente</span>';
+    }
+    html += '<span class="reports-cycle-chevron" aria-hidden="true"></span></button>';
+    html += '<div id="reports-cycle-body" class="reports-cycle-body"' + (this.inventoryCycleExpanded ? '' : ' hidden') + '>';
+    if (!closedCycle) {
+      html += '<p class="reports-cycle-empty">No hay ciclos cerrados todavía. El conteo físico de cierre genera el desplazamiento semanal.</p>';
+      if (openCycle) html += '<div class="reports-cycle-open">Ciclo abierto: ' + this.escapeHtml(openCycle.startDate) + ' a ' + this.escapeHtml(openCycle.endDate) + ' · cierre pendiente de conteo físico</div>';
+      return html + '</div></section>';
+    }
+
+    const productIds = Object.keys(closedCycle.results);
+    const totalUnits = productIds.reduce((total, id) => total + (Number(closedCycle.results[id].ventas) || 0), 0);
+    html += '<div class="reports-cycle-overview"><p>Ciclo del ' + this.escapeHtml(closedCycle.startDate) + ' al ' + this.escapeHtml(closedCycle.endDate) + '</p>';
+    html += '<strong class="reports-cycle-total">' + totalUnits + ' piezas desplazadas</strong></div>';
+    html += '<div class="reports-cycle-products" aria-label="Rendimiento por producto">';
+    productIds.forEach(id => {
+      const result = closedCycle.results[id];
+      const snapshot = closedCycle.products && closedCycle.products[id] ? closedCycle.products[id] : {};
+      html += '<article class="reports-cycle-product"><header><h4>' + this.escapeHtml(snapshot.nombre || 'Producto') + '</h4>';
+      html += '<span class="reports-cycle-displacement"><small>Desplazamiento</small><strong>' + (Number(result.ventas) || 0) + '</strong></span></header>';
+      html += '<dl class="reports-cycle-metrics">';
+      html += '<div><dt>Inicial</dt><dd>' + (Number(result.inicial) || 0) + '</dd></div>';
+      html += '<div><dt>Surtidos</dt><dd>' + (Number(result.entradas) || 0) + '</dd></div>';
+      html += '<div><dt>Final físico</dt><dd>' + (Number(result.final) || 0) + '</dd></div>';
+      html += '</dl></article>';
+    });
+    html += '</div>';
+    if (openCycle) html += '<div class="reports-cycle-open">Ciclo actual abierto: ' + this.escapeHtml(openCycle.startDate) + ' a ' + this.escapeHtml(openCycle.endDate) + '</div>';
+    return html + '</div></section>';
   },
 
   // Arma los bloques del acordeón con su contenido ya calculado

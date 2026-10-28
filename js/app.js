@@ -2,7 +2,7 @@
 // El cierre del turno (y por tanto la salida) se hace unicamente desde "Corte de Caja".
 
 const App = {
-  views: ['pos', 'inventory', 'reports', 'settings'],
+  views: ['pos', 'inventory', 'surtidos', 'reports', 'settings'],
   currentView: null,
   eventsBound: false,
 
@@ -10,6 +10,7 @@ const App = {
     staggerTargets: {
     pos: '.product-grid',
     inventory: '.inventory-grid',
+    surtidos: '.inventory-cycle-list',
     reports: '.reports-metrics-grid',
     settings: '.settings-grid'
   },
@@ -56,15 +57,8 @@ const App = {
       if (typeof CashSession !== 'undefined' && CashSession.getActiveSession) {
         return CashSession.getActiveSession();
       }
-      if (typeof Database === 'undefined' || !Database.getSession) {
-        return null;
-      }
-      const session = Database.getSession();
-      if (!session) return null;
-      if (session.cashOpening === undefined && session.montoApertura === undefined) {
-        return null;
-      }
-      return session;
+      // Sin el guardián de sesión no se permite entrar por datos alternativos.
+      return null;
     } catch (error) {
       console.error('[App] Error en getActiveSession:', error);
       return null;
@@ -375,6 +369,26 @@ const App = {
             }
           } else if (!invContainer) {
             console.error('[App] Contenedor #inventory-container no existe tras render');
+          }
+          break;
+        }
+
+        case 'surtidos': {
+          main.innerHTML = `
+            <div id="surtidos-container" class="surtidos-view">
+              <div id="surtidos-summary" class="inventory-summary" aria-live="polite"></div>
+              <div id="inventory-cycle-panel"></div>
+            </div>
+          `;
+          const surtidosContainer = document.getElementById('surtidos-container');
+          if (surtidosContainer && typeof InventoryManager !== 'undefined' && InventoryManager.initSurtidos) {
+            try {
+              InventoryManager.initSurtidos('surtidos-container');
+            } catch (invErr) {
+              console.error('[App] Error inicializando módulo de Surtidos:', invErr);
+            }
+          } else if (!surtidosContainer) {
+            console.error('[App] Contenedor #surtidos-container no existe tras render');
           }
           break;
         }

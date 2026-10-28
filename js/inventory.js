@@ -47,6 +47,7 @@
 
   const InventoryManager = {
     containerId: 'inventory-container',
+    cycleContainerId: 'surtidos-container',
     gridId: 'inventory-grid',
     formId: 'inventory-form',
     modalId: 'inventory-modal',
@@ -56,6 +57,10 @@
     fridgeCloseBtnId: 'fridge-modal-close',
     scannerModalId: 'inventory-scanner-modal',
     searchQuery: '',
+    inventoryUpdatesBound: false,
+    cyclePickerMode: null,
+    cyclePickerProductId: null,
+    cyclePickerSearchQuery: '',
     scanner: {
       codeReader: null,
       videoElement: null,
@@ -74,9 +79,28 @@
       try {
         this.containerId = containerId || this.containerId;
         this.render();
+        this.bindInventoryUpdates();
         this.bindGlobalKeys();
       } catch (e) {
         console.error('Inventory init error:', e);
+        showErrorAlert(e && e.message ? e.message : String(e));
+      }
+    },
+
+    initSurtidos: function (containerId) {
+      try {
+        this.cycleContainerId = containerId || this.cycleContainerId;
+        const container = document.getElementById(this.cycleContainerId);
+        if (!container) {
+          console.error('Surtidos container #' + this.cycleContainerId + ' does not exist');
+          return;
+        }
+        this.bindInventoryUpdates();
+        this.bindCycleEvents();
+        this.renderInventorySummary();
+        this.renderInventoryCycle();
+      } catch (e) {
+        console.error('Surtidos init error:', e);
         showErrorAlert(e && e.message ? e.message : String(e));
       }
     },
@@ -102,6 +126,457 @@
         console.error('getActiveProducts error:', e);
       }
       return [];
+    },
+
+    getOpenInventoryCycle: function () {
+      const cycles = Database.getInventoryCycles();
+      return cycles
+        .filter(function (cycle) { return cycle.status === 'open'; })
+        .sort(function (a, b) { return String(b.startedAt || '').localeCompare(String(a.startedAt || '')); })[0] || null;
+    },
+
+    dateKey: function (date) {
+      return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-');
+    },
+
+    formatCycleDate: function (dateKey) {
+      const parts = String(dateKey || '').split('-').map(Number);
+      if (parts.length !== 3 || parts.some(function (part) { return !part; })) return dateKey || '';
+      return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('es-MX', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    },
+
+    formatStockPresentation: function (units, unitsPerPackage) {
+      const stock = Math.max(0, Number(units) || 0);
+      const packageSize = Number(unitsPerPackage) || 0;
+      if (packageSize < 1) return stock + ' piezas';
+      const packages = Math.floor(stock / packageSize);
+      const loose = stock % packageSize;
+      return packages + ' cartones/paquetes' + (loose ? ' + ' + loose + ' piezas sueltas' : '') + ' (' + stock + ' piezas)';
+    },
+
+    formatCycleCompactStock: function (units, unitsPerPackage) {
+      const stock = Math.max(0, Number(units) || 0);
+      const packageSize = Number(unitsPerPackage) || 0;
+      if (packageSize < 1) return stock + 'p';
+      const packages = Math.floor(stock / packageSize);
+      const loose = stock % packageSize;
+      return packages + 'c' + (loose ? '+' + loose + 'p' : '');
+    },
+
+    getInventoryTotals: function () {
+      return this.getActiveProducts().reduce(function (totals, product) {
+        const stock = Math.max(0, Number(product.stock) || 0);
+        const packageSize = Math.max(0, Number(product.unidadesPorCarton) || 0);
+        totals.products += 1;
+        totals.pieces += stock;
+        if (packageSize > 0) {
+          totals.packages += Math.floor(stock / packageSize);
+          totals.loose += stock % packageSize;
+        } else {
+          totals.loose += stock;
+        }
+        return totals;
+      }, { products: 0, packages: 0, loose: 0, pieces: 0 });
+    },
+
+    renderInventorySummary: function () {
+      const summary = document.getElementById('surtidos-summary');
+      if (!summary) return;
+      const totals = this.getInventoryTotals();
+      summary.innerHTML =
+        '<div class="inventory-summary-card"><span>Productos activos</span><strong>' + totals.products + '</strong></div>' +
+        '<div class="inventory-summary-card"><span>Cartones / paquetes</span><strong>' + totals.packages + '</strong></div>' +
+        '<div class="inventory-summary-card"><span>Piezas sueltas</span><strong>' + totals.loose + '</strong></div>' +
+        '<div class="inventory-summary-card inventory-summary-total"><span>Total de piezas</span><strong>' + totals.pieces + '</strong></div>';
+    },
+
+    bindInventoryUpdates: function () {
+      if (this.inventoryUpdatesBound) return;
+      this.inventoryUpdatesBound = true;
+      const refresh = () => {
+        const inventoryContainer = document.getElementById(this.containerId);
+        if (inventoryContainer && inventoryContainer.isConnected) this.renderGrid();
+        const surtidosContainer = document.getElementById(this.cycleContainerId);
+        if (surtidosContainer && surtidosContainer.isConnected) {
+          this.renderInventorySummary();
+          this.renderInventoryCycle();
+        }
+      };
+      window.addEventListener('inventory:updated', refresh);
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'cerveceria_products' || event.key === 'cerveceria_inventory_cycles') refresh();
+      });
+    },
+
+    renderInventoryCycle: function () {
+      const cycle = this.getOpenInventoryCycle();
+      const cycles = Database.getInventoryCycles();
+      const latestClosedCycle = cycles
+        .filter(function (item) { return item.status === 'closed'; })
+        .sort(function (a, b) {
+          return String(b.closedAt || b.startedAt || '').localeCompare(String(a.closedAt || a.startedAt || ''));
+        })[0];
+      const products = Database.getProducts();
+      const cyclePanel = document.getElementById('inventory-cycle-panel');
+      if (!cyclePanel) return;
+      if (!cycle) {
+        cyclePanel.innerHTML =
+          '<section class="inventory-cycle">' +
+            '<header class="inventory-cycle-header"><div><h3>Ciclo semanal</h3>' +
+            '<span class="inventory-cycle-status">Sin ciclo activo</span></div></header>' +
+            '<div class="inventory-cycle-start">' +
+              '<label for="inventory-cycle-start-date">Fecha de inicio</label>' +
+              '<input type="date" id="inventory-cycle-start-date" value="' + this.dateKey(new Date()) + '">' +
+              '<button type="button" class="btn" data-cycle-start>Iniciar nuevo ciclo / auditoría</button>' +
+            '</div>' +
+            (latestClosedCycle ? '<div class="inventory-cycle-reopen"><p>¿Cerraste el último ciclo por error? Puedes reabrirlo para corregir los conteos. Se conservarán los surtidos y el stock actual.</p><button type="button" class="btn secondary" data-cycle-reopen="' + this.escapeHtml(latestClosedCycle.id) + '">Reabrir último ciclo</button></div>' : '') +
+          '</section>';
+        return;
+      }
+      const ids = Object.keys(cycle.initialStock || {});
+      const finalStockDraft = cycle.finalStockDraft || {};
+      const savedCount = ids.filter(function (id) {
+        return finalStockDraft[id] !== undefined && finalStockDraft[id] !== null;
+      }).length;
+      const canCloseCycle = ids.length > 0 && savedCount === ids.length;
+      let html = '<section class="inventory-cycle">';
+      html += '<header class="inventory-cycle-header"><div class="inventory-cycle-title"><h3>Ciclo semanal</h3>';
+      html += '<span class="inventory-cycle-status">Abierto · ' + this.escapeHtml(this.formatCycleDate(cycle.startDate)) + '</span></div>';
+      html += '<div class="inventory-cycle-header-actions">';
+      html += '<button type="button" class="btn secondary inventory-cycle-sync" data-cycle-rebase>Sincronizar</button>';
+      html += '<button type="button" class="btn secondary inventory-cycle-count" data-cycle-open-picker="count">Conteo ' + savedCount + '/' + ids.length + '</button>';
+      html += '</div></header>';
+      if (latestClosedCycle) {
+        html += '<div class="inventory-cycle-reopen"><p>¿Necesitas corregir el último ciclo cerrado? Puedes reabrirlo sin perder este ciclo.</p>';
+        html += '<button type="button" class="btn secondary" data-cycle-reopen="' + this.escapeHtml(latestClosedCycle.id) + '">Reabrir último ciclo cerrado</button></div>';
+      }
+      html += '<div class="inventory-cycle-list" aria-label="Resumen de productos del ciclo">';
+      ids.forEach((id) => {
+        const product = products.find(function (item) { return String(item.id) === id; });
+        const snapshot = cycle.products && cycle.products[id] ? cycle.products[id] : {};
+        const name = product ? product.nombre : (snapshot.nombre || 'Producto eliminado');
+        const description = product && product.descripcion ? product.descripcion : '';
+        const brand = product ? [product.marca, product.presentacion].filter(Boolean).join(' · ') : '';
+        const subtitle = [description, brand].filter(Boolean).join(' · ');
+        const unitsPerPackage = product ? Number(product.unidadesPorCarton) || 0 : Number(snapshot.unidadesPorCarton) || 0;
+        const initial = Number(cycle.initialStock[id]) || 0;
+        const currentStock = product ? Math.max(0, Number(product.stock) || 0) : 0;
+        const finalCount = finalStockDraft[id];
+        const entries = (cycle.entries || []).filter(function (entry) {
+          return String(entry.productId) === id;
+        }).reduce(function (sum, entry) { return sum + (Number(entry.units) || 0); }, 0);
+        const packages = unitsPerPackage > 0 ? Math.floor(currentStock / unitsPerPackage) : 0;
+        const loosePieces = unitsPerPackage > 0 ? currentStock % unitsPerPackage : currentStock;
+        const escapedId = this.escapeHtml(id);
+        html += '<details class="inventory-card inventory-cycle-stock-card" data-cycle-product="' + escapedId + '">';
+        html += '<summary class="inventory-cycle-stock-summary">';
+        html += '<span class="inventory-cycle-stock-heading"><strong class="inv-name">' + this.escapeHtml(name) + '</strong>';
+        if (subtitle) html += '<span class="inventory-cycle-stock-subtitle">' + this.escapeHtml(subtitle) + '</span>';
+        html += '</span>';
+        html += '<span class="inventory-cycle-stock-breakdown">';
+        html += '<span><small>Cartones / paquetes</small><strong>' + packages + '</strong></span>';
+        html += '<span><small>Piezas sueltas</small><strong>' + loosePieces + '</strong></span>';
+        html += '<span class="inventory-cycle-stock-total"><small>Total de piezas</small><strong>' + currentStock + '</strong></span>';
+        html += '</span></summary>';
+        html += '<div class="inventory-cycle-stock-details">';
+        html += '<div class="inventory-cycle-detail-list">';
+        html += '<div><span>Inventario inicial</span><strong>' + this.escapeHtml(this.formatStockPresentation(initial, unitsPerPackage)) + '</strong></div>';
+        html += '<div><span>Inventario actual</span><strong>' + this.escapeHtml(this.formatStockPresentation(currentStock, unitsPerPackage)) + '</strong></div>';
+        html += '<div><span>Surtido</span><strong>' + this.escapeHtml(this.formatStockPresentation(entries, unitsPerPackage)) + '</strong></div>';
+        html += '<div><span>Conteo físico</span><strong>' + (finalCount === undefined ? 'Pendiente' : this.escapeHtml(this.formatStockPresentation(finalCount, unitsPerPackage))) + '</strong></div>';
+        html += '</div>';
+        html += '<div class="inventory-cycle-product-actions">';
+        html += '<button type="button" class="btn inventory-cycle-restock-product" data-cycle-open-picker="restock" data-cycle-product-id="' + escapedId + '">Registrar surtido</button>';
+        html += '<button type="button" class="btn secondary inventory-cycle-count-product" data-cycle-open-picker="count" data-cycle-product-id="' + escapedId + '">' + (finalCount === undefined ? 'Capturar conteo físico' : 'Editar conteo físico') + '</button>';
+        html += '</div>';
+        html += '</div></details>';
+      });
+      if (!ids.length) html += '<p class="inventory-cycle-empty">No hay productos registrados para este ciclo.</p>';
+      html += '</div>';
+      html += '<div class="inventory-cycle-close-actions">';
+      html += '<p>' + (canCloseCycle ? 'Conteos completos. El ciclo está listo para cerrar.' : ids.length ? 'Completa el conteo físico de todos los productos para habilitar el cierre.' : 'No hay productos en este ciclo para contar.') + '</p>';
+      html += '<button type="button" class="btn inventory-cycle-close" data-cycle-close' + (canCloseCycle ? '' : ' disabled') + '>Cerrar ciclo</button></div>';
+      html += this.renderCyclePicker(cycle, products);
+      html += '</section>';
+      cyclePanel.innerHTML = html;
+    },
+
+    renderCyclePicker: function (cycle, products) {
+      if (!this.cyclePickerMode) return '';
+      const mode = this.cyclePickerMode;
+      const ids = Object.keys(cycle.initialStock || {});
+      const selectedId = this.cyclePickerProductId;
+      const filterQuery = String(this.cyclePickerSearchQuery || '').trim().toLocaleLowerCase();
+      const selectedProduct = products.find(function (product) { return String(product.id) === String(selectedId); });
+      const snapshot = cycle.products && cycle.products[selectedId] ? cycle.products[selectedId] : {};
+      const productName = selectedProduct ? selectedProduct.nombre : snapshot.nombre;
+      const directProduct = !!selectedId;
+      const unitsPerPackage = selectedProduct
+        ? Number(selectedProduct.unidadesPorCarton) || 0
+        : Number(snapshot.unidadesPorCarton) || 0;
+      let html = '<div class="cycle-picker-backdrop" data-cycle-picker-close></div>';
+      html += '<section class="cycle-picker" role="dialog" aria-modal="true" aria-labelledby="cycle-picker-title">';
+      html += '<header class="cycle-picker-header"><div><h3 id="cycle-picker-title">' + (mode === 'restock' ? 'Registrar surtido' : 'Conteo físico') + '</h3>';
+      html += '<p>' + (directProduct && productName ? this.escapeHtml(productName) : 'Elige un producto para continuar') + '</p></div><button type="button" class="cycle-picker-close" data-cycle-picker-close aria-label="Cerrar">×</button></header>';
+      if (!directProduct) {
+        html += '<label class="cycle-picker-search-label" for="cycle-picker-search">Buscar producto</label>';
+        html += '<input id="cycle-picker-search" class="cycle-picker-search" type="search" placeholder="Nombre del producto" data-cycle-picker-search autocomplete="off" value="' + this.escapeHtml(this.cyclePickerSearchQuery || '') + '">';
+        html += '<div class="cycle-picker-list" role="listbox" aria-label="Productos del ciclo">';
+        ids.forEach((id) => {
+          const product = products.find(function (item) { return String(item.id) === id; });
+          const fallback = cycle.products && cycle.products[id] ? cycle.products[id] : {};
+          const name = product ? product.nombre : (fallback.nombre || 'Producto eliminado');
+          const stock = product ? Math.max(0, Number(product.stock) || 0) : 0;
+          const selected = String(selectedId) === id;
+          const hidden = filterQuery && !String(name).toLocaleLowerCase().includes(filterQuery);
+          html += '<button type="button" class="cycle-picker-option' + (selected ? ' is-selected' : '') + '" data-cycle-select-product="' + this.escapeHtml(id) + '" role="option" aria-selected="' + selected + '"' + (hidden ? ' hidden' : '') + '>';
+          html += '<strong>' + this.escapeHtml(name) + '</strong><span>Actual: ' + this.escapeHtml(this.formatStockPresentation(stock, product ? product.unidadesPorCarton : fallback.unidadesPorCarton)) + '</span></button>';
+        });
+        html += '</div>';
+      }
+      if (selectedId && productName) {
+        const currentStock = selectedProduct ? Math.max(0, Number(selectedProduct.stock) || 0) : 0;
+        const entries = (cycle.entries || []).filter(function (entry) {
+          return String(entry.productId) === String(selectedId);
+        }).reduce(function (sum, entry) { return sum + (Number(entry.units) || 0); }, 0);
+        const finalDraft = cycle.finalStockDraft && cycle.finalStockDraft[selectedId];
+        html += '<form class="cycle-picker-form" data-cycle-picker-form>';
+        html += '<h4>' + this.escapeHtml(productName) + '</h4>';
+        if (mode === 'restock') {
+          html += '<p class="cycle-picker-current">Stock actual: ' + this.escapeHtml(this.formatStockPresentation(currentStock, unitsPerPackage)) + '</p>';
+          html += '<div class="inventory-cycle-controls"><label>Paquetes<input type="number" min="0" step="1" data-picker-packages ' + (unitsPerPackage ? '' : 'disabled') + ' value="0"></label>';
+          html += '<label>Piezas sueltas<input type="number" min="0" step="1" data-picker-pieces value="0"></label></div>';
+          html += '<p class="cycle-picker-preview" data-cycle-picker-preview>Nuevo stock: ' + this.escapeHtml(this.formatStockPresentation(currentStock, unitsPerPackage)) + '</p>';
+          html += '<button type="submit" class="btn">Guardar surtido</button>';
+        } else {
+          const draftUnits = finalDraft === undefined ? 0 : Number(finalDraft);
+          const draftPackages = unitsPerPackage ? Math.floor(draftUnits / unitsPerPackage) : 0;
+          const draftLoose = unitsPerPackage ? draftUnits % unitsPerPackage : draftUnits;
+          html += '<p class="cycle-picker-current">Inicial: ' + this.escapeHtml(this.formatStockPresentation(cycle.initialStock[selectedId], unitsPerPackage)) + ' · Surtido: ' + this.escapeHtml(this.formatStockPresentation(entries, unitsPerPackage)) + '</p>';
+          html += '<div class="inventory-cycle-controls"><label>Paquetes contados<input type="number" min="0" step="1" data-picker-packages ' + (unitsPerPackage ? '' : 'disabled') + ' value="' + draftPackages + '"></label>';
+          html += '<label>Piezas sueltas<input type="number" min="0" step="1" data-picker-pieces value="' + draftLoose + '"></label></div>';
+          html += '<p class="cycle-picker-preview" data-cycle-picker-preview>Desplazamiento estimado: pendiente de captura</p>';
+          html += '<button type="submit" class="btn">Guardar conteo físico</button>';
+        }
+        html += '</form>';
+      }
+      html += '</section>';
+      return html;
+    },
+
+    bindCycleEvents: function () {
+      const container = document.getElementById(this.cycleContainerId);
+      if (!container || container.dataset.cycleEventsBound === 'true') return;
+      container.dataset.cycleEventsBound = 'true';
+      container.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!target || typeof target.closest !== 'function') return;
+        const openPicker = target.closest('[data-cycle-open-picker]');
+        if (openPicker) {
+          this.cyclePickerMode = openPicker.dataset.cycleOpenPicker;
+          this.cyclePickerProductId = openPicker.dataset.cycleProductId || null;
+          this.cyclePickerSearchQuery = '';
+          this.renderInventoryCycle();
+          const search = container.querySelector('[data-cycle-picker-search]');
+          if (search) search.focus();
+          return;
+        }
+        const closePicker = target.closest('[data-cycle-picker-close]');
+        if (closePicker) {
+          this.cyclePickerMode = null;
+          this.cyclePickerProductId = null;
+          this.cyclePickerSearchQuery = '';
+          this.renderInventoryCycle();
+          return;
+        }
+        const selectProduct = target.closest('[data-cycle-select-product]');
+        if (selectProduct) {
+          this.cyclePickerProductId = selectProduct.dataset.cycleSelectProduct;
+          this.renderInventoryCycle();
+          return;
+        }
+        if (target.closest('[data-cycle-start]')) {
+          this.startInventoryCycle();
+          return;
+        }
+        const reopenCycle = target.closest('[data-cycle-reopen]');
+        if (reopenCycle) {
+          this.reopenInventoryCycle(reopenCycle.dataset.cycleReopen);
+          return;
+        }
+        if (target.closest('[data-cycle-rebase]')) {
+          this.rebaseInventoryCycle();
+          return;
+        }
+        if (target.closest('[data-cycle-close]')) this.closeInventoryCycle();
+      });
+      container.addEventListener('input', (event) => {
+        const target = event.target;
+        if (!target) return;
+        if (target.matches('[data-cycle-picker-search]')) {
+          const query = String(target.value || '').trim().toLocaleLowerCase();
+          this.cyclePickerSearchQuery = target.value || '';
+          container.querySelectorAll('[data-cycle-select-product]').forEach((option) => {
+            option.hidden = !option.textContent.toLocaleLowerCase().includes(query);
+          });
+          return;
+        }
+        if (target.matches('[data-picker-packages], [data-picker-pieces]')) {
+          this.updateCyclePickerPreview(container);
+        }
+      });
+      container.addEventListener('submit', (event) => {
+        if (!event.target.matches('[data-cycle-picker-form]')) return;
+        event.preventDefault();
+        this.submitCyclePickerForm(event.target);
+      });
+    },
+
+    startInventoryCycle: function () {
+      try {
+        const dateInput = document.getElementById('inventory-cycle-start-date');
+        const startDate = dateInput && dateInput.value;
+        if (!startDate) throw new Error('Selecciona la fecha de inicio del ciclo.');
+        Database.createInventoryCycle(startDate);
+        this.renderInventoryCycle();
+        this.notifyInventoryUpdated();
+      } catch (error) {
+        console.error('Inventory cycle start error:', error);
+        showErrorAlert(error && error.message ? error.message : String(error));
+      }
+    },
+
+    rebaseInventoryCycle: function () {
+      try {
+        const cycle = this.getOpenInventoryCycle();
+        if (!cycle) throw new Error('No hay un ciclo abierto para sincronizar.');
+        const dateInput = document.getElementById('inventory-cycle-reset-date');
+        const startDate = dateInput && dateInput.value ? dateInput.value : this.dateKey(new Date());
+        if (!confirm('Se reemplazará el inventario inicial con las existencias actuales y se borrará el registro de surtidos de este ciclo. ¿Deseas reiniciar la auditoría?')) return;
+        Database.rebaseInventoryCycle(cycle.id, startDate);
+        this.renderInventoryCycle();
+        this.notifyInventoryUpdated();
+      } catch (error) {
+        console.error('Inventory cycle rebase error:', error);
+        showErrorAlert(error && error.message ? error.message : String(error));
+      }
+    },
+
+    reopenInventoryCycle: function (cycleId) {
+      try {
+        if (!confirm('Se reabrirá el último ciclo cerrado y se borrarán sus conteos finales y resultados. Se conservarán los surtidos y el stock actual. Si hay otro ciclo abierto, quedará guardado y volverá a mostrarse al cerrar este. ¿Deseas continuar?')) return;
+        Database.reopenInventoryCycle(cycleId);
+        this.renderInventorySummary();
+        this.renderInventoryCycle();
+        this.notifyInventoryUpdated();
+      } catch (error) {
+        console.error('Inventory cycle reopen error:', error);
+        showErrorAlert(error && error.message ? error.message : String(error));
+      }
+    },
+
+    readWholeNumber: function (input, label) {
+      if (input && input.disabled) return 0;
+      if (!input) throw new Error('No se encontró el campo de ' + label + '.');
+      const rawValue = String(input.value || '').trim();
+      const value = rawValue ? Number(rawValue) : 0;
+      if (!Number.isInteger(value) || value < 0) throw new Error('Ingresa una cantidad válida para ' + label + '.');
+      return value;
+    },
+
+    updateCyclePickerPreview: function (container) {
+      const cycle = this.getOpenInventoryCycle();
+      const productId = this.cyclePickerProductId;
+      const preview = container.querySelector('[data-cycle-picker-preview]');
+      if (!cycle || !productId || !preview) return;
+      const product = Database.getProducts().find(function (item) { return String(item.id) === String(productId); });
+      const snapshot = cycle.products && cycle.products[productId] ? cycle.products[productId] : {};
+      const packageSize = product ? Number(product.unidadesPorCarton) || 0 : Number(snapshot.unidadesPorCarton) || 0;
+      const packagesInput = container.querySelector('[data-picker-packages]');
+      const piecesInput = container.querySelector('[data-picker-pieces]');
+      const packages = packagesInput && packagesInput.value.trim() ? Number(packagesInput.value) : 0;
+      const pieces = piecesInput && piecesInput.value.trim() ? Number(piecesInput.value) : 0;
+      if (!Number.isInteger(packages) || packages < 0 || !Number.isInteger(pieces) || pieces < 0) {
+        preview.textContent = 'Ingresa cantidades enteras no negativas.';
+        return;
+      }
+      const units = packages * packageSize + pieces;
+      if (this.cyclePickerMode === 'restock') {
+        const current = product ? Math.max(0, Number(product.stock) || 0) : 0;
+        preview.textContent = 'Nuevo stock: ' + this.formatStockPresentation(current + units, packageSize);
+        return;
+      }
+      const entries = (cycle.entries || []).filter(function (entry) {
+        return String(entry.productId) === String(productId);
+      }).reduce(function (sum, entry) { return sum + (Number(entry.units) || 0); }, 0);
+      const displacement = Number(cycle.initialStock[productId]) + entries - units;
+      preview.textContent = 'Desplazamiento estimado: ' + this.formatStockPresentation(displacement, packageSize);
+    },
+
+    submitCyclePickerForm: function (form) {
+      try {
+        const cycle = this.getOpenInventoryCycle();
+        if (!cycle) throw new Error('No hay un ciclo abierto.');
+        const productId = this.cyclePickerProductId;
+        if (!productId) throw new Error('Selecciona un producto.');
+        const product = Database.getProducts().find(function (item) { return String(item.id) === productId; });
+        const snapshot = cycle.products && cycle.products[productId] ? cycle.products[productId] : {};
+        const packageSize = product ? Number(product.unidadesPorCarton) || 0 : Number(snapshot.unidadesPorCarton) || 0;
+        const packages = this.readWholeNumber(form.querySelector('[data-picker-packages]'), 'paquetes');
+        const loose = this.readWholeNumber(form.querySelector('[data-picker-pieces]'), 'piezas');
+        if (packages > 0 && packageSize < 1) throw new Error('Configura primero las unidades por cartón/charola del producto.');
+        const units = packages * packageSize + loose;
+        if (this.cyclePickerMode === 'restock') {
+          if (!product) throw new Error('El producto ya no existe.');
+          if (units < 1) throw new Error('El surtido debe incluir al menos una pieza.');
+          Database.recordInventoryRestock(cycle.id, productId, units, packages);
+          this.cyclePickerMode = null;
+          this.cyclePickerProductId = null;
+          this.cyclePickerSearchQuery = '';
+          this.renderInventorySummary();
+          this.renderGrid();
+          this.renderInventoryCycle();
+          this.notifyInventoryUpdated();
+          return;
+        }
+        Database.saveInventoryCycleFinalCount(cycle.id, productId, units);
+        this.cyclePickerMode = null;
+        this.cyclePickerProductId = null;
+        this.cyclePickerSearchQuery = '';
+        this.renderInventoryCycle();
+      } catch (error) {
+        console.error('Inventory cycle entry error:', error);
+        showErrorAlert(error && error.message ? error.message : String(error));
+      }
+    },
+
+    closeInventoryCycle: function () {
+      try {
+        const cycle = this.getOpenInventoryCycle();
+        if (!cycle) throw new Error('No hay un ciclo abierto.');
+        const finalStock = cycle.finalStockDraft || {};
+        if (Object.keys(finalStock).length !== Object.keys(cycle.initialStock || {}).length) {
+          throw new Error('Captura el conteo físico de todos los productos antes de cerrar el ciclo.');
+        }
+        Database.closeInventoryCycle(cycle.id, finalStock);
+        this.cyclePickerMode = null;
+        this.cyclePickerProductId = null;
+        this.cyclePickerSearchQuery = '';
+        this.renderInventorySummary();
+        this.renderInventoryCycle();
+        this.notifyInventoryUpdated();
+      } catch (error) {
+        console.error('Inventory cycle close error:', error);
+        showErrorAlert(error && error.message ? error.message : String(error));
+      }
     },
 
      getFridgeCapacity: function () {
@@ -281,9 +756,14 @@
         html += '        <div class="inv-section-body">';
         html += '          <div class="inv-form-grid">';
         html += '            <div class="inv-field">';
-        html += '              <label for="inv-stock">Stock Actual</label>';
+        html += '              <label for="inv-stock-cartones">Cartones / charolas / paquetes</label>';
+        html += '              <input name="stockCartones" id="inv-stock-cartones" type="number" min="0" step="1" placeholder="0">';
+        html += '              <span class="inv-field-hint">Se convierte a piezas usando las unidades por cartón configuradas arriba.</span>';
+        html += '            </div>';
+        html += '            <div class="inv-field">';
+        html += '              <label for="inv-stock">Piezas sueltas</label>';
         html += '              <input name="stock" id="inv-stock" type="number" min="0" placeholder="0">';
-        html += '              <span class="inv-field-hint">Conteo real actual de unidades (botellas, piezas sueltas, etc.). Edítalo libremente para reflejar lo que hay en la nevera.</span>';
+        html += '              <span class="inv-field-hint">Unidades fuera del paquete completo.</span>';
         html += '            </div>';
         html += '            <div class="inv-field">';
         html += '              <label for="inv-stockMinimo">Stock Mínimo</label>';
@@ -378,11 +858,7 @@
           }
           html += '  <div class="inv-prices"><div><span>Compra</span>' + currencySymbol + parseFloat(precioCompra).toFixed(2) + '</div><div><span>Venta</span>' + currencySymbol + parseFloat(precioVenta).toFixed(2) + '</div></div>';
           if (codigo) html += '  <div class="inv-code"><span>Código</span> ' + this.escapeHtml(codigo) + '</div>';
-          html += '  <div class="inv-stock ' + (lowStock ? 'low-stock' : '') + '">Stock: ' + stock + (lowStock ? ' ⚠️ Rellenar' : '') + ' <span class="inv-stock-min">(mín. ' + stockMin + ')</span></div>';
-          html += '  <div class="inv-stock-adjust">';
-          html += '    <button class="inv-stock-btn inv-stock-minus" onclick="InventoryManager.adjustStock(\'' + id + '\', -1)" title="Quitar 1 unidad">−</button>';
-          html += '    <button class="inv-stock-btn inv-stock-plus" onclick="InventoryManager.adjustStock(\'' + id + '\', 1)" title="Agregar 1 unidad">+</button>';
-          html += '  </div>';
+          html += '  <div class="inv-stock ' + (lowStock ? 'low-stock' : '') + '">Stock: ' + this.escapeHtml(this.formatStockPresentation(stock, product.unidadesPorCarton)) + (lowStock ? ' ⚠️ Rellenar' : '') + ' <span class="inv-stock-min">(mín. ' + stockMin + ' piezas)</span></div>';
           html += '  <div class="inv-actions">';
           html += '    <button class="inv-edit" onclick="InventoryManager.editProduct(\'' + id + '\')">Editar</button>';
           html += '    <button class="inv-delete" onclick="InventoryManager.deleteProduct(\'' + id + '\')" title="Eliminar" aria-label="Eliminar"><span class="trash-icon">&#128465;</span></button>';
@@ -391,6 +867,7 @@
         }
 
         grid.innerHTML = html;
+        this.renderInventorySummary();
         this.updateFridgeStatus();
       } catch (e) {
         console.error('Inventory renderGrid error:', e);
@@ -418,6 +895,23 @@
           try {
             const id = form.dataset.editId || null;
             const precioVenta = parseFloat((form.precioVenta && form.precioVenta.value) || 0) || 0;
+            const unidadesPorCarton = Number((form.unidadesPorCarton && form.unidadesPorCarton.value) || 0);
+            const stockCartones = Number((form.stockCartones && form.stockCartones.value) || 0);
+            const stockPiezas = Number((form.stock && form.stock.value) || 0);
+            if (![unidadesPorCarton, stockCartones, stockPiezas].every(function (value) {
+              return Number.isInteger(value) && value >= 0;
+            })) {
+              throw new Error('Las cantidades de inventario deben ser números enteros no negativos.');
+            }
+            if (stockCartones > 0 && unidadesPorCarton < 1) {
+              throw new Error('Configura las unidades por cartón/charola para capturar stock por paquetes.');
+            }
+            const stockFieldsUnchanged = !!id &&
+              stockCartones === Number(form.dataset.stockCartonesBaseline) &&
+              stockPiezas === Number(form.dataset.stockPiezasBaseline);
+            const stockTotal = stockFieldsUnchanged
+              ? Number(form.dataset.originalStock) || 0
+              : stockCartones * unidadesPorCarton + stockPiezas;
             const product = {
               nombre: (form.nombre && form.nombre.value || '').trim(),
               marca: (form.marca && form.marca.value || '').trim(),
@@ -431,7 +925,7 @@
               cobroExtraEnvaseFaltantePieza: parseFloat((form.cobroExtraEnvaseFaltantePieza && form.cobroExtraEnvaseFaltantePieza.value) || 0) || 0,
               precioCarton: parseFloat((form.precioCarton && form.precioCarton.value) || 0) || 0,
               costoCarton: parseFloat((form.costoCarton && form.costoCarton.value) || 0) || 0,
-              unidadesPorCarton: parseInt((form.unidadesPorCarton && form.unidadesPorCarton.value) || 0, 10) || 0,
+              unidadesPorCarton: unidadesPorCarton,
               cobroExtraEnvaseFaltanteCarton: parseFloat((form.cobroExtraEnvaseFaltanteCarton && form.cobroExtraEnvaseFaltanteCarton.value) || 0) || 0,
               precioPromo: parseFloat((form.precioPromo && form.precioPromo.value) || 0) || 0,
               costoPromo: parseFloat((form.costoPromo && form.costoPromo.value) || 0) || 0,
@@ -446,7 +940,7 @@
                 return levels;
               })(),
               promocionesPorPieza: (form.promocionesPorPieza && form.promocionesPorPieza.value) || '',
-              stock: parseInt((form.stock && form.stock.value) || 0, 10) || 0,
+              stock: stockTotal,
               stockMinimo: parseInt((form.stockMinimo && form.stockMinimo.value) || 5, 10) || 5,
               activo: true
             };
@@ -528,6 +1022,9 @@
         const form = document.getElementById(this.formId);
         if (!modal || !form) return;
         delete form.dataset.editId;
+        delete form.dataset.originalStock;
+        delete form.dataset.stockCartonesBaseline;
+        delete form.dataset.stockPiezasBaseline;
         form.reset();
         const title = document.getElementById('inventory-modal-title');
         if (title) title.textContent = 'Nuevo Producto';
@@ -583,7 +1080,12 @@
           if (form['promo' + l + 'Precio']) form['promo' + l + 'Precio'].value = p ? p.precio : '';
         }
         if (form.promocionesPorPieza) form.promocionesPorPieza.value = product.promocionesPorPieza || '';
-        if (form.stock) form.stock.value = product.stock || 0;
+        const packageSize = Number(product.unidadesPorCarton) || 0;
+        if (form.stockCartones) form.stockCartones.value = packageSize ? Math.floor((Number(product.stock) || 0) / packageSize) : 0;
+        if (form.stock) form.stock.value = packageSize ? (Number(product.stock) || 0) % packageSize : (Number(product.stock) || 0);
+        form.dataset.originalStock = String(Number(product.stock) || 0);
+        form.dataset.stockCartonesBaseline = String(packageSize ? Math.floor((Number(product.stock) || 0) / packageSize) : 0);
+        form.dataset.stockPiezasBaseline = String(packageSize ? (Number(product.stock) || 0) % packageSize : (Number(product.stock) || 0));
         if (form.stockMinimo) form.stockMinimo.value = product.stockMinimo !== undefined ? product.stockMinimo : 5;
 
         const title = document.getElementById('inventory-modal-title');
@@ -615,26 +1117,6 @@
         }
       } catch (e) {
         console.error('Inventory deleteProduct error:', e);
-      }
-    },
-
-    // Suma o resta unidades sueltas al stock de un producto (entrada parcial / ajuste rápido).
-    adjustStock: function (id, delta) {
-      try {
-        var products = this.getActiveProducts();
-        var product = products.find(function (p) { return String(p.id) === String(id); });
-        if (!product) return;
-        var current = Number(product.stock || 0);
-        var next = Math.max(0, current + Number(delta || 0));
-        var updated = Object.assign({}, product, { stock: next });
-        if (typeof Database !== 'undefined' && Database.updateProduct) {
-          Database.updateProduct(String(id), updated);
-        }
-        this.renderGrid();
-        this.notifyInventoryUpdated();
-      } catch (e) {
-        console.error('Inventory adjustStock error:', e);
-        showErrorAlert(e && e.message ? e.message : String(e));
       }
     },
 

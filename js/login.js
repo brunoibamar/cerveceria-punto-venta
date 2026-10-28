@@ -58,13 +58,24 @@ const CashSession = {
     return true;
   },
 
-  // Caja marcada explícitamente como cerrada
-  isRegisterClosed() {
+  // La caja solo está activa si existe un registro explícito y coincide con la sesión.
+  isRegisterOpen(session) {
     try {
       const raw = localStorage.getItem(this.KEYS.CAJA);
       if (!raw) return false;
       const caja = JSON.parse(raw);
-      return !!(caja && caja.abierta === false);
+      if (!caja || caja.abierta !== true) return false;
+
+      const fondoInicial = Number(caja.fondoInicial);
+      const fondoSesion = this.getOpeningAmount(session);
+      const usuarioCaja = String(caja.usuario || '').trim();
+      const usuarioSesion = String(session && (session.name || session.usuario) || '').trim();
+
+      return Number.isFinite(fondoInicial)
+        && fondoInicial >= 0
+        && fondoInicial === fondoSesion
+        && usuarioCaja !== ''
+        && usuarioCaja === usuarioSesion;
     } catch (e) {
       console.error('[CashSession] No se pudo leer el estado de la caja:', e);
       return false;
@@ -76,7 +87,7 @@ const CashSession = {
     try {
       const session = this.readRaw();
       if (!this.isValid(session)) return null;
-      if (this.isRegisterClosed()) return null;
+      if (!this.isRegisterOpen(session)) return null;
       return session;
     } catch (error) {
       console.error('[CashSession] Error al obtener la sesión activa:', error);
