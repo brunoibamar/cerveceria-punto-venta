@@ -2486,6 +2486,7 @@ if (other) {
             <div class="cut-actions">
               <button type="button" class="btn secondary" id="pos-cut-save-json">💾 Guardar localmente JSON</button>
               <button type="button" class="btn secondary" id="pos-cut-print">🖨️ Imprimir Ticket</button>
+              <button type="button" class="btn secondary" id="pos-cut-email">📧 Enviar a Correo</button>
             </div>
             <div class="cut-footer-row">
               <button type="button" class="btn secondary" data-cut-close="true">Cancelar</button>
@@ -2532,6 +2533,11 @@ if (other) {
     const printBtn = document.getElementById('pos-cut-print');
     if (printBtn) {
       printBtn.addEventListener('click', () => this.runCutAction('print'));
+    }
+
+    const emailBtn = document.getElementById('pos-cut-email');
+    if (emailBtn) {
+      emailBtn.addEventListener('click', () => this.runCutAction('email'));
     }
 
     document.addEventListener('keydown', (e) => {
@@ -2725,7 +2731,7 @@ if (other) {
     }
 
     // Las acciones de salida se habilitan cuando el corte ya es válido
-    ['pos-cut-save-json', 'pos-cut-print'].forEach(id => {
+    ['pos-cut-save-json', 'pos-cut-print', 'pos-cut-email'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn) btn.disabled = !valid || this.cut.busy;
     });
@@ -2902,8 +2908,8 @@ if (other) {
     return saved;
   },
 
-  // Ejecuta una acción de salida del corte (JSON / ticket).
-  runCutAction(action) {
+  // Ejecuta una acción de salida del corte (JSON / ticket / correo).
+  async runCutAction(action) {
     if (this.cut.busy) return;
 
     const saved = this.ensureCutRecorded();
@@ -2916,6 +2922,14 @@ if (other) {
         ok = this.downloadCutJson(saved);
       } else if (action === 'print') {
         ok = this.printCutTicket(saved);
+      } else if (action === 'email') {
+        const result = await EmailService.sendCorteRespaldo(saved);
+        ok = result.success;
+        if (ok) {
+          alert('Correo de respaldo enviado exitosamente');
+        } else {
+          alert(result.error || 'No se pudo enviar el correo de respaldo.');
+        }
       }
     } catch (error) {
       console.error('[POS] Error al ejecutar la acción del corte:', error);
@@ -2937,7 +2951,7 @@ if (other) {
     this.cut.busy = !!busy;
 
     if (busy) {
-      ['pos-cut-save-json', 'pos-cut-print', 'pos-cut-confirm', 'pos-cut-cash'].forEach(id => {
+      ['pos-cut-save-json', 'pos-cut-print', 'pos-cut-email', 'pos-cut-confirm', 'pos-cut-cash'].forEach(id => {
         const element = document.getElementById(id);
         if (element) element.disabled = true;
       });

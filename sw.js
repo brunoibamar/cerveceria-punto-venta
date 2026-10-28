@@ -1,10 +1,10 @@
 /**
  * Service Worker - Cervecería POS
  * Permite el funcionamiento offline caché de activos y recursos.
- * Versión: 2.0.1
+ * Versión: 2.0.2
  */
 
-const CACHE_VERSION = 'cerveceria-pos-v2.0.1';
+const CACHE_VERSION = 'cerveceria-pos-v2.0.2';
 const CACHE_NAME = `${CACHE_VERSION}-offline`;
 const DATA_CACHE_NAME = `${CACHE_VERSION}-data`;
 
@@ -23,6 +23,7 @@ const PRECACHE_ASSETS = [
   './js/settings.js',
   './db/database.js',
   './services/salesBreakdown.js',
+  './services/emailService.js',
   './manifest.json'
 ];
 
