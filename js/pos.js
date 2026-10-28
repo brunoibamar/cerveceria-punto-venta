@@ -3102,19 +3102,44 @@ if (other) {
     return 'Cajero';
   },
 
-  // Credenciales EmailJS fijas en el servicio
+  // Credenciales EmailJS guardadas en Ajustes, con valores predeterminados del servicio
   getEmailConfig() {
+    let settings = {};
+    try {
+      settings = Database.getSettings() || {};
+    } catch (e) {
+      settings = {};
+    }
+
     if (typeof emailjs === 'undefined') {
       return { ok: false, error: 'La librería de EmailJS no está disponible. Revisa tu conexión a internet.' };
     }
 
-    const defaults = EmailService.config;
+    const publicKey = String(settings.emailPublicKey || 'SqbTPIS_U8CAwQTw').trim();
+    const serviceId = String(settings.emailServiceId || 'service_1576q89').trim();
+    const templateId = String(settings.emailTemplateId || 'template_dkl2n9i').trim();
+
+    if (!publicKey || !serviceId || !templateId) {
+      return { ok: false, error: 'No se pudieron cargar las credenciales de EmailJS.' };
+    }
+
+    let destino = String(settings.backupEmail || 'tonitocerverciapunto@gmail.com').trim();
+    if (!destino) {
+      destino = 'tonitocerverciapunto@gmail.com';
+      try {
+        settings.backupEmail = destino;
+        Database.saveSettings(settings);
+      } catch (e) {
+        console.error('[POS] No se pudo guardar el correo de respaldo:', e);
+      }
+    }
+
     return {
       ok: true,
-      destino: 'tonitocerverciapunto@gmail.com',
-      publicKey: defaults.publicKey,
-      serviceId: defaults.serviceId,
-      templateId: defaults.templateId
+      destino: destino,
+      publicKey: publicKey,
+      serviceId: serviceId,
+      templateId: templateId
     };
   },
 
@@ -3130,6 +3155,12 @@ if (other) {
     }
 
     try {
+      EmailService.setConfig({
+        publicKey: credenciales.publicKey,
+        serviceId: credenciales.serviceId,
+        templateId: credenciales.templateId
+      });
+
       const payload = {
         id: cut.id || 'N/A',
         fecha: cut.fechaCierre || new Date().toISOString().split('T')[0],
