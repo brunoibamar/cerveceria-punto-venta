@@ -4,7 +4,7 @@
 const EmailService = {
   // Configuración de EmailJS
   config: Object.freeze({
-    publicKey: 'SqbTPIS_U8CAwQTw',
+    publicKey: 'SqbjTPIS_U8CAwQTw',
     serviceId: 'service_1576q89',
     templateId: 'template_dkl2n9i'
   }),
@@ -252,11 +252,11 @@ const EmailService = {
         promociones_monto: promocionesResumen.monto
       });
 
+      emailjs.init({ publicKey: 'SqbjTPIS_U8CAwQTw' });
       const response = await emailjs.send(
         this.config.serviceId,
         this.config.templateId,
-        templateParams,
-        { publicKey: this.config.publicKey }
+        templateParams
       );
 
       console.log('SUCCESS!', response.status, response.text);
