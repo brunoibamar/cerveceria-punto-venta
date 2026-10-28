@@ -288,17 +288,17 @@ const EmailService = {
       });
 
       // Enviar el correo
+      emailjs.init('SqbjTPIS_U8CAwQTw');
       return emailjs.send(
         'service_1576q89',
         'template_dkl2n9i',
-        templateParams,
-        'SqbjTPIS_U8CAwQTw'
-      ).then(response => {
+        templateParams
+      ).then((response) => {
         console.log('SUCCESS!', response.status, response.text);
         return { success: true, response };
-      }).catch(err => {
-        const errorMessage = this.getResponseMessage(err, 'Error al enviar el correo de respaldo.');
-        console.log('FAILED...', errorMessage);
+      }).catch((error) => {
+        console.log('FAILED...', error);
+        const errorMessage = this.getResponseMessage(error, 'Error al enviar el correo de respaldo.');
         return { success: false, error: errorMessage };
       });
     } catch (error) {
