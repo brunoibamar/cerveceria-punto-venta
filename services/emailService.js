@@ -252,11 +252,11 @@ const EmailService = {
         promociones_monto: promocionesResumen.monto
       });
 
-      emailjs.init({ publicKey: this.config.publicKey });
       const response = await emailjs.send(
         this.config.serviceId,
         this.config.templateId,
-        templateParams
+        templateParams,
+        { publicKey: this.config.publicKey }
       );
 
       console.log('SUCCESS!', response.status, response.text);
