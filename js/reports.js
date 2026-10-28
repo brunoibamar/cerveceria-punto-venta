@@ -1087,7 +1087,7 @@ const ReportsManager = {
         }
       });
     });
-    const resumenFrio = EmailService.getColdItemsSummary(filtered);
+    const resumenFrio = SalesBreakdown.getColdItemsSummary(filtered);
     const piezasFrias = resumenFrio.piezasMonto;
     const cartonesFrios = resumenFrio.cartonesMonto;
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
@@ -1170,7 +1170,7 @@ const ReportsManager = {
         let productLabel = '';
         let tipoLinea = '';
 
-        const coldBreakdown = EmailService.getColdItemBreakdown(item);
+        const coldBreakdown = SalesBreakdown.getColdItemBreakdown(item);
         const promo = item.promoVolumenAplicada;
 
         if (category === 'piezas-frias') {
@@ -1308,9 +1308,9 @@ const ReportsManager = {
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = turnSales.reduce((sum, s) => sum + (s.total || 0), 0);
     const transacciones = turnSales.length;
-    const promocionesVolumen = EmailService.getVolumePromotionsSummary(turnSales).monto;
+    const promocionesVolumen = SalesBreakdown.getVolumePromotionsSummary(turnSales).monto;
 
-    const resumenFrio = EmailService.getColdItemsSummary(turnSales);
+    const resumenFrio = SalesBreakdown.getColdItemsSummary(turnSales);
     const piezasFrias = resumenFrio.piezasMonto;
     const cartonesFrios = resumenFrio.cartonesMonto;
     const inventoryCycleSummary = this.renderInventoryCycleSummary();

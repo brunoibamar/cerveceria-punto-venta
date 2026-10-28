@@ -4600,7 +4600,7 @@ PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
 
 #pos-cut-modal .cut-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
   gap: 8px;
   margin: 0;
@@ -4720,7 +4720,7 @@ PUNTO DE VENTA · LAYOUT DE DOS COLUMNAS (caja registradora)
   }
 
   #pos-cut-modal .cut-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   #pos-cut-modal .cut-footer-row {

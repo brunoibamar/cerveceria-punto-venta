@@ -244,7 +244,6 @@ const POS = {
     counted: 0,
     isAdmin: false,
     busy: false, // bloquea el modal mientras se ejecuta una acción de cierre
-    actionPromise: null,
     recorded: null // corte ya registrado en la base de datos (evita duplicados)
   },
   scanner: {
@@ -2367,7 +2366,7 @@ if (other) {
     const pagos = this.sumPayments(ventas);
     const fondoInicial = Number(session.cashOpening) || 0;
     const totalVentas = ventas.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-    const promocionesResumen = EmailService.getVolumePromotionsSummary(ventas);
+    const promocionesResumen = SalesBreakdown.getVolumePromotionsSummary(ventas);
     const promocionesAplicadas = promocionesResumen.cantidad > 0 ? [{
       nombre: 'Promociones',
       veces: promocionesResumen.cantidad,
@@ -2487,7 +2486,6 @@ if (other) {
             <div class="cut-actions">
               <button type="button" class="btn secondary" id="pos-cut-save-json">💾 Guardar localmente JSON</button>
               <button type="button" class="btn secondary" id="pos-cut-print">🖨️ Imprimir Ticket</button>
-              <button type="button" class="btn secondary" id="pos-cut-email">📧 Enviar a correo</button>
             </div>
             <div class="cut-footer-row">
               <button type="button" class="btn secondary" data-cut-close="true">Cancelar</button>
@@ -2534,11 +2532,6 @@ if (other) {
     const printBtn = document.getElementById('pos-cut-print');
     if (printBtn) {
       printBtn.addEventListener('click', () => this.runCutAction('print'));
-    }
-
-    const emailBtn = document.getElementById('pos-cut-email');
-    if (emailBtn) {
-      emailBtn.addEventListener('click', () => this.runCutAction('email'));
     }
 
     document.addEventListener('keydown', (e) => {
@@ -2607,7 +2600,6 @@ if (other) {
   },
 
   closeCashCutModal() {
-    if (this.cut.busy) return;
     const modal = document.getElementById('pos-cut-modal');
     if (modal) modal.classList.remove('is-active');
     this.cut.isOpen = false;
@@ -2640,9 +2632,9 @@ if (other) {
       channelsBox.hidden = !(canales.qr > 0 || canales.terminal > 0);
     }
 
-    const resumenFrio = EmailService.getColdItemsSummary(summary.ventas);
+    const resumenFrio = SalesBreakdown.getColdItemsSummary(summary.ventas);
 
-    const promocionesResumen = EmailService.getVolumePromotionsSummary(summary.ventas);
+    const promocionesResumen = SalesBreakdown.getVolumePromotionsSummary(summary.ventas);
     const montoPromociones = promocionesResumen.monto;
     setText('pos-cut-promociones', montoPromociones > 0 ? currency + montoPromociones.toFixed(2) : currency + '0.00');
     setText('pos-cut-piezas-frias', currency + resumenFrio.piezasMonto.toFixed(2));
@@ -2733,7 +2725,7 @@ if (other) {
     }
 
     // Las acciones de salida se habilitan cuando el corte ya es válido
-    ['pos-cut-save-json', 'pos-cut-print', 'pos-cut-email'].forEach(id => {
+    ['pos-cut-save-json', 'pos-cut-print'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn) btn.disabled = !valid || this.cut.busy;
     });
@@ -2816,8 +2808,8 @@ if (other) {
     const productos = this.getCutProducts({ tickets: ticketsCorte });
 
     // Desglose de frío y promociones desde las transacciones del turno
-    const resumenFrio = EmailService.getColdItemsSummary(tickets);
-    const promocionesResumen = EmailService.getVolumePromotionsSummary(tickets);
+    const resumenFrio = SalesBreakdown.getColdItemsSummary(tickets);
+    const promocionesResumen = SalesBreakdown.getVolumePromotionsSummary(tickets);
 
     return {
       tipo: 'cierre',
@@ -2910,49 +2902,20 @@ if (other) {
     return saved;
   },
 
-  // Evita acciones concurrentes y libera la promesa al terminar para permitir reintentos.
+  // Ejecuta una acción de salida del corte (JSON / ticket).
   runCutAction(action) {
-    if (this.cut.actionPromise) return this.cut.actionPromise;
+    if (this.cut.busy) return;
 
-    const actionPromise = Promise.resolve().then(() => this.performCutAction(action));
-    const trackedPromise = actionPromise.finally(() => {
-      if (this.cut.actionPromise === trackedPromise) {
-        this.cut.actionPromise = null;
-      }
-    });
-    this.cut.actionPromise = trackedPromise;
-    return trackedPromise;
-  },
+    const saved = this.ensureCutRecorded();
+    if (!saved) return;
 
-  async performCutAction(action) {
+    this.setCutBusy(true);
     let ok = true;
     try {
-      this.setCutBusy(true);
-
-      let emailConfig = null;
-      if (action === 'email') {
-        emailConfig = this.getEmailConfig();
-        if (!emailConfig.ok) {
-          alert(emailConfig.error);
-          return;
-        }
-      }
-
-      const saved = this.ensureCutRecorded();
-      if (!saved) return;
-
       if (action === 'json') {
         ok = this.downloadCutJson(saved);
       } else if (action === 'print') {
         ok = this.printCutTicket(saved);
-      } else if (action === 'email') {
-        const result = await this.sendCutByEmail(saved, emailConfig);
-        ok = result.success;
-        if (ok) {
-          alert('¡Correo enviado con éxito!');
-        } else {
-          alert(EmailService.getResponseMessage(result.error, 'No se pudo enviar el correo del corte.'));
-        }
       }
     } catch (error) {
       console.error('[POS] Error al ejecutar la acción del corte:', error);
@@ -2964,7 +2927,7 @@ if (other) {
 
     if (!ok) return;
 
-    // Las acciones de correo, JSON e impresión NO cierran el turno.
+    // Las acciones de exportación e impresión no cierran el turno.
     // El cierre de sesión es exclusivo del botón oficial de "Cerrar Turno / Corte de Caja".
     // El turno permanece activo e intacto para seguir operando.
   },
@@ -2974,13 +2937,6 @@ if (other) {
     this.cut.busy = !!busy;
 
     if (busy) {
-      const emailBtn = document.getElementById('pos-cut-email');
-      if (emailBtn) {
-        if (!emailBtn.dataset.idleText) emailBtn.dataset.idleText = emailBtn.textContent;
-        emailBtn.disabled = true;
-        emailBtn.setAttribute('aria-busy', 'true');
-        emailBtn.textContent = 'Procesando…';
-      }
       ['pos-cut-save-json', 'pos-cut-print', 'pos-cut-confirm', 'pos-cut-cash'].forEach(id => {
         const element = document.getElementById(id);
         if (element) element.disabled = true;
@@ -2995,11 +2951,6 @@ if (other) {
       return;
     }
 
-    const emailBtn = document.getElementById('pos-cut-email');
-    if (emailBtn) {
-      if (emailBtn.dataset.idleText) emailBtn.textContent = emailBtn.dataset.idleText;
-      emailBtn.removeAttribute('aria-busy');
-    }
     this.renderCashCutModal();
   },
 
@@ -3130,89 +3081,6 @@ if (other) {
     if (role === 'employee' || role === 'empleado') return 'Empleado';
     if (role === 'guest' || role === 'invitado') return 'Invitado';
     return 'Cajero';
-  },
-
-  // Credenciales EmailJS fijas en el servicio; solo el destinatario viene de Ajustes
-  getEmailConfig() {
-    let settings = {};
-    try {
-      settings = Database.getSettings() || {};
-    } catch (e) {
-      settings = {};
-    }
-
-    if (typeof emailjs === 'undefined') {
-      return { ok: false, error: 'La librería de EmailJS no está disponible. Revisa tu conexión a internet.' };
-    }
-
-    let destino = String(settings.backupEmail || 'tonitocerverciapunto@gmail.com').trim();
-    if (!destino) {
-      destino = 'tonitocerverciapunto@gmail.com';
-      try {
-        settings.backupEmail = destino;
-        Database.saveSettings(settings);
-      } catch (e) {
-        console.error('[POS] No se pudo guardar el correo de respaldo:', e);
-      }
-    }
-
-    return {
-      ok: true,
-      destino: destino,
-      publicKey: EmailService.config.publicKey,
-      serviceId: EmailService.config.serviceId,
-      templateId: EmailService.config.templateId
-    };
-  },
-
-  // Envía el reporte del corte de caja por correo con las credenciales de EmailJS
-  async sendCutByEmail(cut, config) {
-    const credenciales = (config && config.ok) ? config : this.getEmailConfig();
-    if (!credenciales || !credenciales.ok) {
-      return { success: false, error: (credenciales && credenciales.error) || 'No se pudo leer la configuración de correo.' };
-    }
-
-    if (typeof EmailService === 'undefined') {
-      return { success: false, error: 'El servicio de correo no está disponible.' };
-    }
-
-    try {
-      const payload = {
-        id: cut.id || 'N/A',
-        fecha: cut.fechaCierre || new Date().toISOString().split('T')[0],
-        hora: cut.horaCierre || new Date().toLocaleTimeString(),
-        turno: cut.turno || 'N/A',
-        corteNumero: cut.corteNumero || 'N/A',
-        totalEfectivo: cut.ventasEfectivo || 0,
-        totalTarjeta: cut.ventasTarjeta || 0,
-        totalTransferencia: cut.ventasTransferencia || 0,
-        totalGeneral: cut.totalGeneral || 0,
-        totalVentas: cut.totalVentas || 0,
-        cantidadVentas: cut.cantidadVentas || 0,
-        montoApertura: cut.montoApertura || 0,
-        fondoInicial: cut.fondoInicial || 0,
-        descuentosPromociones: cut.descuentosPromociones || 0,
-        promocionesAplicadas: cut.promocionesAplicadas || [],
-        transacciones: cut.tickets || [],
-        ventas: cut.usuario || 'Sistema',
-        productos: this.getCutProducts(cut)
-      };
-
-      const fecha = cut.fechaCierre ? String(cut.fechaCierre).split('T')[0] : '';
-      const asunto = 'Corte de caja ' + (cut.turno || '') + (fecha ? ' - ' + fecha : '');
-      const result = await EmailService.sendCorteRespaldo(payload, credenciales.destino, asunto);
-
-      if (!result || !result.success) {
-        return { success: false, error: (result && result.error) || 'EmailJS no pudo enviar el correo del corte.' };
-      }
-      return { success: true };
-    } catch (error) {
-      console.error('[POS] Error al enviar el corte por correo:', error);
-      return {
-        success: false,
-        error: EmailService.getResponseMessage(error, 'Error al enviar el corte por correo.')
-      };
-    }
   },
 
   // Productos vendidos en el corte (agrupados por artículo)

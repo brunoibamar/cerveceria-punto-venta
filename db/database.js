@@ -150,7 +150,6 @@ const DEFAULT_SETTINGS = {
   ticketFooter: 'Vuelva pronto',
   currency: 'MXN',
   printerName: '',
-  backupEmail: '',
   currencySymbol: '$',
   coldCharge: 0,
   fridgeCapacity: 24,

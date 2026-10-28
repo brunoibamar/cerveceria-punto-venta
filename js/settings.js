@@ -30,11 +30,6 @@ const SettingsManager = {
       subtitle: 'Capacidad de la nevera fría y control de piezas disponibles.',
       icon: '🧊'
     },
-    email: {
-      title: 'Correo de Respaldo (EmailJS)',
-      subtitle: 'El servicio de correo está configurado automáticamente para los cortes de caja.',
-      icon: '📧'
-    },
     mp: {
       title: 'Mercado Pago',
       subtitle: 'Link de cobro que se codifica en el QR y se usa con NFC o terminal.',
@@ -68,7 +63,7 @@ const SettingsManager = {
       <header class="settings-header">
         <div>
           <h2 class="settings-title">⚙️ Ajustes</h2>
-          <p class="settings-subtitle">Configura el negocio, la nevera, los cobros con tarjeta, los correos y los respaldos del punto de venta.</p>
+          <p class="settings-subtitle">Configura el negocio, la nevera, los cobros con tarjeta y los respaldos del punto de venta.</p>
         </div>
       </header>
       <div class="settings-grid">
@@ -87,11 +82,6 @@ const SettingsManager = {
           <span class="settings-card-icon">🧊</span>
           <span class="settings-card-title">Refrigerador</span>
           <span class="settings-card-sub">${Number(settings.fridgeCapacity || 24)} piezas</span>
-          <span class="settings-card-arrow">▸</span>
-        </button>
-        <button class="settings-card" data-modal="email">
-          <span class="settings-card-icon">📧</span>
-          <span class="settings-card-title">Correo de Respaldo (EmailJS)</span>
           <span class="settings-card-arrow">▸</span>
         </button>
         <button class="settings-card" data-modal="mp">
@@ -142,7 +132,7 @@ const SettingsManager = {
         <h3 class="settings-modal-title" id="settings-modal-title">${meta.icon} ${this.escapeHtml(meta.title)}</h3>
         <p class="settings-modal-sub">${this.escapeHtml(meta.subtitle)}</p>
         ${body}
-        ${(type !== 'backup' && type !== 'mplink' && type !== 'email') ? '<button type="button" class="settings-modal-save" id="settings-modal-save">Guardar</button>' : ''}
+        ${(type !== 'backup' && type !== 'mplink') ? '<button type="button" class="settings-modal-save" id="settings-modal-save">Guardar</button>' : ''}
       </div>
     `;
 
@@ -192,12 +182,6 @@ const SettingsManager = {
           <input type="number" id="m-fridgeCapacity" value="${Number(settings.fridgeCapacity) || 24}" step="1" min="1" />
           <p class="form-hint">Cantidad máxima de piezas frías que puede contener la nevera. Se usa al rellenar automáticamente.</p>
         </div>
-      `;
-    }
-
-    if (type === 'email') {
-      return `
-        <p class="form-hint">El correo de respaldo está configurado y no requiere ingresar credenciales en este dispositivo.</p>
       `;
     }
 
