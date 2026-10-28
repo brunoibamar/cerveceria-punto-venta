@@ -244,6 +244,7 @@ const POS = {
     counted: 0,
     isAdmin: false,
     busy: false, // bloquea el modal mientras se ejecuta una acción de cierre
+    actionPromise: null,
     recorded: null // corte ya registrado en la base de datos (evita duplicados)
   },
   scanner: {
@@ -2606,6 +2607,7 @@ if (other) {
   },
 
   closeCashCutModal() {
+    if (this.cut.busy) return;
     const modal = document.getElementById('pos-cut-modal');
     if (modal) modal.classList.remove('is-active');
     this.cut.isOpen = false;
@@ -2908,26 +2910,37 @@ if (other) {
     return saved;
   },
 
-  // Ejecuta una acción de salida del corte (JSON / ticket / correo) y cierra la sesión
-  async runCutAction(action) {
-    if (this.cut.busy) return;
+  // Evita acciones concurrentes y libera la promesa al terminar para permitir reintentos.
+  runCutAction(action) {
+    if (this.cut.actionPromise) return this.cut.actionPromise;
 
-    let emailConfig = null;
-    if (action === 'email') {
-      emailConfig = this.getEmailConfig();
-      if (!emailConfig.ok) {
-        alert(emailConfig.error);
-        return;
+    const actionPromise = Promise.resolve().then(() => this.performCutAction(action));
+    const trackedPromise = actionPromise.finally(() => {
+      if (this.cut.actionPromise === trackedPromise) {
+        this.cut.actionPromise = null;
       }
-    }
+    });
+    this.cut.actionPromise = trackedPromise;
+    return trackedPromise;
+  },
 
-    const saved = this.ensureCutRecorded();
-    if (!saved) return;
-
-    this.setCutBusy(true);
-
+  async performCutAction(action) {
     let ok = true;
     try {
+      this.setCutBusy(true);
+
+      let emailConfig = null;
+      if (action === 'email') {
+        emailConfig = this.getEmailConfig();
+        if (!emailConfig.ok) {
+          alert(emailConfig.error);
+          return;
+        }
+      }
+
+      const saved = this.ensureCutRecorded();
+      if (!saved) return;
+
       if (action === 'json') {
         ok = this.downloadCutJson(saved);
       } else if (action === 'print') {
@@ -2961,6 +2974,18 @@ if (other) {
     this.cut.busy = !!busy;
 
     if (busy) {
+      const emailBtn = document.getElementById('pos-cut-email');
+      if (emailBtn) {
+        if (!emailBtn.dataset.idleText) emailBtn.dataset.idleText = emailBtn.textContent;
+        emailBtn.disabled = true;
+        emailBtn.setAttribute('aria-busy', 'true');
+        emailBtn.textContent = 'Procesando…';
+      }
+      ['pos-cut-save-json', 'pos-cut-print', 'pos-cut-confirm', 'pos-cut-cash'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.disabled = true;
+      });
+
       const hint = document.getElementById('pos-cut-hint');
       if (hint) {
         hint.classList.remove('is-error');
@@ -2970,6 +2995,11 @@ if (other) {
       return;
     }
 
+    const emailBtn = document.getElementById('pos-cut-email');
+    if (emailBtn) {
+      if (emailBtn.dataset.idleText) emailBtn.textContent = emailBtn.dataset.idleText;
+      emailBtn.removeAttribute('aria-busy');
+    }
     this.renderCashCutModal();
   },
 

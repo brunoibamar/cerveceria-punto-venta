@@ -4,7 +4,7 @@
 const EmailService = {
   // Configuración de EmailJS
   config: Object.freeze({
-    publicKey: 'SqbjTPIS_U8CAwQTw'.trim(),
+    publicKey: 'SqbTPIS_U8CAwQTw',
     serviceId: 'service_1576q89',
     templateId: 'template_dkl2n9i'
   }),
@@ -120,7 +120,6 @@ const EmailService = {
    */
   async sendCorteRespaldo(corte, emailDestino, asunto = 'Respaldo de Corte de Caja') {
     try {
-      // Validar que emailjs esté disponible
       if (typeof emailjs === 'undefined') {
         throw new Error('La librería de EmailJS no está cargada.');
       }
@@ -253,7 +252,6 @@ const EmailService = {
         promociones_monto: promocionesResumen.monto
       });
 
-      // Enviar el correo
       emailjs.init({ publicKey: this.config.publicKey });
       const response = await emailjs.send(
         this.config.serviceId,
