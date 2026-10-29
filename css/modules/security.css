@@ -1,0 +1,29 @@
+.security-overlay { position:fixed; inset:0; z-index:20000; background:#080706dd; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); }
+.security-card { background:#211c17; color:#faf4ee; border:1px solid #b9844e66; border-radius:20px; padding:28px; width:min(540px,100%); max-height:90dvh; overflow:auto; box-shadow:0 24px 90px #0008; }
+.security-card h2 { margin:0 0 16px; color:#e0a96d; } .security-card p { line-height:1.6; color:#cbbfb4; } .security-card .btn { margin-top:14px; } #users-list p { display:flex; justify-content:space-between; gap:12px; align-items:center; border-bottom:1px solid #ffffff14; padding-bottom:12px; }
+.form-error { color:#ffb3a8; min-height:20px; } .startup-notice { max-width:550px; margin:60px auto; padding:28px; color:#faf4ee; }
+.shift-warning { position:fixed; top:74px; left:50%; transform:translateX(-50%); z-index:10000; background:#442918; border:1px solid #e0a96d; padding:16px; border-radius:14px; display:flex; gap:16px; align-items:center; max-width:95vw; color:#fff; }
+.tab-btn[hidden] { display:none !important; }
+@media(max-width:600px) { .shift-warning { flex-direction:column; gap:8px; width:90vw; } .security-card { padding:20px; } }
+
+.demo-banner { position:fixed; top:0; left:0; right:0; z-index:30000; padding:5px 12px; background:#e0a96d; color:#21180f; text-align:center; font-size:11px; font-weight:700; letter-spacing:.05em; }
+body:has(.demo-banner) .app-header { margin-top:24px; }
+
+.security-field { display:grid; gap:8px; color:var(--text-secondary); font-size:14px; }
+.pin-input { font-size:24px; letter-spacing:.2em; min-height:52px; }
+.security-user { border:1px solid var(--border-soft); border-radius:14px; padding:16px; margin:14px 0; }
+.security-user h3 { margin:0; overflow-wrap:anywhere; }
+.security-user .login-form { margin-top:16px; }
+.security-user .security-pin-status { display:block !important; font-size:15px; padding:0 !important; border:0 !important; }
+.security-user .btn, .security-card input, .security-card select { min-height:48px; }
+.bootstrap-pin { padding:14px; border:1px solid var(--accent); border-radius:12px; color:var(--accent); overflow-wrap:anywhere; }
+@media(max-width:600px) { .security-user { padding:12px; } .security-card { max-height:calc(100dvh - 32px); } }
+
+.admin-pin-screen { gap:12px; } .admin-pin-screen .pin-display { width:min(320px,100%); letter-spacing:.3em; padding:12px; box-sizing:border-box; }
+.admin-pin-screen .pin-key { min-height:56px; touch-action:manipulation; } .admin-pin-screen .pin-grid { gap:10px; }
+#create-secret { display:grid; gap:14px; } .reports-employee-summary { margin:16px 0; padding:16px; border:1px solid var(--border-soft); border-radius:14px; background:var(--bg-card); }
+.reports-employee-summary h3 { margin:0 0 8px; } .reports-employee-summary p { font-size:12px; line-height:1.5; color:var(--text-secondary); }
+.reports-employee-summary td { overflow-wrap:anywhere; } .sale-tag-cashier { white-space:normal; overflow-wrap:anywhere; }
+@media(max-width:600px) { .admin-pin-screen .pin-grid { max-width:290px; gap:8px; } .admin-pin-screen .pin-key { padding:12px 8px; } }
+
+.demo-reset { margin-left:10px; border:1px solid #21180f55; border-radius:6px; background:transparent; color:inherit; padding:4px 8px; font:inherit; cursor:pointer; }

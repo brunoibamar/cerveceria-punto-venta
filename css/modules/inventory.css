@@ -1,0 +1,1043 @@
+/* ---------- INVENTARIO ---------- */
+.inventory-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.inventory-search {
+  flex: 1 1 280px;
+  min-width: 240px;
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.01);
+}
+
+.inventory-search:focus {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.7);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.12);
+}
+
+.inv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  font-weight: 600;
+}
+
+.inv-btn.new-product {
+  background: linear-gradient(90deg, rgba(224, 169, 109, 0.22) 0%, transparent 100%);
+  border: 1px solid var(--accent);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-gold);
+}
+
+.inv-btn.new-product:hover {
+  transform: translateY(-1px);
+}
+
+.inv-btn-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, #b98a52 100%);
+  color: #1a140d;
+  font-weight: 800;
+}
+
+.inv-btn.fridge {
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+}
+
+/* Bot�n/tarjeta independiente de nevera: solo copo de nieve + capacidad */
+.inv-btn.fridge.wide {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  min-width: 150px;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.inv-btn.fridge.wide:hover {
+  border-color: rgba(147, 197, 253, 0.55);
+  color: #eaf4ff;
+  transform: translateY(-1px);
+}
+
+.fridge-icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(147, 197, 253, 0.45));
+}
+
+.fridge-status {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+}
+
+.inventory-card {
+  background: radial-gradient(380px 160px at 50% 0%, rgba(224, 169, 109, 0.07) 0%, transparent 70%), linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  box-shadow: var(--shadow-elegant);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: var(--transition-smooth);
+}
+
+.inventory-card:hover {
+  border-color: rgba(224, 169, 109, 0.55);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.72), 0 0 18px rgba(224, 169, 109, 0.2);
+}
+
+.inv-img {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  background: radial-gradient(circle, rgba(224, 169, 109, 0.12) 0%, transparent 70%);
+}
+
+.inv-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inv-name {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.inv-meta,
+.inv-brand {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.inv-prices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.inv-prices > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.1) 0%, transparent 100%);
+}
+
+.inv-prices span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.inv-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #1f1914 0%, transparent 100%);
+  font-size: 13px;
+}
+
+.inv-code span {
+  color: var(--text-secondary);
+}
+
+.inv-stock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.inv-stock.low-stock {
+  color: var(--accent);
+}
+
+.inv-stock-min {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.inv-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.inv-edit,
+.inv-delete {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.inv-edit:hover {
+  border-color: rgba(224, 169, 109, 0.6);
+}
+
+.inv-delete {
+  color: #fca5a5;
+}
+
+.inv-delete:hover {
+  border-color: rgba(153, 27, 27, 0.9);
+  background: linear-gradient(180deg, rgba(153, 27, 27, 0.4) 0%, transparent 100%);
+}
+
+.inventory-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 16px;
+  border-radius: 14px;
+  border: 1px dashed var(--border-soft);
+  color: var(--text-secondary);
+}
+
+/* =========================================================
+   INVENTARIO � MODAL FLOTANTE DE PRODUCTO
+   Modal centrado con fondo difuminado (backdrop-filter),
+   formulario en grid de dos columnas, bot�n de c�mara con
+   flash y control de nevera como tarjeta independiente.
+   Paleta "Midnight & Amber".
+   ========================================================= */
+.inv-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 420;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.inv-modal.is-open {
+  display: flex;
+}
+
+/* Fondo difuminado: difumina la vista de inventario detr�s del modal */
+.inv-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(900px 620px at 50% 28%, rgba(224, 169, 109, 0.1) 0%, rgba(12, 10, 9, 0.74) 58%, rgba(8, 7, 6, 0.9) 100%);
+  backdrop-filter: blur(7px) saturate(135%);
+  -webkit-backdrop-filter: blur(7px) saturate(135%);
+  animation: invBackdropIn 0.24s var(--ease-smooth) both;
+}
+
+.inv-modal.is-closing .inv-modal-backdrop {
+  animation: invBackdropOut 0.2s var(--ease-smooth) both;
+}
+
+.inv-modal-shell {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  max-height: min(92dvh, 880px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: radial-gradient(520px 220px at 50% 0%, rgba(224, 169, 109, 0.1) 0%, transparent 70%), linear-gradient(180deg, #241d17 0%, var(--bg-card) 42%, #17130f 100%);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(224, 169, 109, 0.06), 0 0 46px rgba(224, 169, 109, 0.14);
+  animation: invModalIn 0.3s var(--ease-smooth) both;
+}
+
+.inv-modal-shell-sm {
+  width: min(560px, 100%);
+}
+
+.inv-modal.is-closing .inv-modal-shell {
+  animation: invModalOut 0.2s var(--ease-smooth) both;
+}
+
+/* --- Cabecera del modal --- */
+.inv-modal-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.12) 0%, transparent 100%);
+}
+
+.inv-modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.inv-modal-badge {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  font-size: 20px;
+  background: radial-gradient(circle, rgba(224, 169, 109, 0.28) 0%, rgba(224, 169, 109, 0.05) 70%);
+  border: 1px solid var(--border-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.inv-modal-badge-cold {
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.26) 0%, rgba(96, 165, 250, 0.05) 70%);
+  border-color: rgba(147, 197, 253, 0.35);
+}
+
+.inv-modal-heading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inv-modal-heading-text h3 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+}
+
+.inv-modal-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.inv-modal-close {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.inv-modal-close:hover {
+  color: var(--text-primary);
+  border-color: rgba(224, 169, 109, 0.6);
+}
+
+/* --- Formulario: grid de dos columnas --- */
+.inv-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.inv-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.inv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inv-field-full {
+  grid-column: 1 / -1;
+}
+
+.inv-field > label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.inv-field input,
+.inv-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: #1a1613;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  transition: var(--transition-smooth);
+}
+
+.inv-field input::placeholder {
+  color: #77695d;
+}
+
+.inv-field input:focus {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.12);
+  background: #1e1915;
+}
+
+/* --- Tarjetas de secci�n del formulario de producto --- */
+.inv-section {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.05) 0%, transparent 100%), linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  box-shadow: var(--shadow-elegant);
+  overflow: visible;
+  margin-bottom: 16px;
+}
+
+.inv-section:last-child {
+  margin-bottom: 0;
+}
+
+.inv-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.12) 0%, transparent 100%);
+  flex-shrink: 0;
+}
+
+.inv-section-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.inv-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.inv-section-body {
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: visible;
+}
+
+.inv-field-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  display: block;
+  line-height: 1.35;
+}
+
+/* C�digo de barras + bot�n de c�mara con flash */
+.inv-input-group {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.inv-input-group input {
+  flex: 1 1 auto;
+}
+
+.inv-scan-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(224, 169, 109, 0.45);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.24) 0%, rgba(224, 169, 109, 0.08) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.inv-scan-btn:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-1px);
+}
+
+.inv-scan-btn:active {
+  transform: none;
+}
+
+
+
+/* --- Acciones del formulario --- */
+.inv-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.inv-save-btn {
+  min-width: 170px;
+}
+
+/* --- Botones base reutilizables --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+  color: #14100b;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-gold);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn.secondary,
+.btn-secondary {
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+.btn.secondary:hover,
+.btn-secondary:hover {
+  color: var(--text-primary);
+  border-color: rgba(224, 169, 109, 0.5);
+}
+
+/* --- Tarjetas de producto: encabezado y chip de nevera --- */
+.inv-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inv-actions {
+  flex-wrap: wrap;
+}
+
+.inv-btn.fridge:hover {
+  border-color: rgba(147, 197, 253, 0.55);
+  color: #eaf4ff;
+}
+
+/* --- Panel del modal global de nevera --- */
+.inv-fridge-panel {
+  padding: 20px 22px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.inv-fridge-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(224, 169, 109, 0.35);
+  background: linear-gradient(135deg, rgba(224, 169, 109, 0.18) 0%, rgba(28, 24, 21, 0.92) 100%);
+  box-shadow: 0 0 24px rgba(224, 169, 109, 0.12);
+}
+
+.inv-fridge-summary-icon {
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(224, 169, 109, 0.35));
+}
+
+.inv-fridge-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+}
+
+.inv-fridge-summary-text strong {
+  font-size: 20px;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.inv-fridge-summary-text span {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.inv-fridge-refill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin: 4px auto 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(224, 169, 109, 0.5);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.22) 0%, rgba(224, 169, 109, 0.08) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-gold);
+}
+
+.inv-fridge-refill:hover {
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+  border-color: var(--accent);
+  color: #14100b;
+  transform: translateY(-1px);
+  box-shadow: 0 0 26px rgba(224, 169, 109, 0.35);
+}
+
+.inv-fridge-refill:active {
+  transform: translateY(0);
+}
+
+.inv-fridge-adjust {
+  width: 100%;
+  max-width: 420px;
+  margin: 14px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+.inv-fridge-input-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  border: 1px solid rgba(224, 169, 109, 0.35);
+  background: rgba(28, 24, 21, 0.9);
+  border-radius: 16px;
+  padding: 14px 18px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.inv-fridge-input-wrap input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  padding: 8px 4px;
+  min-width: 0;
+}
+
+.inv-fridge-apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+  color: #14100b;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(224, 169, 109, 0.3);
+}
+
+.inv-fridge-apply:hover {
+  background: linear-gradient(180deg, var(--accent), #d99a5c);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(224, 169, 109, 0.4);
+}
+
+.inv-fridge-apply:active {
+  transform: translateY(0);
+}
+
+/* =========================================================
+   ESC�NER DE C�DIGO DE BARRAS (inventario y punto de venta)
+   ========================================================= */
+.scanner-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.scanner-modal.active,
+.scanner-modal.is-open {
+  display: flex;
+}
+
+.scanner-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 7, 6, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.scanner-modal-content {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden auto;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75);
+  animation: invModalIn 0.28s var(--ease-smooth) both;
+}
+
+.scanner-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.scanner-modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.scanner-close {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.scanner-close:hover {
+  color: var(--text-primary);
+  border-color: rgba(224, 169, 109, 0.5);
+}
+
+.scanner-modal-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scanner-video-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0c0a09;
+  border: 1px solid var(--border-soft);
+}
+
+.scanner-video-wrapper video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.scanner-guide {
+  position: absolute;
+  inset: 18% 12%;
+  border: 2px solid rgba(224, 169, 109, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+}
+
+.scanner-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scanner-hint {
+  font-size: 12px;
+  color: var(--text-primary);
+  background: rgba(18, 16, 14, 0.72);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.scanner-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.scanner-flash-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(90deg, rgba(224, 169, 109, 0.16) 0%, transparent 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.scanner-flash-btn.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-gold);
+}
+
+.scanner-mode {
+  display: flex;
+  justify-content: center;
+}
+
+.scanner-status {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.scanner-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px 16px;
+}
+
+/* --- Animaciones del modal --- */
+@keyframes invModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes invModalOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes invBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes invBackdropOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* --- Adaptaci�n a pantallas peque�as --- */
+@media (max-width: 560px) {
+  .inv-modal {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .inv-modal-shell,
+  .inv-modal-shell-sm {
+    width: 100%;
+    max-height: 94dvh;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .inv-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inv-scan-btn-text {
+    display: none;
+  }
+
+  .inv-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .inv-form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Referencia teórica del ciclo, separada del conteo físico. */
+.inventory-cycle-expected,
+.inventory-expected-guide {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(224, 169, 109, 0.45);
+  border-radius: 12px;
+  background: rgba(224, 169, 109, 0.09);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.inventory-cycle-expected small,
+.inventory-expected-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.inventory-cycle-expected strong,
+.inventory-expected-guide strong {
+  color: var(--accent);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.inventory-expected-guide small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.inventory-cycle-expected.is-negative,
+.inventory-expected-guide.is-negative {
+  border-color: #e9a58c;
+}
+.inventory-cycle-expected.is-negative strong,
+.inventory-expected-guide.is-negative strong {
+  color: #ffc0aa;
+}
+@media (max-width: 600px) {
+  .inventory-cycle-expected,
+  .inventory-expected-guide { padding: 10px; }
+}

@@ -1,0 +1,734 @@
+/* =========================================================
+   AJUSTES M�VIL: header compacto, vista de ventas compacta
+   y anclaje seguro del bot�n COBRAR
+   ========================================================= */
+@media (max-width: 600px) {
+  /* Encabezado superior m�s compacto: no recorta "Cervecer�a" */
+  .app-header {
+    padding: 8px 12px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  }
+
+  .header-brand {
+    gap: 6px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .btn-corte-caja {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .header-user {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* ---------- Vista de ventas: un �nico scroll vertical ----------
+     La tarjeta de totales y el bot�n COBRAR salen del flujo y quedan
+     fijados por encima de la barra de navegaci�n; el resto del contenido
+     fluye en el scroll principal, con 120px de aire al final para que
+     ning�n producto quede oculto bajo la barra fija. */
+   .pos-view {
+     height: auto;
+     min-height: 100%;
+     align-items: start;
+     align-content: start;
+     gap: 8px;
+     padding: 10px 12px;
+     padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+   }
+
+  /* Sin scrolls anidados: el cat�logo, el historial y el ticket fluyen
+     en el mismo contenedor con scroll. */
+  .pos-sidebar,
+  .pos-main {
+    max-height: none;
+    overflow: visible;
+    gap: 8px;
+  }
+
+  /* ---------- Buscador ---------- */
+  .pos-search-bar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .pos-search-bar input {
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+
+  .btn-camera {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .btn-camera .btn-text {
+    display: none;
+  }
+
+  /* Palomita "Pieza Fr�a": cabe en la misma l�nea que el buscador */
+  .cold-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .cold-toggle input[type="checkbox"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cold-toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .cold-palomita {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid var(--border-soft);
+    background: #1a1613;
+    color: transparent;
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .cold-toggle.is-active .cold-palomita {
+    border-color: rgba(147, 197, 253, 0.6);
+    background: rgba(96, 165, 250, 0.22);
+    color: #eaf4ff;
+  }
+
+  .toggle-label {
+    font-size: 11px;
+  }
+
+  .fridge-counter {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* ---------- Fichas de productos ---------- */
+  .product-list-wrap {
+    gap: 4px;
+  }
+
+  .product-list-wrap h2 {
+    font-size: 13px;
+    margin: 0 0 1px;
+  }
+
+  /* Columnas m�s angostas: caben m�s productos por fila en el celular */
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 5px;
+  }
+
+  .product-card {
+    padding: 5px 6px;
+    gap: 1px;
+    border-radius: 9px;
+  }
+
+  .product-name {
+    font-size: 11px;
+  }
+
+  .product-price {
+    font-size: 11.5px;
+  }
+
+  .product-stock {
+    font-size: 9px;
+  }
+
+  .product-cold-badge {
+    margin-top: 2px;
+    padding: 0 5px;
+    font-size: 8px;
+  }
+
+  /* ---------- Historial de ventas (acorde�n) ----------
+     Se reduce a una barra delgad�sima: t�tulo y resumen en una sola l�nea
+     con tipograf�a de 11px, de modo que no roba espacio vertical al
+     cat�logo ni al ticket actual. */
+  .live-sales {
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  .live-sales-header {
+    padding: 2px 8px;
+    gap: 6px;
+    min-height: 22px;
+  }
+
+  .live-sales-headings {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .live-sales-title {
+    font-size: 11px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+  }
+
+  .live-sales-sub {
+    font-size: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .live-sales-count {
+    min-width: 18px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+
+  .live-sales-arrow {
+    font-size: 9px;
+  }
+
+  .live-sales-list {
+    gap: 4px;
+    transition: none;
+  }
+
+  .live-sales-list.expanded {
+    max-height: 42vh;
+    min-height: 160px;
+    padding: 0 8px 8px;
+  }
+
+  .live-ticket {
+    min-height: 56px;
+    padding: 9px 10px;
+    gap: 8px;
+    border-radius: 9px;
+  }
+
+  .live-ticket-time {
+    font-size: 10px;
+  }
+
+  .live-ticket-items {
+    font-size: 12px;
+  }
+
+  .live-ticket-total {
+    font-size: 12px;
+  }
+
+  .sale-tag {
+    padding: 3px 7px;
+    font-size: 10.5px;
+  }
+
+  .live-ticket-modal-overlay {
+    align-items: flex-end;
+    padding: 8px;
+  }
+
+  .live-ticket-modal {
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: 18px 18px 12px 12px;
+  }
+
+  .live-ticket-modal-header,
+  .live-ticket-modal-content {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  /* ---------- Carrito (tabla del ticket) ---------- */
+  #pos-cart {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    /* Colch�n extra: la �ltima fila del ticket nunca queda bajo la barra fija */
+    padding-bottom: 36px;
+  }
+
+  #pos-cart h2 {
+    font-size: 14px;
+    margin: 0 0 4px;
+  }
+
+  .cart-table {
+    font-size: 11px;
+  }
+
+  .cart-table th {
+    padding: 3px 4px;
+    font-size: 8.5px;
+    letter-spacing: 0.2px;
+  }
+
+  .cart-table td {
+    padding: 3px 4px;
+  }
+
+  .cart-qty {
+    gap: 3px;
+  }
+
+  .btn-qty,
+  .btn-delete {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+
+  .cart-table td:last-child {
+    width: 44px;
+    min-width: 44px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+
+  .cart-cold-charge {
+    font-size: 9.5px;
+    margin-top: 1px;
+  }
+
+  .cart-empty {
+    padding: 12px 10px;
+    font-size: 11.5px;
+  }
+
+  .cart-promo {
+    padding: 5px 8px;
+    font-size: 10.5px;
+  }
+
+  /* ---------- Tarjeta de resumen: desgloces en una sola l�nea ---------- */
+  .pos-totals {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 6px;
+    padding: 6px 10px;
+    border-radius: 12px;
+  }
+
+  .pos-totals-row {
+    flex: 0 0 auto;
+    gap: 3px;
+    font-size: 11px;
+  }
+
+  .pos-totals-row .pos-totals-label {
+    font-size: 11px;
+    letter-spacing: 0.4px;
+  }
+
+  .pos-totals-row .pos-totals-value {
+    font-size: 11px;
+  }
+
+  /* Los desgloces opcionales (cargo fr�o / descuento promo) se alinean en
+     la misma l�nea horizontal, sin bordes ni saltos de l�nea propios. */
+  .pos-totals-row.pos-totals-cold,
+  .pos-totals-row.pos-totals-promo {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  .pos-totals-row.pos-totals-cold::before,
+  .pos-totals-row.pos-totals-promo::before {
+    content: '�';
+    margin-right: 3px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+  }
+
+  /* El total ocupa su propia l�nea, con tipograf�a reducida */
+  .pos-totals-row.pos-totals-grand {
+    flex: 0 0 100%;
+    order: 10;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 4px;
+    margin-top: 2px;
+    font-size: 12px;
+  }
+
+  .pos-totals-grand .pos-totals-label {
+    font-size: 11px;
+  }
+
+  .pos-totals-grand .pos-totals-value {
+    font-size: 15px;
+  }
+
+  /* ---------- Anclaje seguro: totales + COBRAR sobre la nav inferior ---------- */
+   .pos-summary-bar {
+     position: fixed;
+     left: 0;
+     right: 0;
+     bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+     z-index: 9999;
+     width: 100%;
+     margin: 0;
+     gap: 8px;
+     padding: 8px 12px;
+     background: linear-gradient(180deg, rgba(18, 16, 14, 0.94) 0%, rgba(18, 16, 14, 0.98) 30%, #12100E 100%);
+     border-top: 1px solid var(--border-soft);
+     box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.65);
+   }
+
+  .pos-summary-actions {
+    gap: 8px;
+  }
+
+  /* Bot�n de cobrar: alto, t�ctil y siempre accesible */
+   .pos-charge-btn {
+     padding: 16px 20px;
+     min-height: 52px;
+     font-size: 16px;
+     letter-spacing: 2px;
+     margin-bottom: 0;
+     border-radius: 12px;
+   }
+
+  /* ---------- Modal de cobro: compacto, sin encimados y anclado al fondo ----------
+     La ventana flotante de "Cobrar venta" se comprime al m�ximo (total,
+     m�todos de pago y campos de efectivo) para que quepa completa en el
+     celular, y su pie queda fijo en el borde inferior: el bot�n final
+     nunca queda debajo del teclado num�rico ni encimado sobre el modal. */
+  .payment-modal {
+    padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    align-items: flex-end;
+    /* Con el teclado abierto (iOS) el inset inferior empuja la ventana
+       hacia arriba para que el bot�n de cobro siga siendo visible. */
+    padding-bottom: var(--kb-inset, 0px);
+  }
+
+  .payment-shell {
+    width: 100%;
+    max-height: 100%;
+    border-radius: 18px 18px 0 0;
+    border-bottom: none;
+  }
+
+  /* Con el modal de cobro abierto, la barra fija de totales + COBRAR se
+     retira: as� no queda encimada sobre la ventana flotante. */
+  body:has(#pos-payment-modal.is-active) .pos-summary-bar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .payment-header {
+    padding: 7px 10px;
+    gap: 8px;
+  }
+
+  .payment-header h2 {
+    font-size: 15px;
+  }
+
+  .payment-subtitle {
+    font-size: 10px;
+  }
+
+  .payment-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    font-size: 13px;
+  }
+
+  /* --- Total a pagar --- */
+  .payment-total-card {
+    padding: 6px 10px;
+    gap: 1px;
+    border-radius: 12px;
+  }
+
+  .payment-screen > .payment-total-card {
+    margin: 6px 10px 0;
+  }
+
+  .payment-total-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .payment-total-value {
+    font-size: 24px;
+  }
+
+  .payment-total-detail {
+    font-size: 10.5px;
+  }
+
+  /* --- Resumen de productos --- */
+  .payment-items {
+    margin: 5px 10px 0;
+    padding: 5px 8px;
+    max-height: 62px;
+    gap: 4px;
+    border-radius: 10px;
+  }
+
+  .payment-items-title {
+    font-size: 8.5px;
+    letter-spacing: 1px;
+  }
+
+  .payment-item {
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  /* --- M�todos de pago --- */
+  .payment-tabs {
+    margin: 5px 10px 0;
+    gap: 4px;
+  }
+
+  .payment-tab {
+    padding: 5px 2px;
+    gap: 2px;
+    border-radius: 9px;
+  }
+
+  .payment-tab-icon {
+    font-size: 15px;
+  }
+
+  .payment-tab-label {
+    font-size: 9px;
+    letter-spacing: 0.1px;
+  }
+
+  /* --- Opciones de cobro con tarjeta (NFC / QR / terminal) --- */
+  .pay-card-options {
+    gap: 5px;
+  }
+
+  .pay-card-options-title {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .pay-card-options-grid {
+    gap: 6px;
+  }
+
+  .pay-channel {
+    min-height: 64px;
+    padding: 7px 4px;
+    border-radius: 11px;
+    gap: 2px;
+  }
+
+  .pay-channel-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+
+  .pay-channel-name {
+    font-size: 9.5px;
+  }
+
+  .pay-channel-desc {
+    font-size: 7.5px;
+  }
+
+  .pay-card-panel {
+    padding: 7px 9px;
+    border-radius: 11px;
+  }
+
+  .pay-card-panel-body {
+    gap: 6px;
+  }
+
+  .pay-card-text {
+    font-size: 11.5px;
+  }
+
+  .pay-card-btn {
+    padding: 9px 8px;
+    font-size: 11.5px;
+  }
+
+  .pay-card-status {
+    font-size: 10.5px;
+  }
+
+  .pay-card-fallback {
+    font-size: 9.5px;
+  }
+
+  .pay-card-steps {
+    font-size: 11px;
+  }
+
+  .pay-qr {
+    gap: 9px;
+  }
+
+  .pay-qr-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .pay-qr-amount {
+    font-size: 16px;
+  }
+
+  .pay-qr-label {
+    font-size: 10.5px;
+  }
+
+  .pay-qr-note {
+    font-size: 9px;
+  }
+
+  /* --- Campos de cobro --- */
+  .payment-body {
+    padding: 6px 10px 2px;
+    gap: 7px;
+  }
+
+  .payment-section {
+    gap: 7px;
+  }
+
+  .payment-field {
+    gap: 3px;
+  }
+
+  .payment-field-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .payment-input {
+    padding: 8px 10px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .payment-quick-grid {
+    gap: 4px;
+  }
+
+  .payment-quick {
+    padding: 7px 2px;
+    font-size: 11px;
+    border-radius: 8px;
+  }
+
+  .payment-summary {
+    padding: 1px 9px;
+    border-radius: 10px;
+  }
+
+  .payment-summary-row {
+    padding: 5px 0;
+    font-size: 11.5px;
+  }
+
+  .payment-summary-row.is-change {
+    padding-top: 6px;
+  }
+
+  .payment-summary-row.is-change span:last-child {
+    font-size: 13px;
+  }
+
+  .payment-hint {
+    font-size: 10.5px;
+    padding: 6px 8px;
+    border-radius: 9px;
+  }
+
+  .payment-chip {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .payment-mix-grid {
+    gap: 6px;
+  }
+
+  .payment-amount-card {
+    padding: 8px;
+    gap: 2px;
+    border-radius: 12px;
+  }
+
+  .payment-amount-value {
+    font-size: 20px;
+  }
+
+  /* --- Pie del modal: bot�n de cobro siempre visible y al fondo --- */
+  .payment-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 6px;
+    padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(0deg, #17130f 0%, rgba(23, 19, 15, 0.97) 65%, rgba(23, 19, 15, 0.88) 100%);
+    box-shadow: 0 -8px 18px rgba(0, 0, 0, 0.5);
+  }
+
+  .payment-footer .btn {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 6px;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+  }
+
+  .payment-footer .btn.secondary {
+    flex: 0 0 34%;
+  }
+}

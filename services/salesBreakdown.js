@@ -12,6 +12,7 @@ const SalesBreakdown = {
     let piezas = 0;
 
     (Array.isArray(transacciones) ? transacciones : []).forEach(ticket => {
+      monto += Math.max(0, Number(ticket && ticket.promoDiscount) || 0);
       (Array.isArray(ticket && ticket.items) ? ticket.items : []).forEach(item => {
         if (!item) return;
         const promo = item.promoVolumenAplicada;
@@ -19,7 +20,7 @@ const SalesBreakdown = {
         if (!Number.isFinite(precio) || precio <= 0) return;
 
         cantidad += 1;
-        monto += precio;
+        monto += Math.max(0, Number(item.precio || 0) * Number(item.cantidad || item.quantity || promo.cantidad || 0) - precio);
         piezas += Number(promo.cantidad || item.cantidad || item.quantity || 1);
       });
     });
@@ -29,6 +30,16 @@ const SalesBreakdown = {
       monto: this.round2(monto),
       piezas: piezas
     };
+  },
+
+  getFinancialSummary(transactions) {
+    const sales=(Array.isArray(transactions)?transactions:[]).filter(t=>!['cancelada','cancelado','cancelled','canceled','void'].includes(String(t.status || '').toLowerCase()));
+    const items=sales.flatMap(t=>Array.isArray(t.items)?t.items:[]);
+    const known=items.every(i=>i.costoTotal !== null && i.costoTotal !== undefined && Number.isFinite(Number(i.costoTotal)));
+    const revenue=this.round2(sales.reduce((sum,t)=>sum+Number(t.total || 0),0));
+    const deposits=this.round2(items.reduce((sum,i)=>sum+Number(i.envaseCargo || 0),0));
+    const cost=known ? this.round2(items.reduce((sum,i)=>sum+Number(i.costoTotal),0)) : null;
+    return { revenue, cost, grossProfit: known ? this.round2(revenue-deposits-cost) : null, deposits, known };
   },
 
   getColdItemBreakdown(item) {

@@ -1,0 +1,64 @@
+/* Cervecer�a POS - Dise�o nativo Android de alta gama */
+:root {
+  --bg-primary: #12100E;
+  --bg-secondary: #1C1815;
+  --bg-card: #1C1815;
+  --accent: #E0A96D;
+  --accent-hover: #E8B77D;
+  --text-primary: #FAF4EE;
+  --text-secondary: #B8A89A;
+  --success: #4ade80;
+  --warning: #E0A96D;
+  --danger: #991b1b;
+  --danger-hover: #b91c1c;
+  --border: rgba(224, 169, 109, 0.35);
+  --border-soft: rgba(224, 169, 109, 0.18);
+  --shadow-elegant: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 0 18px rgba(224, 169, 109, 0.25);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --modal-backdrop-blur: 4px;
+  /* Altura oculta por el teclado num�rico del celular (la actualiza
+     js inline de index.html con window.visualViewport). */
+  --kb-inset: 0px;
+
+  /* Glassmorphism � login / apertura de caja */
+  --glass-bg: rgba(20, 17, 14, 0.70);
+  --glass-bg-hover: rgba(36, 30, 26, 0.78);
+  --glass-border: rgba(224, 169, 109, 0.42);
+  --glass-border-soft: rgba(224, 169, 109, 0.16);
+  --glass-glow: rgba(224, 169, 109, 0.30);
+  --glass-shadow: 0 24px 58px rgba(0, 0, 0, 0.82), 0 0 0 1px rgba(224, 169, 109, 0.10);
+  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 0 24px rgba(224, 169, 109, 0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+body {
+  background: radial-gradient(1200px 800px at 50% 0%, #1a1511 0%, var(--bg-primary) 55%);
+  color: var(--text-primary);
+  height: 100dvh;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}

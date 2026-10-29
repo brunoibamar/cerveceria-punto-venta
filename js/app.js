@@ -15,7 +15,8 @@ const App = {
     settings: '.settings-grid'
   },
 
-  init() {
+  async init() {
+    if (!WriteGuard.ready) { WriteGuard.start(() => this.init()); return; }
     try {
       const main = document.getElementById('app-main');
       if (!main) {
@@ -26,8 +27,11 @@ const App = {
       if (typeof Database !== 'undefined' && Database.init) {
         try {
           Database.init();
+          await Auth.ensureCredentials();
+          Demo.init();
         } catch (dbErr) {
-          console.error('[App] Error al inicializar Database:', dbErr);
+          this.showStorageRecovery(dbErr);
+          return;
         }
       }
 
@@ -40,6 +44,7 @@ const App = {
       }
 
       this.enterApp(session);
+      ShiftGuard.check();
     } catch (error) {
       console.error('[App] Error fatal en App.init:', error);
       try {
@@ -48,6 +53,16 @@ const App = {
         console.error('[App] No se pudo mostrar login tras error:', e);
       }
     }
+  },
+
+  showStorageRecovery(error) {
+    const main=document.getElementById('app-main'); main.replaceChildren();
+    const panel=document.createElement('div'); panel.className='startup-notice';
+    const heading=document.createElement('h2'); heading.textContent='No se pudo abrir el almacenamiento';
+    const detail=document.createElement('p'); detail.textContent=error.message;
+    const button=document.createElement('button'); button.className='btn'; button.textContent='Recuperar copia local';
+    button.onclick=async()=>{ try { await DataStore.recover(); location.reload(); } catch(e) { detail.textContent=e.message; } };
+    panel.append(heading,detail,button); main.append(panel);
   },
 
   // Devuelve la sesion solo si existe y la caja esta abierta (fondo de ingreso registrado)
@@ -100,6 +115,7 @@ const App = {
       this.restoreAppChrome(active);
       this.bindEvents();
       this.showView('pos');
+      document.querySelectorAll('.tab-btn').forEach(btn => { btn.hidden = ['inventory','surtidos','settings'].includes(btn.dataset.view) && !Auth.isAdmin(); });
     } catch (error) {
       console.error('[App] Error en enterApp:', error);
       try {
@@ -237,6 +253,7 @@ const App = {
         return;
       }
 
+      if (['inventory','surtidos','settings'].includes(view) && !Auth.isAdmin()) { alert('Esta sección requiere administrador.'); return; }
       this.currentView = view;
 
       // Cierra el modal de cobro si se esta cambiando de vista
@@ -487,5 +504,3 @@ const App = {
     console.error('[App] Error configurando inicializacion segura:', error);
   }
 })();
-
-(function(){function tick(){var n=new Date();if(n.getHours()===23&&n.getMinutes()===50){alert('La caja cerrara automaticamente a las 12:00 AM. Tienes 10 minutos para finalizar operaciones.');}if(n.getHours()===0&&n.getMinutes()===0){try{if(typeof POS!=='undefined'&&POS.confirmCut)POS.confirmCut(true);}catch(e){console.error(e);}}}setInterval(tick,60000);})();

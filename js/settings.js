@@ -53,6 +53,7 @@ const SettingsManager = {
   },
 
   render() {
+    Auth.requireAdmin();
     const container = document.getElementById(this.containerId);
     if (!container) return;
 
@@ -66,7 +67,7 @@ const SettingsManager = {
           <p class="settings-subtitle">Configura el negocio, la nevera, los cobros con tarjeta y los respaldos del punto de venta.</p>
         </div>
       </header>
-      <div class="settings-grid">
+      <div class="settings-grid"><button class="settings-card" id="manage-users"><span class="settings-card-icon">👥</span><span class="settings-card-title">Gestión de Contraseñas</span><span class="settings-card-sub">NIP del administrador · Contraseñas de empleados</span></button><button class="settings-card" id="previous-backup"><span class="settings-card-icon">🛟</span><span class="settings-card-title">Recuperación</span><span class="settings-card-sub">Descargar copia anterior a una restauración</span></button>
         <button class="settings-card" data-modal="ticket">
           <span class="settings-card-icon">🧾</span>
           <span class="settings-card-title">Configuración de Ticket</span>
@@ -105,13 +106,16 @@ const SettingsManager = {
       </div>
     `;
 
-    container.querySelectorAll('.settings-card').forEach(btn => {
+    container.querySelector('#manage-users').onclick = () => Auth.renderUsers();
+    container.querySelector('#previous-backup').onclick = () => { const raw=AppStorage.getItem('cerveceria_before_restore'); if (!raw) { alert('Todavía no hay restauraciones previas.'); return; } const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([raw],{type:'application/json'})); a.download='antes_de_restaurar.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+    container.querySelectorAll('.settings-card[data-modal]').forEach(btn => {
       btn.addEventListener('click', () => this.openModal(btn.dataset.modal));
     });
   },
 
   // Abre el modal flotante del módulo indicado
   openModal(type) {
+    Auth.requireAdmin();
     const meta = this.MODALS[type];
     if (!meta) return;
 
@@ -217,7 +221,7 @@ const SettingsManager = {
     }
 
     if (type === 'backup') {
-      const today = new Date().toISOString().split('T')[0];
+      const today = SalesLog.dateKey(new Date());
       return `
         <div class="modal-field">
           <button type="button" class="settings-modal-save" id="btn-export-backup">📥 Descargar Respaldo (.json)</button>
@@ -300,7 +304,7 @@ const SettingsManager = {
   // Link de cobro de Mercado Pago guardado en el dispositivo (vacío si no hay)
   getSavedMPLink() {
     try {
-      return String(window.localStorage.getItem(this.MP_LINK_KEY) || '').trim();
+      return String(DataStore.getItem(this.MP_LINK_KEY) || '').trim();
     } catch (error) {
       console.warn('[SettingsManager] No se pudo leer el link de Mercado Pago:', error);
       return '';
@@ -327,9 +331,9 @@ const SettingsManager = {
 
     try {
       if (value) {
-        window.localStorage.setItem(this.MP_LINK_KEY, value);
+        DataStore.setItem(this.MP_LINK_KEY, value);
       } else {
-        window.localStorage.removeItem(this.MP_LINK_KEY);
+        DataStore.removeItem(this.MP_LINK_KEY);
       }
     } catch (error) {
       console.error('[SettingsManager] No se pudo guardar el link de Mercado Pago:', error);
@@ -353,7 +357,7 @@ const SettingsManager = {
       const jsonStr = JSON.stringify(backup, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
-      const dateStr = new Date().toISOString().split('T')[0];
+      const dateStr = SalesLog.dateKey(new Date());
       const link = document.createElement('a');
       link.href = url;
       link.download = `respaldo_pos_${dateStr}.json`;

@@ -76,6 +76,7 @@
     },
 
     init: function (containerId) {
+      Auth.requireAdmin();
       try {
         this.containerId = containerId || this.containerId;
         this.render();
@@ -88,6 +89,7 @@
     },
 
     initSurtidos: function (containerId) {
+      Auth.requireAdmin();
       try {
         this.cycleContainerId = containerId || this.cycleContainerId;
         const container = document.getElementById(this.cycleContainerId);
@@ -244,6 +246,31 @@
       return estimates;
     },
 
+    // Guía de consulta: no guarda conteos ni modifica resultados de auditoría.
+    getCycleExpectedStock: function (cycle, productId, salesEstimates) {
+      const key = String(productId);
+      const estimates = salesEstimates || this.getCycleSalesEstimates(cycle);
+      const initial = Number(cycle.initialStock && cycle.initialStock[key]) || 0;
+      const restocked = (cycle.entries || []).reduce(function (sum, entry) {
+        return String(entry.productId) === key ? sum + (Number(entry.units) || 0) : sum;
+      }, 0);
+      return initial + restocked - (Number(estimates[key]) || 0);
+    },
+
+    formatExpectedStock: function (units, unitsPerPackage) {
+      // El formateador normal limita el stock a cero; aquí se preserva el saldo negativo.
+      if (units < 0) return units + ' piezas · revisa los movimientos del ciclo';
+      return this.formatStockPresentation(units, unitsPerPackage);
+    },
+
+    renderExpectedStockGuide: function (expected, unitsPerPackage) {
+      return '<div class="inventory-expected-guide' + (expected < 0 ? ' is-negative' : '') + '">' +
+        '<span class="inventory-expected-label">Inventario esperado</span>' +
+        '<strong>' + this.escapeHtml(this.formatExpectedStock(expected, unitsPerPackage)) + '</strong>' +
+        '<small>Inicial + surtido − ventas estimadas. Guía para comparar con tu conteo físico.</small>' +
+        '</div>';
+    },
+
     renderInventoryCycle: function () {
       const cycle = this.getOpenInventoryCycle();
       const cycles = Database.getInventoryCycles();
@@ -299,6 +326,7 @@
         const initial = Number(cycle.initialStock[id]) || 0;
         const currentStock = product ? Math.max(0, Number(product.stock) || 0) : 0;
         const finalCount = finalStockDraft[id];
+        const expectedStock = this.getCycleExpectedStock(cycle, id, salesEstimates);
         const entries = (cycle.entries || []).filter(function (entry) {
           return String(entry.productId) === id;
         }).reduce(function (sum, entry) { return sum + (Number(entry.units) || 0); }, 0);
@@ -314,13 +342,16 @@
         html += '<span><small>Cartones / paquetes</small><strong>' + packages + '</strong></span>';
         html += '<span><small>Piezas sueltas</small><strong>' + loosePieces + '</strong></span>';
         html += '<span class="inventory-cycle-stock-total"><small>Total de piezas</small><strong>' + currentStock + '</strong></span>';
-        html += '</span></summary>';
+        html += '</span>';
+        html += '<span class="inventory-cycle-expected' + (expectedStock < 0 ? ' is-negative' : '') + '"><small>Inventario esperado</small><strong>' + this.escapeHtml(this.formatExpectedStock(expectedStock, unitsPerPackage)) + '</strong></span>';
+        html += '</summary>';
         html += '<div class="inventory-cycle-stock-details">';
         html += '<div class="inventory-cycle-detail-list">';
         html += '<div><span>Inventario inicial</span><strong>' + this.escapeHtml(this.formatStockPresentation(initial, unitsPerPackage)) + '</strong></div>';
         html += '<div><span>Inventario actual</span><strong>' + this.escapeHtml(this.formatStockPresentation(currentStock, unitsPerPackage)) + '</strong></div>';
         html += '<div><span>Surtido</span><strong>' + this.escapeHtml(this.formatStockPresentation(entries, unitsPerPackage)) + '</strong></div>';
         html += '<div class="inventory-cycle-sales-estimate"><span>Estimado de ventas del ciclo</span><strong>' + (Number(salesEstimates[id]) || 0) + ' piezas</strong></div>';
+        html += '<div class="inventory-cycle-expected-detail"><span>Inventario esperado</span><strong>' + this.escapeHtml(this.formatExpectedStock(expectedStock, unitsPerPackage)) + '</strong></div>';
         html += '<div><span>Conteo físico</span><strong>' + (finalCount === undefined ? 'Pendiente' : this.escapeHtml(this.formatStockPresentation(finalCount, unitsPerPackage))) + '</strong></div>';
         html += '</div>';
         html += '<div class="inventory-cycle-product-actions">';
@@ -391,6 +422,7 @@
           const draftPackages = unitsPerPackage ? Math.floor(draftUnits / unitsPerPackage) : 0;
           const draftLoose = unitsPerPackage ? draftUnits % unitsPerPackage : draftUnits;
           html += '<p class="cycle-picker-current">Inicial: ' + this.escapeHtml(this.formatStockPresentation(cycle.initialStock[selectedId], unitsPerPackage)) + ' · Surtido: ' + this.escapeHtml(this.formatStockPresentation(entries, unitsPerPackage)) + '</p>';
+          html += this.renderExpectedStockGuide(this.getCycleExpectedStock(cycle, selectedId), unitsPerPackage);
           html += '<div class="inventory-cycle-controls"><label>Paquetes contados<input type="number" min="0" step="1" data-picker-packages ' + (unitsPerPackage ? '' : 'disabled') + ' value="' + draftPackages + '"></label>';
           html += '<label>Piezas sueltas<input type="number" min="0" step="1" data-picker-pieces value="' + draftLoose + '"></label></div>';
           html += '<p class="cycle-picker-preview" data-cycle-picker-preview>Desplazamiento estimado: pendiente de captura</p>';
@@ -866,7 +898,7 @@
 
         for (var i = 0; i < filtered.length; i++) {
           var product = filtered[i];
-          var id = this.escapeHtml(String(product.id));
+          var id = POS.jsArg(String(product.id));
           var stock = (product.stock === undefined || product.stock === null) ? 0 : product.stock;
           var stockMin = (product.stockMinimo === undefined || product.stockMinimo === null) ? 5 : product.stockMinimo;
           var lowStock = stock <= stockMin;
@@ -1008,7 +1040,7 @@
     getFridgeStock: function () {
       try {
         const capacity = this.getFridgeCapacity();
-        const raw = localStorage.getItem('fridgeStock');
+        const raw = DataStore.getItem('fridgeStock');
         if (raw === null || raw === undefined || raw === '') return capacity;
         const parsed = Number(raw);
         if (isNaN(parsed)) return capacity;
@@ -1022,7 +1054,7 @@
       try {
         const capacity = this.getFridgeCapacity();
         const next = Math.max(0, Math.min(capacity, Number(value) || 0));
-        localStorage.setItem('fridgeStock', String(next));
+        DataStore.setItem('fridgeStock', String(next));
       } catch (e) {}
     },
 

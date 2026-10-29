@@ -1,0 +1,433 @@
+/* ---------- REPORTES � REDISE�O MINIMALISTA ---------- */
+/* Cuadr�cula de m�tricas compactas, acordeones por bot�n y
+   gr�ficas con altura m�xima acotada. Paleta "Midnight & Amber". */
+
+.reports-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  min-height: 0;
+}
+
+.reports-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reports-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+}
+
+/* Cuadr�cula de m�tricas compactas */
+.reports-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  box-shadow: var(--shadow-elegant);
+  transition: var(--transition-smooth);
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(400px 140px at 60% -10%, rgba(224, 169, 109, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: var(--transition-smooth);
+}
+
+.metric-card:hover {
+  border-color: rgba(224, 169, 109, 0.55);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
+}
+
+.metric-card:hover::before {
+  opacity: 1;
+}
+
+.metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.metric-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.metric-icon {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.metric-value.highlight {
+  color: var(--accent);
+}
+
+.metric-sub {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  line-height: 1.25;
+}
+
+/* Filtro de periodo */
+.reports-period {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.period-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.period-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(224, 169, 109, 0.5);
+}
+
+.period-btn.active {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-gold);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.16) 0%, transparent 100%);
+}
+
+/* Acordeones: cada bot�n y su panel forman un solo bloque, as� el panel
+   se despliega justo debajo de su bot�n y empuja al resto hacia abajo. */
+.reports-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reports-acc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reports-acc-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reports-acc-btn:hover {
+  border-color: rgba(224, 169, 109, 0.5);
+  background: rgba(224, 169, 109, 0.06);
+}
+
+.reports-acc-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-gold);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.reports-acc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.reports-acc-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reports-acc-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.reports-acc-chevron {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: transform 0.3s var(--ease-smooth);
+}
+
+.reports-acc-btn[aria-expanded="true"] .reports-acc-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+/* Panel desplegable: la altura la calcula el JS con la medida real del
+   contenido, de modo que no quedan huecos vac�os al terminar la animaci�n. */
+.reports-acc-panel {
+  min-width: 0;
+}
+
+.reports-acc-panel-clip {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.34s var(--ease-smooth);
+}
+
+.reports-acc-panel-card {
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  box-shadow: var(--shadow-elegant);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.26s var(--ease-smooth), transform 0.3s var(--ease-smooth);
+}
+
+.reports-acc-panel.is-open .reports-acc-panel-card,
+.reports-acc-panel-clip.is-open .reports-acc-panel-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Aviso de gr�fica no disponible */
+.reports-chart-note {
+  margin: 0;
+  padding: 10px 4px 4px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.reports-chart-note[hidden] {
+  display: none !important;
+}
+
+/* Contenido de los paneles */
+.reports-empty {
+  padding: 18px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.reports-list {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.reports-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.reports-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.reports-table td {
+  padding: 8px 4px;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(224, 169, 109, 0.08);
+}
+
+.reports-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.reports-table .num {
+  text-align: right;
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+.reports-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(224, 169, 109, 0.1);
+  color: var(--text-primary);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Gr�ficas: altura m�xima estricta, nunca gigantes.
+   El m�ximo contempla el padding del marco para que el lienzo no quede cortado. */
+.reports-chart-wrap {
+  position: relative;
+  width: 100%;
+  max-height: 282px;
+  padding: 12px 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reports-chart-wrap canvas {
+  max-height: 250px !important;
+  height: 250px !important;
+  width: 100% !important;
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reports-table {
+    font-size: 0.8rem;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    padding: 4px 6px;
+  }
+
+  .reports-table .num {
+    min-width: 80px;
+  }
+
+  .reports-chip {
+    padding: 2px 6px;
+    font-size: 9.5px;
+  }
+}
+
+@media (max-width: 560px) {
+  .reports-view {
+    padding: 12px;
+  }
+
+  .reports-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .metric-card {
+    padding: 10px 9px;
+    gap: 6px;
+  }
+
+  .metric-value {
+    font-size: 16px;
+  }
+
+  .reports-acc-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .reports-chart-wrap {
+    max-height: 250px;
+    padding: 10px 12px 12px;
+  }
+
+  .reports-chart-wrap canvas {
+    max-height: 200px !important;
+    height: 200px !important;
+  }
+
+  .reports-table {
+    font-size: 0.75rem;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    padding: 4px 5px;
+  }
+
+  .reports-table th {
+    font-size: 9px;
+    letter-spacing: 0.6px;
+  }
+
+  .reports-chip {
+    padding: 2px 5px;
+    font-size: 9px;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  .reports-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

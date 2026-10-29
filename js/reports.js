@@ -90,7 +90,7 @@ const ReportsManager = {
     this.chartCallbacks.push(done);
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js';
+    script.src = 'vendor/chart-4.4.6.min.js';
     script.async = true;
     script.onload = () => {
       this.chartLibState = 'ready';
@@ -373,51 +373,8 @@ const ReportsManager = {
   },
 
   getOpeningAmount() {
-    let amount = 0;
-    try {
-      if (typeof POS !== 'undefined' && typeof POS.getSessionInfo === 'function') {
-        const session = POS.getSessionInfo();
-        if (session) {
-          const val = session.cashOpening !== undefined && session.cashOpening !== null
-            ? session.cashOpening
-            : (session.montoApertura !== undefined && session.montoApertura !== null ? session.montoApertura : 0);
-          amount = Number(val) || 0;
-          if (amount > 0) return amount;
-        }
-      }
-    } catch (e) {}
-    try {
-      if (typeof Database !== 'undefined') {
-        if (Database.getSession) {
-          const s = Database.getSession();
-          if (s) {
-            const val = s.cashOpening !== undefined && s.cashOpening !== null
-              ? s.cashOpening
-              : (s.montoApertura !== undefined && s.montoApertura !== null ? s.montoApertura : 0);
-            amount = Number(val) || 0;
-            if (amount > 0) return amount;
-          }
-        }
-        const cuts = Database.getCuts ? Database.getCuts() : [];
-        if (Array.isArray(cuts) && cuts.length) {
-          const last = cuts[cuts.length - 1];
-          const val = last && (last.montoApertura !== undefined ? last.montoApertura : last.fondoInicial);
-          amount = Number(val) || 0;
-          if (amount > 0) return amount;
-        }
-      }
-    } catch (e) {}
-    try {
-      const raw = localStorage.getItem('pos_session');
-      if (raw) {
-        const s = JSON.parse(raw);
-        const val = s.cashOpening !== undefined && s.cashOpening !== null
-          ? s.cashOpening
-          : (s.montoApertura !== undefined && s.montoApertura !== null ? s.montoApertura : 0);
-        amount = Number(val) || 0;
-      }
-    } catch (e) {}
-    return amount || 0;
+    const session=CashSession.getActiveSession();
+    return session ? Number(session.cashOpening || 0) : 0;
   },
 
   paymentTotals(filtered) {
@@ -646,11 +603,28 @@ const ReportsManager = {
     this.render();
   },
 
+  getSalesByEmployee(sales) {
+    const groups=new Map();
+    (Array.isArray(sales)?sales:[]).forEach(sale=>{
+      if(!sale || ['cancelada','cancelado','anulada','anulado','cancelled','canceled','void'].includes(String(sale.status || '').toLowerCase())) return;
+      const name=sale.cajero || 'Sin responsable registrado';
+      const key=sale.cajeroId?'id:'+sale.cajeroId:'legacy:'+name;
+      const group=groups.get(key) || {id:sale.cajeroId || null,name,count:0,total:0};
+      group.count++;group.total+=Number(sale.total) || 0;groups.set(key,group);
+    });
+    return Array.from(groups.values()).sort((a,b)=>b.total-a.total).map(g=>({...g,total:Math.round(g.total*100)/100}));
+  },
+  renderEmployeeSalesSummary(sales) {
+    const groups=this.getSalesByEmployee(sales);
+    const labels={dia:'día',semana:'semana',mes:'mes','año':'año'};
+    return '<section class="reports-employee-summary"><h3>Ventas por responsable</h3><p>Periodo: '+this.escapeHtml(labels[this.currentFilter] || this.currentFilter)+'. Incluye turnos abiertos y cerrados; excluye ventas canceladas.</p>'+(groups.length?'<div class="reports-table-wrap"><table class="reports-table"><thead><tr><th>Responsable</th><th>Ventas</th><th>Total</th></tr></thead><tbody>'+groups.map(g=>'<tr><td>'+this.escapeHtml(g.name)+'</td><td>'+g.count+'</td><td>'+this.formatCurrency(g.total)+'</td></tr>').join('')+'</tbody></table></div>':'<p>Sin ventas registradas en este periodo.</p>')+'</section>';
+  },
+
   renderSalesPanel(filtered) {
     if (!filtered.length) {
       return '<div class="reports-empty">No hay ventas en el periodo seleccionado.</div>';
     }
-    let html = '<div class="reports-list"><div class="reports-table-wrap"><table class="reports-table"><thead><tr><th>Hora</th><th>Productos</th><th>Método</th><th class="num">Total</th></tr></thead><tbody>';
+    let html = '<div class="reports-list"><div class="reports-table-wrap"><table class="reports-table"><thead><tr><th>Hora</th><th>Responsable</th><th>Productos</th><th>Método</th><th class="num">Total</th></tr></thead><tbody>';
     [...filtered].reverse().forEach(s => {
       const items = Array.isArray(s.items) ? s.items : [];
       const qty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
@@ -664,7 +638,7 @@ const ReportsManager = {
         const promoName = (s.promoName || s.promocion || 'Promoción aplicada');
         desc = 'Promoción: ' + promoName + ' (' + desc + ')';
       }
-      html += `<tr><td>${this.formatDateTime(s.fecha)}</td><td>${this.escapeHtml(desc)}</td><td><span class="reports-chip">${this.escapeHtml(metodo)}</span></td><td class="num">${this.formatCurrency(s.total || 0)}</td></tr>`;
+      html += `<tr><td>${this.formatDateTime(s.fecha)}</td><td>${this.escapeHtml(s.cajero || 'Sin responsable registrado')}</td><td>${this.escapeHtml(desc)}</td><td><span class="reports-chip">${this.escapeHtml(metodo)}</span></td><td class="num">${this.formatCurrency(s.total || 0)}</td></tr>`;
     });
     html += '</tbody></table></div>';
     return html;
@@ -1308,6 +1282,7 @@ const ReportsManager = {
     const totalCuts = cuts.reduce((sum, c) => sum + (Number(c.totalGeneral) || 0), 0);
     const totalVentas = turnSales.reduce((sum, s) => sum + (s.total || 0), 0);
     const transacciones = turnSales.length;
+    const financial = SalesBreakdown.getFinancialSummary(turnSales);
     const promocionesVolumen = SalesBreakdown.getVolumePromotionsSummary(turnSales).monto;
 
     const resumenFrio = SalesBreakdown.getColdItemsSummary(turnSales);
@@ -1322,6 +1297,11 @@ const ReportsManager = {
       <div class="reports-view">
         <div class="reports-header">
           <h2>Reportes</h2>
+        </div>
+
+        <div class="reports-metrics-grid">
+          <div class="metric-card"><div class="metric-row"><span class="metric-label">Costo de lo vendido</span><span class="metric-icon">📦</span></div><div class="metric-value">${financial.known ? this.formatCurrency(financial.cost) : 'Sin costos completos'}</div><div class="metric-sub">Importe estimado para reinversión</div></div>
+          <div class="metric-card"><div class="metric-row"><span class="metric-label">Utilidad bruta estimada</span><span class="metric-icon">📈</span></div><div class="metric-value highlight">${financial.known ? this.formatCurrency(financial.grossProfit) : 'Sin costos completos'}</div><div class="metric-sub">Ventas menos costo y envases; antes de gastos</div></div>
         </div>
 
         <div class="reports-metrics-grid">
@@ -1379,6 +1359,7 @@ const ReportsManager = {
         </div>
 
         ${inventoryCycleSummary}
+        ${Auth.isAdmin() ? this.renderEmployeeSalesSummary(this.getFilteredSales()) : ''}
 
         <div class="reports-period">
           <button class="period-btn ${this.currentFilter === 'dia' ? 'active' : ''}" data-filter="dia">Día</button>

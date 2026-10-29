@@ -24,7 +24,7 @@ const CashSession = {
     const keys = [this.KEYS.POS, this.KEYS.DB];
     for (let i = 0; i < keys.length; i++) {
       try {
-        const raw = localStorage.getItem(keys[i]);
+        const raw = DataStore.getItem(keys[i]);
         if (!raw) continue;
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') return parsed;
@@ -50,7 +50,7 @@ const CashSession = {
 
   // Una sesión es válida cuando tiene rol, responsable y fondo de apertura
   isValid(session) {
-    if (!session || typeof session !== 'object') return false;
+    if (!session || typeof session !== 'object' || !Auth.validSession(session)) return false;
     if (!String(session.role || session.rol || '').trim()) return false;
     if (!String(session.name || session.usuario || '').trim()) return false;
     if (this.getOpeningAmount(session) === null) return false;
@@ -61,7 +61,7 @@ const CashSession = {
   // La caja solo está activa si existe un registro explícito y coincide con la sesión.
   isRegisterOpen(session) {
     try {
-      const raw = localStorage.getItem(this.KEYS.CAJA);
+      const raw = DataStore.getItem(this.KEYS.CAJA);
       if (!raw) return false;
       const caja = JSON.parse(raw);
       if (!caja || caja.abierta !== true) return false;
@@ -99,9 +99,10 @@ const CashSession = {
   save(session) {
     const amount = this.getOpeningAmount(session);
     try {
-      localStorage.setItem(this.KEYS.POS, JSON.stringify(session));
-      localStorage.setItem(this.KEYS.DB, JSON.stringify(session));
-      localStorage.setItem(this.KEYS.CAJA, JSON.stringify({
+      return DataStore.atomic(() => {
+      DataStore.setItem(this.KEYS.POS, JSON.stringify(session));
+      DataStore.setItem(this.KEYS.DB, JSON.stringify(session));
+      DataStore.setItem(this.KEYS.CAJA, JSON.stringify({
         abierta: true,
         fondoInicial: amount === null ? 0 : amount,
         fechaApertura: session.openedAt || new Date().toISOString(),
@@ -111,6 +112,7 @@ const CashSession = {
         usuario: session.name || session.usuario || 'Cajero'
       }));
       return session;
+      });
     } catch (error) {
       console.error('[CashSession] Error al guardar la sesión:', error);
       return null;
@@ -119,12 +121,9 @@ const CashSession = {
 
   // Elimina la sesión del turno activo (corte de caja / cierre de turno)
   clear() {
-    [this.KEYS.POS, this.KEYS.DB, this.KEYS.CAJA].forEach(key => {
-      try {
-        localStorage.removeItem(key);
-      } catch (e) {
-        console.error('[CashSession] No se pudo eliminar "' + key + '":', e);
-      }
+    DataStore.atomic(() => {
+      [this.KEYS.POS,this.KEYS.DB,this.KEYS.CAJA].forEach(key=>DataStore.removeItem(key));
+      DataStore.removeItem('cerveceria_auth');
     });
   }
 };
@@ -235,190 +234,25 @@ const Login = {
         </p>
       </div>
     `;
+    Auth.renderBootstrapNotice().catch(error=>console.error('[Seguridad]',error));
     document.getElementById('role-admin').onclick = () => this.renderPinPad();
     document.getElementById('role-employee').onclick = () => this.renderStaffForm('employee');
   },
 
-  renderPinPad() {
-    this.pin = '';
-    this.container.innerHTML = `
-      <div class="login-screen">
-        <h2 class="login-heading">NIP de Administrador</h2>
-        <div id="pin-display" class="pin-display">____</div>
-        <div class="pin-grid">
-          ${[1,2,3,4,5,6,7,8,9].map(n => `<button data-digit="${n}" class="pin-key">${n}</button>`).join('')}
-          <button id="pin-clear" class="pin-key is-clear">⌫</button>
-          <button data-digit="0" class="pin-key">0</button>
-          <button id="pin-ok" class="pin-key is-ok">OK</button>
-        </div>
-        <button id="pin-back" class="login-back">Volver</button>
-      </div>
-    `;
-    this.resetScroll();
-    this.container.querySelectorAll('[data-digit]').forEach(btn => {
-      btn.onclick = () => { if (this.pin.length < 4) { this.pin += btn.dataset.digit; this.updatePinDisplay(); } };
-    });
-    document.getElementById('pin-clear').onclick = () => { this.pin = this.pin.slice(0,-1); this.updatePinDisplay(); };
-    document.getElementById('pin-ok').onclick = () => this.submitPin();
-    document.getElementById('pin-back').onclick = () => this.renderGlassyLogin();
-  },
-
-  updatePinDisplay() {
-    document.getElementById('pin-display').textContent = this.pin.padEnd(4,'_').split('').join(' ');
-  },
-
-  submitPin() {
-    if (this.pin.length !== 4) { alert('Ingresa 4 dígitos.'); return; }
-    if (this.pin !== '1234') { alert('NIP incorrecto.'); this.pin=''; this.updatePinDisplay(); return; }
-    this.openCash({ role:'admin', name:'Administrador' });
-  },
-
-  // Acceso del personal: mismo flujo, distinto rol para el turno
-  renderStaffForm(role) {
-    const isGuest = role === 'guest';
-    const titulo = isGuest ? 'Acceso Invitado' : 'Acceso Empleado';
-    const placeholder = isGuest ? 'Nombre del invitado' : 'Nombre del empleado';
-
-    this.container.innerHTML = `
-      <div class="login-screen">
-        <h2 class="login-heading">${titulo}</h2>
-        <form id="emp-form" class="login-form">
-          <input name="nombre" class="login-field" placeholder="${placeholder}" autocomplete="off" required />
-          <input name="clave" type="password" class="login-field" placeholder="Clave de acceso" autocomplete="off" required />
-          <button type="submit" class="login-submit">Entrar</button>
-        </form>
-        <button id="emp-back" class="login-back">Volver</button>
-      </div>
-    `;
-    this.resetScroll();
-    document.getElementById('emp-form').onsubmit = (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const nombre = form.nombre.value.trim();
-      const clave = form.clave.value;
-      if (!nombre || !clave) { alert('Completa todos los campos.'); return; }
-      this.openCash({ role: role, name: nombre });
-    };
-    document.getElementById('emp-back').onclick = () => this.renderGlassyLogin();
-  },
+  renderPinPad() { Auth.renderLogin('admin'); },
+  renderStaffForm() { Auth.renderLogin('employee'); },
 
   // Paso final obligatorio: apertura de caja con el fondo inicial del turno
   openCash(user) {
-    this.container.innerHTML = `
-      <div class="login-screen">
-        <div class="cash-card">
-          <h2 class="cash-card-title">Apertura de Caja</h2>
-          <p class="cash-card-subtitle">Fondo inicial en efectivo</p>
-          <input id="cash-amount" class="cash-amount" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
-          <button id="cash-confirm" class="cash-confirm">Confirmar</button>
-        </div>
-      </div>
-    `;
+    this.container.innerHTML='<div class="login-screen"><div class="cash-card"><h2 class="cash-card-title">Apertura de Caja</h2><p class="cash-card-subtitle">Fondo inicial en efectivo</p><form id="cash-open-form"><input id="cash-amount" class="cash-amount" type="number" step="0.01" min="0" value="0" inputmode="decimal" required><p id="cash-error" class="form-error" role="alert"></p><button type="submit" id="cash-confirm" class="cash-confirm">Confirmar</button></form></div></div>';
     this.resetScroll();
-    document.getElementById('cash-confirm').onclick = () => {
-      try {
-        const input = document.getElementById('cash-amount');
-        const amount = parseFloat(input.value);
-        if (isNaN(amount) || amount < 0) {
-          alert('Monto inválido.');
-          return;
-        }
-
-        const timestamp = Date.now();
-        const openedAt = new Date().toISOString();
-        const turnoNumero = this.getNextTurnoNumero();
-        const turno = 'T-' + String(turnoNumero).padStart(3, '0');
-        const usuario = user.name || 'Cajero';
-
-        // Registro de la apertura del turno (queda como historial en la base de datos)
-        let aperturaId = null;
-        if (typeof Database !== 'undefined') {
-          try {
-            const cuts = Database.recordCut({
-              tipo: 'apertura',
-              corteNumero: turnoNumero,
-              turno: turno,
-              montoApertura: amount,
-              montoInicial: amount,
-              usuario: usuario,
-              fechaApertura: openedAt,
-              horaApertura: this.formatTime(openedAt)
-            });
-            if (Array.isArray(cuts) && cuts.length) {
-              const last = cuts[cuts.length - 1];
-              aperturaId = (last && last.id) ? last.id : null;
-            }
-          } catch (e) {
-            console.error('Error al registrar corte de apertura:', e);
-          }
-        }
-
-        const session = {
-          role: user.role || 'admin',
-          name: usuario,
-          usuario: usuario,
-          cashInitial: amount,
-          cashOpening: amount,
-          montoApertura: amount,
-          timestamp: timestamp,
-          openedAt: openedAt,
-          turnoNumero: turnoNumero,
-          turno: turno,
-          turnoId: aperturaId,
-          aperturaId: aperturaId
-        };
-
-        // Persistencia de la caja abierta: sin esto la app vuelve al login
-        if (typeof CashSession !== 'undefined') {
-          const saved = CashSession.save(session);
-          if (!saved) {
-            alert('No se pudo registrar la apertura de caja. Revisa el almacenamiento del navegador.');
-            return;
-          }
-        } else {
-          localStorage.setItem('pos_session', JSON.stringify(session));
-          localStorage.setItem('cerveceria_session', JSON.stringify(session));
-        }
-
-        // Se mantiene sincronizada la capa de base de datos
-        if (typeof Database !== 'undefined' && Database.setSession) {
-          try {
-            Database.setSession(session);
-          } catch (e) {
-            console.error('Error al guardar sesión en Database:', e);
-          }
-        }
-
-        // Transición inmediata a POS
-        if (typeof App !== 'undefined' && typeof App.enterApp === 'function') {
-          App.enterApp(session);
-        } else {
-          // Fallback: mostrar POS directamente y restaurar chrome
-          try {
-            const tabBar = document.getElementById('tab-bar');
-            if (tabBar) tabBar.style.display = 'flex';
-            const headerActions = document.querySelector('.header-actions');
-            if (headerActions) headerActions.style.display = 'flex';
-            const userArea = document.getElementById('header-user');
-            const userName = document.getElementById('user-name');
-            if (userArea) userArea.style.display = 'flex';
-            if (userName) userName.textContent = usuario;
-            if (typeof POS !== 'undefined' && typeof POS.init === 'function') {
-              const main = document.getElementById('app-main');
-              if (main) {
-                main.innerHTML = '';
-              }
-              POS.init();
-            }
-          } catch (e) {
-            console.error('Error en fallback de transición:', e);
-          }
-        }
-      } catch (err) {
-        console.error('Error en apertura:', err);
-      }
+    document.getElementById('cash-open-form').onsubmit=e=>{
+      e.preventDefault(); const button=document.getElementById('cash-confirm'); button.disabled=true;
+      try { const session=Database.openRegister(user,Number(document.getElementById('cash-amount').value)); App.enterApp(session); ShiftGuard.check(); }
+      catch(error) { document.getElementById('cash-error').textContent=error.message; button.disabled=false; }
     };
   }
+
 };
 
 if (typeof module !== 'undefined' && module.exports) {

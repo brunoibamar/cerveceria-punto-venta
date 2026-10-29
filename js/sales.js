@@ -569,7 +569,7 @@ const SalesPayment = {
   getSavedMPLink() {
     let saved = '';
     try {
-      saved = window.localStorage.getItem(this.MP_LINK_KEY) || '';
+      saved = DataStore.getItem(this.MP_LINK_KEY) || '';
     } catch (error) {
       console.warn('[SalesPayment] No se pudo leer el link de Mercado Pago:', error);
       return '';
@@ -585,7 +585,7 @@ const SalesPayment = {
      if (fromSettings) return fromSettings;
      const saved = this.getSavedMPLink();
      if (saved) return saved;
-     return 'https://link.mercadopago.com.mx/cerveceriatonito';
+     return '';
    },
 
   // Arma el contenido del código QR de cobro.
@@ -717,7 +717,7 @@ const SalesPayment = {
         + '<div class="pay-qr-badge" aria-hidden="true">🔳</div>'
         + '<div class="pay-qr-info">'
         + '<span class="pay-qr-amount">' + amount + '</span>'
-        + '<span class="pay-qr-label">Código QR listo para escanear</span>'
+        + '<span class="pay-qr-label">' + (configured ? 'Código QR de tu negocio' : 'Falta configurar el enlace de cobro') + '</span>'
         + '<span class="pay-qr-note">' + (configured
           ? 'El código apunta a tu link de cobro configurado en Ajustes.'
           : 'Configura tu link de cobro en Ajustes → Mercado Pago para cobrar directo a tu cuenta.') + '</span>'
@@ -752,6 +752,7 @@ const SalesPayment = {
 
   // Abre el modal flotante con el QR en formato gigante
   openQrOverlay(ctx) {
+    if (!this.getMPLinkTemplate()) { alert('Configura el enlace de tu negocio en Ajustes → Mercado Pago antes de generar el QR.'); return; }
     const context = ctx || this.lastContext || {};
     const total = Number(context.total) || 0;
     const currency = context.currency || '$';

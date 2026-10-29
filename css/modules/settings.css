@@ -1,0 +1,136 @@
+/* =========================================================
+   AJUSTES � GRID DE TARJETAS-BOT�N
+   Cada opci�n de ajuste es una tarjeta interactiva con
+   fondo oscuro, borde �mbar y efecto hover suave.
+   Paleta "Midnight & Amber".
+   ========================================================= */
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding: 0 4px;
+}
+
+.settings-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+}
+
+.settings-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.settings-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-elegant);
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(400px 180px at 60% -10%, rgba(224, 169, 109, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: var(--transition-smooth);
+}
+
+.settings-card:hover {
+  border-color: rgba(224, 169, 109, 0.55);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.72), 0 0 22px rgba(224, 169, 109, 0.18);
+}
+
+.settings-card:hover::before {
+  opacity: 1;
+}
+
+.settings-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.settings-card:focus-visible {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 3px rgba(224, 169, 109, 0.25);
+}
+
+.settings-card-icon {
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 0 10px rgba(224, 169, 109, 0.25));
+}
+
+.settings-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.settings-card-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.settings-card-arrow {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: rgba(224, 169, 109, 0.1);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: var(--transition-smooth);
+}
+
+.settings-card:hover .settings-card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 560px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-card {
+    padding: 18px 16px;
+  }
+}

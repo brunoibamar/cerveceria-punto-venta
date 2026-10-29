@@ -1,0 +1,633 @@
+/* =========================================================
+LOGIN / APERTURA DE CAJA · GLASSMORPHISM + SOLAPAS (COMPUERTA)
+   Vidrio esmerilado, bordes ámbar, solapas laterales inspiradas
+
+   en la copa de la marca y apertura animada paso a paso.
+   ========================================================= */
+.login-screen {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 30px 20px;
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+  background:
+    radial-gradient(1200px 800px at 50% 0%, #1a1511 0%, var(--bg-primary) 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 22%, transparent 78%, rgba(224, 169, 109, 0.035) 100%);
+  color: var(--text-primary);
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: loginGlassIn 0.85s var(--ease-smooth) both;
+}
+
+.login-screen > * {
+  position: relative;
+  z-index: 1;
+  animation: loginPaneRise 0.7s var(--ease-smooth) both;
+}
+
+/* Solapas laterales tipo compuerta, inspiradas en el contorno de la copa de la marca */
+.login-screen::before,
+.login-screen::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  width: 60px;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.45);
+  animation: loginFlapOpen 0.9s var(--ease-smooth) both;
+}
+
+.login-screen::before {
+  left: -12px;
+  transform-origin: left center;
+  border-radius: 0 26px 26px 0;
+  background: linear-gradient(90deg, rgba(224, 169, 109, 0.16), transparent);
+  animation-name: loginFlapOpenLeft;
+}
+
+.login-screen::after {
+  right: -12px;
+  transform-origin: right center;
+  border-radius: 26px 0 0 26px;
+  background: linear-gradient(270deg, rgba(224, 169, 109, 0.16), transparent);
+  animation-name: loginFlapOpenRight;
+}
+
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* Copa de bienvenida: tama�o m�ximo controlado (nunca gigante) */
+.login-brand .brand-logo {
+  width: 88px;
+  height: 88px;
+  max-width: 100px;
+  max-height: 100px;
+  color: var(--accent);
+  filter: drop-shadow(0 8px 20px rgba(224, 169, 109, 0.28));
+}
+
+.login-brand-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+  text-align: center;
+}
+
+.login-brand-subtitle {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin: 0;
+  text-align: center;
+}
+
+.login-heading {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin: 0;
+  text-align: center;
+}
+
+.login-subheading {
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0;
+  text-align: center;
+}
+
+.login-note {
+  color: #8A7A6C;
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 440px;
+  text-align: center;
+  margin: 0;
+}
+
+/* --- Selecci�n de rol --- */
+.login-roles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 640px;
+}
+
+.login-role-btn {
+  flex: 1 1 160px;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  border: 1px solid var(--glass-border-soft);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--glass-inner);
+}
+
+.login-role-btn:hover {
+  border-color: var(--glass-border);
+  background: var(--glass-bg-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow);
+}
+
+.login-role-btn:focus-visible {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 3px rgba(224, 169, 109, 0.35), var(--glass-inner);
+}
+
+.login-role-btn.is-admin {
+  color: var(--accent);
+  border-color: rgba(224, 169, 109, 0.45);
+}
+
+.login-role-btn.is-employee {
+  color: var(--text-secondary);
+}
+
+.login-role-btn.is-guest {
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+/* --- Teclado NIP --- */
+.pin-display {
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 30px;
+  letter-spacing: 14px;
+  min-height: 46px;
+  padding: 0 8px;
+  color: var(--text-primary);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 14px;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.5), var(--glass-inner);
+}
+
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.pin-key {
+  padding: 18px 8px;
+  font-size: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--glass-inner);
+}
+
+.pin-key:hover {
+  border-color: rgba(224, 169, 109, 0.55);
+  background: var(--glass-bg-hover);
+  transform: translateY(-1px);
+}
+
+.pin-key:active {
+  animation: loginKeyTap 0.15s both;
+}
+
+.pin-key.is-clear {
+  background: rgba(42, 26, 22, 0.7);
+  color: #E8B4B8;
+  border: 1px solid rgba(220, 100, 100, 0.35);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pin-key.is-ok {
+  background: var(--accent);
+  color: #12100E;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-gold);
+}
+
+.pin-key.is-ok:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 0 26px rgba(224, 169, 109, 0.4);
+}
+
+/* --- Formulario de personal --- */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 330px;
+  max-width: 100%;
+}
+
+.login-field {
+  width: 100%;
+  padding: 15px 17px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(18, 15, 13, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  font-size: 15px;
+  margin: 0;
+  box-shadow: var(--glass-inner);
+  transition: var(--transition-smooth);
+}
+
+.login-field::placeholder {
+  color: rgba(125, 111, 99, 0.6);
+}
+
+.login-field:focus {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  background: rgba(26, 22, 19, 0.85);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.14), var(--glass-inner);
+}
+
+.login-submit,
+.cash-confirm {
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #12100E;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(224, 169, 109, 0.35);
+  margin: 0;
+  transition: var(--transition-smooth);
+}
+
+.login-submit:hover,
+.cash-confirm:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 0 34px rgba(224, 169, 109, 0.5);
+}
+
+.login-submit:active,
+.cash-confirm:active {
+  transform: scale(0.97);
+}
+
+.login-back {
+  margin-top: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: var(--transition-smooth);
+}
+
+.login-back:hover {
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+  background: rgba(224, 169, 109, 0.08);
+}
+
+/* --- Apertura de caja --- */
+.cash-card {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: 26px;
+  padding: 40px 30px;
+  box-shadow: var(--glass-shadow), var(--glass-inner);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cash-card-title {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.cash-card-subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.cash-amount {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(18, 15, 13, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  font-size: 24px;
+  text-align: center;
+  margin: 0;
+  box-shadow: var(--glass-inner);
+  transition: var(--transition-smooth);
+}
+
+.cash-amount:focus {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.14), var(--glass-inner);
+  background: rgba(26, 22, 19, 0.75);
+}
+
+/* --- Resumen del �ltimo corte --- */
+.login-cut-banner {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  padding: 16px 18px;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+.login-cut-title {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.login-cut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 3px 0;
+}
+
+.login-cut-label {
+  color: var(--text-secondary);
+}
+
+.login-cut-foot {
+  font-size: 11px;
+  color: #8A7A6C;
+  margin-top: 8px;
+}
+
+/* --- Adaptaci�n a pantallas peque�as / bajas --- */
+@media (max-width: 520px) {
+  .login-screen {
+    gap: 20px;
+    padding: 24px 16px;
+  }
+
+  .login-brand .brand-logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .login-brand-title {
+    font-size: 22px;
+  }
+
+  .login-roles {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-role-btn {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 16px 20px;
+  }
+
+  .cash-card {
+    padding: 28px 20px;
+  }
+}
+
+@media (max-height: 640px) {
+  .login-screen {
+    justify-content: flex-start;
+    padding-top: 24px;
+  }
+
+  .login-brand .brand-logo {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* =========================================================
+   GLASSY LOGIN � CONTENEDOR CRISTAL ESMERILADO Y TOGGLE
+   Formularios "Welcome Back" (Sign In) y "Create Account"
+   con animaci�n de despliegue fluida (escala + opacidad).
+   ========================================================= */
+
+/* Contenedor principal del login glassy */
+.glassy-login {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* Marca dentro del contenedor glassy */
+.glassy-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.glassy-brand .brand-logo {
+  width: 64px;
+  height: 64px;
+  color: var(--accent);
+  filter: drop-shadow(0 8px 20px rgba(224, 169, 109, 0.35));
+}
+
+.glassy-brand-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.glassy-brand-subtitle {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Panel �nico de autenticaci�n */
+.auth-panel {
+  width: 100%;
+  max-width: 360px;
+  padding: 32px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: var(--glass-shadow), var(--glass-inner);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+/* Adaptaci�n m�vil */
+@media (max-width: 480px) {
+  .glassy-login {
+    padding: 24px 16px;
+  }
+
+  .auth-panel {
+    max-width: 100%;
+    padding: 24px 16px;
+  }
+}
+
+/* =========================================================
+   LOGIN � KEYFRAMES DE APERTURA (efecto compuerta / solapas)
+   Se reproducen en cada paso del asistente al renderizar el
+   panel, dando la sensaci�n de apertura y cierre de solapas
+   tipo compuerta entre la selecci�n de usuario, el NIP y el
+   fondo inicial de caja.
+   ========================================================= */
+
+@keyframes loginGlassIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loginPaneRise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes loginFlapOpenLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(28px) scaleX(0.5);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes loginFlapOpenRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-28px) scaleX(0.5);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes loginKeyTap {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.93);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

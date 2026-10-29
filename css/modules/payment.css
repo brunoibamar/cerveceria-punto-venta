@@ -1,0 +1,1134 @@
+/* =========================================================
+   COBRO � MODAL FLOTANTE MULTIM�TODO
+   Ventana flotante centrada sobre un fondo oscuro difuminado
+   (backdrop-filter). Contiene, en orden: total a pagar y
+   resumen de productos, selector de m�todo de pago
+   (Efectivo / Tarjeta / Transferencia / Mixto), denominaciones
+   r�pidas, c�lculo del cambio y confirmaci�n del pago.
+   Paleta "Midnight & Amber".
+   ========================================================= */
+.payment-modal {
+  position: fixed;
+  inset: 0;
+  /* Por encima de la barra fija de totales + COBRAR (z-index 9999) para
+     que el modal nunca quede encimado sobre ella en m�vil. */
+  z-index: 10050;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.payment-modal.is-active {
+  display: flex;
+}
+
+/* Fondo difuminado: difumina la vista del POS detr�s del modal */
+.payment-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(900px 620px at 50% 28%, rgba(224, 169, 109, 0.1) 0%, rgba(12, 10, 9, 0.76) 58%, rgba(8, 7, 6, 0.92) 100%);
+  backdrop-filter: blur(7px) saturate(135%);
+  -webkit-backdrop-filter: blur(7px) saturate(135%);
+  animation: payBackdropIn 0.24s var(--ease-smooth) both;
+}
+
+.payment-shell {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  max-height: min(92dvh, 860px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: radial-gradient(520px 220px at 50% 0%, rgba(224, 169, 109, 0.1) 0%, transparent 70%), linear-gradient(180deg, #241d17 0%, var(--bg-card) 42%, #17130f 100%);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(224, 169, 109, 0.06), 0 0 46px rgba(224, 169, 109, 0.14);
+  animation: payModalIn 0.3s var(--ease-smooth) both;
+}
+
+/* --- Pantallas del modal (cobro / confirmaci�n) --- */
+.payment-screen {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+#pos-pay-screen-success {
+  display: none;
+}
+
+.payment-modal.is-success #pos-pay-screen-cobro {
+  display: none;
+}
+
+.payment-modal.is-success #pos-pay-screen-success {
+  display: flex;
+  animation: paySectionIn 0.26s var(--ease-smooth) both;
+}
+
+/* --- Cabecera --- */
+.payment-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.12) 0%, transparent 100%);
+}
+
+.payment-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payment-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+}
+
+.payment-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.payment-icon-btn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #231d17 0%, var(--bg-card) 100%);
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.payment-icon-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(224, 169, 109, 0.6);
+}
+
+/* --- Total a pagar --- */
+.payment-total-card {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border-soft);
+  background: radial-gradient(420px 160px at 50% -20%, rgba(224, 169, 109, 0.18) 0%, transparent 72%), linear-gradient(180deg, #241d17 0%, #1a1613 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+/* Cuando la tarjeta va dentro del cuerpo con scroll no lleva margen propio */
+.payment-screen > .payment-total-card {
+  margin: 16px 18px 0;
+}
+
+.payment-total-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.payment-total-value {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  text-shadow: 0 0 24px rgba(224, 169, 109, 0.25);
+}
+
+.payment-total-detail {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* --- Resumen de productos --- */
+.payment-items {
+  flex: 0 0 auto;
+  margin: 12px 18px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: rgba(12, 10, 9, 0.45);
+  max-height: 132px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-items-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.payment-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.payment-item-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.payment-item-qty {
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.payment-item-value {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.payment-item.is-cold .payment-item-name::after {
+  content: '??';
+  font-size: 12px;
+}
+
+/* --- Selector de m�todo de pago --- */
+.payment-tabs {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 18px 0;
+}
+
+.payment-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 4px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #221c17 0%, #1a1613 100%);
+  color: var(--text-secondary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.payment-tab:hover {
+  border-color: rgba(224, 169, 109, 0.5);
+  color: var(--text-primary);
+}
+
+.payment-tab:focus-visible {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 3px rgba(224, 169, 109, 0.22);
+}
+
+.payment-tab.is-active {
+  border-color: rgba(224, 169, 109, 0.75);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.22) 0%, rgba(224, 169, 109, 0.07) 100%);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(224, 169, 109, 0.12);
+}
+
+.payment-tab-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.payment-tab-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-align: center;
+}
+
+/* --- Cuerpo y secciones --- */
+.payment-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 18px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.payment-section {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.payment-section.is-active {
+  display: flex;
+  animation: paySectionIn 0.24s var(--ease-smooth) both;
+}
+
+/* --- Campos --- */
+.payment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.payment-field-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.payment-input {
+  width: 100%;
+  min-width: 0;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: #1a1613;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.payment-input::placeholder {
+  color: #77695d;
+}
+
+.payment-input:focus {
+  outline: none;
+  border-color: rgba(224, 169, 109, 0.75);
+  box-shadow: 0 0 0 4px rgba(224, 169, 109, 0.12);
+  background: #1e1915;
+}
+
+/* --- Denominaciones r�pidas --- */
+.payment-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-quick {
+  padding: 12px 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.payment-quick:hover {
+  border-color: rgba(224, 169, 109, 0.6);
+  color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.payment-quick:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.payment-quick.is-exact {
+  background: linear-gradient(180deg, rgba(74, 222, 128, 0.18) 0%, rgba(74, 222, 128, 0.05) 100%);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #bbf7d0;
+}
+
+.payment-quick.is-clear {
+  background: linear-gradient(180deg, rgba(153, 27, 27, 0.38) 0%, rgba(153, 27, 27, 0.12) 100%);
+  border-color: rgba(185, 28, 28, 0.45);
+  color: #fecaca;
+}
+
+/* --- Resumen de cobro (total / recibido / cambio) --- */
+.payment-summary {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: rgba(12, 10, 9, 0.42);
+  padding: 4px 14px;
+}
+
+.payment-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(224, 169, 109, 0.1);
+}
+
+.payment-summary-row:last-child {
+  border-bottom: none;
+}
+
+.payment-summary-row span:last-child {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.payment-summary-row.is-change {
+  margin-top: 2px;
+  padding-top: 11px;
+  border-top: 1px dashed rgba(224, 169, 109, 0.28);
+  border-bottom: none;
+}
+
+.payment-summary-row.is-change span:last-child {
+  color: var(--accent);
+  font-size: 16px;
+}
+
+.payment-summary-row.is-error span:last-child {
+  color: #fca5a5;
+}
+
+.payment-summary-row.is-ok span:last-child {
+  color: var(--success);
+}
+
+/* --- Avisos --- */
+.payment-hint {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: rgba(224, 169, 109, 0.06);
+}
+
+.payment-hint.is-error {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.payment-hint.is-ok {
+  color: #86efac;
+  border-color: rgba(74, 222, 128, 0.32);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+/* --- Chips (tarjeta / transferencia) --- */
+.payment-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.payment-chip {
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.payment-chip.is-active {
+  border-color: rgba(224, 169, 109, 0.7);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.22) 0%, rgba(224, 169, 109, 0.06) 100%);
+  color: var(--text-primary);
+}
+
+/* --- Monto a cobrar con tarjeta / transferencia --- */
+.payment-amount-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: radial-gradient(420px 160px at 50% -20%, rgba(224, 169, 109, 0.16) 0%, transparent 72%), #1a1613;
+}
+
+.payment-amount-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* --- Pago mixto --- */
+.payment-mix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* =========================================================
+   COBRO CON TARJETA � OPCIONES DE MERCADO PAGO
+   Selector compacto con las tres formas de cobro: NFC /
+   Contactless (Tap to Pay), cobro con c�digo QR y terminal
+   f�sica. Paleta "Midnight & Amber".
+   ========================================================= */
+.pay-card-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-card-options-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.pay-card-options-grid {
+  display: grid;
+  /* Una columna por opci�n (js/sales.js ajusta el n�mero real):
+     todas las tarjetas miden exactamente lo mismo y quedan sim�tricas. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+}
+
+.pay-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 86px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pay-channel:hover {
+  border-color: var(--border);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.14) 0%, var(--bg-card) 100%);
+}
+
+.pay-channel:active {
+  transform: scale(0.97);
+}
+
+.pay-channel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pay-channel.is-active {
+  border-color: rgba(224, 169, 109, 0.75);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.24) 0%, rgba(224, 169, 109, 0.07) 100%);
+  box-shadow: var(--shadow-gold);
+}
+
+.pay-channel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pay-channel-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Se reservan dos renglones para que "C�digo QR" y "Terminal f�sica"
+     ocupen exactamente el mismo alto y las tarjetas queden sim�tricas. */
+  min-height: 2.3em;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.pay-channel-desc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 1.3em;
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.pay-channel.is-active .pay-channel-desc {
+  color: var(--accent-hover);
+}
+
+/* --- Panel del canal elegido --- */
+.pay-card-panel {
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: rgba(12, 10, 9, 0.42);
+  padding: 10px 12px;
+}
+
+.pay-card-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-card-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.pay-card-text strong {
+  color: var(--accent);
+}
+
+.pay-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pay-card-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #241d17 0%, var(--bg-card) 100%);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: var(--transition-smooth);
+}
+
+.pay-card-btn:hover {
+  border-color: var(--border);
+  color: var(--accent-hover);
+}
+
+.pay-card-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pay-card-btn.primary {
+  border-color: rgba(224, 169, 109, 0.7);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.26) 0%, rgba(224, 169, 109, 0.08) 100%);
+  color: var(--text-primary);
+}
+
+.pay-card-status {
+  margin: 0;
+  min-height: 15px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.pay-card-status.is-error {
+  color: #fca5a5;
+}
+
+.pay-card-status.is-ok {
+  color: #86efac;
+}
+
+.pay-card-status a {
+  color: var(--accent);
+}
+
+.pay-card-fallback {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.pay-card-fallback a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(224, 169, 109, 0.45);
+}
+
+.pay-card-fallback a:hover {
+  color: var(--accent-hover);
+}
+
+.pay-card-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.pay-card-steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* --- Resumen del canal QR (el QR grande vive en su propio overlay) --- */
+.pay-qr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pay-qr-badge {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.24) 0%, rgba(224, 169, 109, 0.06) 100%);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.pay-qr-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pay-qr-amount {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.pay-qr-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pay-qr-note {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+
+/* --- Desglose por forma de cobro en el corte de caja --- */
+.cut-channels {
+  display: flex;
+  flex-direction: column;
+}
+
+.cut-channels .payment-summary-row {
+  font-size: 12.5px;
+}
+
+.cut-channels .payment-summary-row span:first-child {
+  padding-left: 10px;
+}
+
+/* --- Pie con las acciones --- */
+.payment-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--border-soft);
+  background: linear-gradient(0deg, rgba(224, 169, 109, 0.07) 0%, transparent 100%);
+}
+
+.payment-footer .btn {
+  min-width: 132px;
+}
+
+.payment-footer .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* --- Pantalla de venta completada --- */
+.payment-success-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.payment-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f1a12;
+  background: radial-gradient(circle, #86efac 0%, #22c55e 100%);
+  box-shadow: 0 0 32px rgba(74, 222, 128, 0.35);
+}
+
+.payment-success-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.payment-success-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: rgba(12, 10, 9, 0.42);
+}
+
+.payment-success-item span {
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.payment-success-item strong {
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.payment-link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+.payment-link-btn:hover {
+  color: var(--accent-hover);
+  background: rgba(224, 169, 109, 0.1);
+}
+
+.payment-ticket {
+  display: none;
+  width: 100%;
+  margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: #14110e;
+  color: var(--text-secondary);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.payment-ticket.is-visible {
+  display: block;
+}
+
+/* --- Corte de caja (comparte la ventana flotante del cobro) --- */
+.cut-promos {
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: rgba(224, 169, 109, 0.06);
+  padding: 10px 12px;
+}
+
+.cut-promos-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.cut-promos-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cut-promos-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.cut-promos-name {
+  font-weight: 600;
+}
+
+.cut-promos-times {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.cut-promos-value {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cut-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.cut-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#pos-cut-modal .payment-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+#pos-cut-modal .cut-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: 8px;
+  margin: 0;
+}
+
+#pos-cut-modal .cut-footer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  width: 100%;
+  gap: 8px;
+}
+
+#pos-cut-modal .cut-actions .btn,
+#pos-cut-modal .cut-footer-row .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 9px 10px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Los elementos ocultos nunca deben reaparecer por reglas de display */
+.payment-modal [hidden],
+.settings-modal [hidden],
+.settings-modal-backdrop [hidden] {
+  display: none !important;
+}
+
+/* --- Animaciones --- */
+@keyframes payModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes payBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes paySectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Adaptaci�n a pantallas peque�as --- */
+@media (max-width: 560px) {
+  .payment-modal {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .payment-shell {
+    width: 100%;
+    max-height: 94dvh;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .payment-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .payment-tab-label {
+    font-size: 10px;
+    letter-spacing: 0.2px;
+  }
+
+  .payment-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-mix-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-total-value {
+    font-size: 30px;
+  }
+
+  .payment-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .payment-footer .btn {
+    width: 100%;
+  }
+
+  .cut-actions,
+  .cut-footer-row {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+  }
+
+  #pos-cut-modal .payment-footer {
+    gap: 10px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #pos-cut-modal .cut-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #pos-cut-modal .cut-footer-row {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .cut-actions .btn,
+  .cut-footer-row .btn {
+    width: 100%;
+  }
+
+  #pos-cut-modal .cut-actions .btn {
+    min-height: 54px;
+    padding: 7px 5px;
+    font-size: 10px;
+  }
+
+  #pos-cut-modal .cut-footer-row .btn {
+    min-height: 50px;
+    padding: 9px 8px;
+    font-size: 12px;
+  }
+}

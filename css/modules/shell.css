@@ -1,0 +1,187 @@
+/* =========================================================
+   ESTRUCTURA DE LA APLICACI�N (cabecera + �rea principal)
+   Sin estas reglas el <svg class="brand-logo"> se dibuja al
+   100% del ancho del contenedor y desborda la pantalla.
+   ========================================================= */
+.app-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  background: linear-gradient(180deg, #1b1613 0%, rgba(18, 16, 14, 0.94) 100%);
+  border-bottom: 1px solid var(--border-soft);
+  position: relative;
+  z-index: 20;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.header-brand h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Logotipo de la marca: tama�o fijo, nunca se estira ni desborda */
+.brand-logo {
+  display: block;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  max-width: 100px;
+  max-height: 100px;
+  color: var(--accent);
+}
+
+/* El sprite SVG no debe ocupar espacio ni ser visible */
+.brand-logo-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.user-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+
+.status-dot.offline {
+  background: #f87171;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+}
+
+.btn-corte-caja {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: linear-gradient(90deg, rgba(224, 169, 109, 0.16) 0%, transparent 100%);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-corte-caja:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* �rea principal: contenedor con scroll propio para que la
+   pantalla de login pueda centrarse sin salirse de la vista */
+.app-main {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Barra de navegaci�n inferior */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  flex: 0 0 auto;
+  display: none;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  background: rgba(18, 16, 14, 0.96);
+  border-top: 1px solid var(--border-soft);
+  z-index: 60;
+}
+
+.tab-bar.is-visible {
+  display: flex;
+}
+
+.tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(224, 169, 109, 0.08);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-color: var(--border-soft);
+  background: linear-gradient(180deg, rgba(224, 169, 109, 0.16) 0%, transparent 100%);
+}
+
+.tab-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.tab-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
