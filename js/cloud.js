@@ -206,6 +206,15 @@ const Cloud = {
       document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const product = this.state.products.find(p => p.id === b.dataset.add); this.cart.push({ product, settings: { ...this.settings }, quantity: 1, cold: false, missing: false }); this.renderCart(); });
     };
     document.getElementById('cloud-search').oninput = list; list(); this.renderCart();
+    const paymentForm = document.getElementById('cloud-payment');
+    const updatePaymentFields = () => {
+      const method = paymentForm.elements.namedItem('method').value;
+      paymentForm.reference.closest('label').hidden = method !== 'transfer';
+      paymentForm.verified.closest('label').hidden = method !== 'transfer';
+      paymentForm.received.closest('label').hidden = method !== 'cash';
+    };
+    paymentForm.elements.namedItem('method').onchange = updatePaymentFields;
+    updatePaymentFields();
     document.getElementById('cloud-payment').onsubmit = e => { e.preventDefault(); this.run(async () => {
       if (!this.cart.length) throw new Error('El ticket está vacío.');
       const form = e.target, total = this.total(), method = form.elements.namedItem('method').value;
@@ -213,7 +222,7 @@ const Cloud = {
       payment[method + '_cents'] = total;
       let change = 0;
       if (method === 'cash') { const received = CloudPricing.cents(form.received.value); if (received < total) throw new Error('Efectivo insuficiente.'); change = received - total; }
-      else { if (!form.verified.checked || !form.reference.value.trim()) throw new Error('Verifica el pago electrónico e indica su referencia.'); payment.reference = form.reference.value.trim(); payment.verified = true; }
+      else if (method === 'transfer') { if (!form.verified.checked || !form.reference.value.trim()) throw new Error('Verifica el pago electrónico e indica su referencia.'); payment.reference = form.reference.value.trim(); payment.verified = true; }
       await this.command('sale', { shift_id: this.shift.id, expected_total_cents: total, payment, items: this.cart.map(i => ({ product_id: i.product.id, revision: i.product.revision, quantity: i.quantity, cold: i.cold, missing_container: i.missing })) });
       this.notice('Venta confirmada en la nube. Cambio: ' + this.money(change));
     }); };

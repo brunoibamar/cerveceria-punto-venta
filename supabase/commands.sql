@@ -116,7 +116,10 @@ begin
     payment:=p_payload->'payment';
     paid:=coalesce((payment->>'cash_cents')::bigint,0)+coalesce((payment->>'card_cents')::bigint,0)+coalesce((payment->>'transfer_cents')::bigint,0);
     if payment is null or paid<>total or coalesce((payment->>'cash_cents')::bigint,0)<0 or coalesce((payment->>'card_cents')::bigint,0)<0 or coalesce((payment->>'transfer_cents')::bigint,0)<0 then raise exception 'El pago no coincide con el total'; end if;
-    if coalesce((payment->>'card_cents')::bigint,0)+coalesce((payment->>'transfer_cents')::bigint,0)>0 and (length(trim(coalesce(payment->>'reference','')))=0 or coalesce(payment->>'verified','false')<>'true') then raise exception 'Confirma el pago electrónico recibido y su referencia'; end if;
+    if coalesce((payment->>'transfer_cents')::bigint,0)>0 and (length(trim(coalesce(payment->>'reference','')))=0 or coalesce(payment->>'verified','false')<>'true') then raise exception 'Confirma la transferencia recibida y su referencia'; end if;
+    if coalesce((payment->>'card_cents')::bigint,0)>0 then
+      payment:=payment||jsonb_build_object('card_status','cashier-declared','bank_verified',false,'declared_by',auth.uid());
+    end if;
     insert into public.pos_sales(business_id,id,shift_id,user_id,cashier_name,total_cents,payment)
       values(p_business,p_request,shift.id,auth.uid(),member.display_name,total,payment);
     for item in select value from jsonb_array_elements(items) loop

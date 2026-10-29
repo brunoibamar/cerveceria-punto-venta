@@ -426,7 +426,8 @@ const Database = {
       const amount = ['efectivo','tarjeta','transferencia'].reduce((sum,key) => sum + Number((sale.paymentBreakdown || {})[key] || 0),0);
       if (!Number.isFinite(amount) || Math.abs(amount - sale.total) > 0.011 || Object.values(sale.paymentBreakdown || {}).some(value => !Number.isFinite(value) || value < 0)) throw new Error('El desglose del pago no coincide con el total.');
       const electronic = Number(sale.paymentBreakdown.tarjeta || 0) + Number(sale.paymentBreakdown.transferencia || 0);
-      if (electronic > 0 && (!sale.paymentVerification || sale.paymentVerification.status !== 'confirmed' || !sale.paymentVerification.reference)) throw new Error('Confirma el cobro electrónico y su referencia.');
+      const cardDeclaration = sale.paymentVerification?.method === 'cashier-declared' && Number(sale.paymentBreakdown.transferencia || 0) === 0;
+      if (electronic > 0 && (!sale.paymentVerification || sale.paymentVerification.status !== 'confirmed' || (!cardDeclaration && !sale.paymentVerification.reference))) throw new Error('Confirma el cobro electrónico y su referencia.');
       if (electronic > 0) {
         const attempt=PaymentVerification.getAll().find(p=>p.id===sale.paymentVerification.id);
         if (!attempt || attempt.status !== 'pending' || (attempt.amount !== undefined && Math.abs(attempt.amount-electronic)>0.011)) throw new Error('El intento de pago ya fue usado, cancelado o tiene otro importe.');

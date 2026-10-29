@@ -35,9 +35,11 @@ const PaymentVerification = {
   getAll() { return JSON.parse(DataStore.getItem('cerveceria_payment_attempts') || '[]'); },
   save(list) { DataStore.setItem('cerveceria_payment_attempts',JSON.stringify(list)); },
   finish(id,status,saleId) { const list=this.getAll(); const entry=list.find(x=>x.id===id); if (!entry) throw new Error('No existe el intento de cobro.'); entry.status=status; entry.saleId=saleId || null; entry.updatedAt=new Date().toISOString(); this.save(list); },
-  request(amount) {
+  request(amount, requireReference = true) {
     const attempt={id:crypto.randomUUID(),amount,status:'pending',createdAt:new Date().toISOString(),userId:CashSession.getActiveSession().userId};
     const list=this.getAll(); list.push(attempt); this.save(list);
+    // Finalizar el cobro con tarjeta es la declaración del cajero, no una validación bancaria.
+    if (!requireReference) return Promise.resolve({...attempt,status:'confirmed',method:'cashier-declared',bankVerified:false,declaredBy:attempt.userId,declaredAt:new Date().toISOString()});
     return new Promise(resolve=>{
       const overlay=document.createElement('div'); overlay.className='security-overlay';
       overlay.innerHTML='<section class="security-card" role="dialog" aria-modal="true" aria-labelledby="verify-heading"><h2 id="verify-heading">Pago pendiente de verificación</h2><p id="verify-amount"></p><p>Revisa el movimiento aprobado en la terminal, banco o Mercado Pago. El QR por sí solo no confirma el pago.</p><form class="login-form"><input class="login-field" name="reference" placeholder="Referencia o autorización del movimiento" required maxlength="120"><label><input type="checkbox" name="verified" required> Verifiqué que el importe fue recibido y aprobado.</label><button class="btn" type="submit">Confirmar pago recibido</button></form><button class="btn secondary" id="verify-cancel">Cancelar intento</button></section>';

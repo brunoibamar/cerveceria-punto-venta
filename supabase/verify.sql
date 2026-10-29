@@ -58,6 +58,10 @@ begin
   exception when raise_exception then denied:=true; end;
   if not denied then raise exception 'FAIL sobreventa'; end if;
   if (select p.stock from public.pos_products p where business_id=b and id='test-product')<>18 then raise exception 'FAIL reversión de inventario'; end if;
+  payload:=jsonb_build_object('shift_id',shift_id,'expected_total_cents',5000,'payment',jsonb_build_object('card_cents',5000),
+    'items',jsonb_build_array(jsonb_build_object('product_id','test-product','revision',2,'quantity',1,'cold',false)));
+  result:=public.pos_command(b,gen_random_uuid(),'sale',payload);
+  if not exists(select 1 from public.pos_sales where business_id=b and payment->>'card_status'='cashier-declared' and payment->>'bank_verified'='false') then raise exception 'FAIL tarjeta sin referencia'; end if;
   result:=public.pos_command(b,gen_random_uuid(),'close_shift',jsonb_build_object('id',shift_id,'counted_cents',57000));
   if (result->>'difference_cents')::bigint<>0 then raise exception 'FAIL corte de caja'; end if;
   if public.pos_snapshot(b)->'member'->>'role'<>'employee' then raise exception 'FAIL snapshot autenticado'; end if;

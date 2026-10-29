@@ -19,6 +19,8 @@ No se guardó una contraseña predeterminada ni se enviaron correos desde herram
 La interfaz permite catálogo y stock compartidos, separación de stock frío, ventas por pieza/cartón,
 cargos de frío/envase, verificación manual de pago electrónico, apertura/cierre de una caja principal,
 resumen diario por cajero, últimas 500 ventas y supervisión mediante Realtime y consulta cada 15 segundos.
+Tarjeta no pide referencia ni casilla de verificación: el servidor registra la declaración del cajero.
+Las transferencias mantienen referencia y verificación manual. No hay validación bancaria automática.
 Cada pestaña usa una sesión de Supabase y un espacio de autenticación independientes.
 Cerrar sesión usa `scope: local`; no cierra turnos ni revoca las sesiones de otros dispositivos.
 Un administrador puede supervisar sin abrir caja. Solo el responsable cierra su turno.

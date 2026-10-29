@@ -1727,7 +1727,7 @@ if (other) {
     }
 
     const electronicAmount = Number(breakdown.tarjeta || 0) + Number(breakdown.transferencia || 0);
-    const verification = electronicAmount > 0 ? await PaymentVerification.request(electronicAmount) : null;
+    const verification = electronicAmount > 0 ? await PaymentVerification.request(electronicAmount, Number(breakdown.transferencia || 0) > 0) : null;
     if (electronicAmount > 0 && !verification) return;
     const result = this.completeSale({
       paymentVerification: verification,
