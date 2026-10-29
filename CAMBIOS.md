@@ -1,5 +1,24 @@
 # Cambios para las pruebas en Android
 
+## Versión 3.4: venta local y supervisor unidos
+
+- Ajustes → Vincular ventas e inventario autoriza la terminal una vez con una sesión técnica de Supabase Auth.
+  Esa identidad no es administradora ni lectora del negocio; solo puede entregar datos de su instalación.
+  La sesión humana del administrador se cierra al terminar el alta. No se guardan su contraseña ni su sesión.
+- Las ventas locales guardan el envío pendiente dentro de la misma operación que el ticket y el stock.
+  Se envían con administrador o empleado, después del corte y al volver a abrir el POS, sin publicar cada venta.
+- Los envíos incluyen cantidades en piezas, precios y costos históricos, forma de pago, responsable y turnos.
+  El saldo enviado ya contiene el descuento local: el servidor no descuenta otra vez las piezas.
+- El alta recupera tickets del historial y de cortes anteriores del dispositivo. Los UUID y las claves de origen
+  evitan duplicados, incluso si una respuesta se pierde o se repite el alta de la misma instalación.
+- El supervisor integra los tickets de terminal con los de caja compartida en reportes e historial y muestra
+  cuándo llegó el último envío. El administrador puede revocar la terminal desde Ajustes de nube.
+- Sin internet no existe actualización en vivo: los datos quedan pendientes en el dispositivo y se reintentan.
+  Si otra caja modifica el inventario de nube, el envío se detiene para revisar el conflicto.
+- `actualizar.html` instala la versión actual sin borrar inventario, ventas ni accesos locales.
+
+Las notas de versiones anteriores siguientes describen etapas previas de la integración.
+
 ## Versión 3.3: presentación, inventario vinculado y cámara
 
 - Panel remoto con tarjetas, acentos ámbar, tablas y jerarquía visual adaptada a Android.

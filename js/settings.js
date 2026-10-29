@@ -109,7 +109,7 @@ const SettingsManager = {
     container.querySelector('#manage-users').onclick = () => Auth.renderUsers();
     if(typeof InventoryCloud!=='undefined') {
       const button=document.createElement('button');button.className='settings-card';
-      button.innerHTML='<span class="settings-card-icon">☁️</span><span class="settings-card-title">Vincular inventario con nube</span><span class="settings-card-sub">Publicar catálogo y conteos para el supervisor</span>';
+      button.innerHTML='<span class="settings-card-icon">☁️</span><span class="settings-card-title">Vincular ventas e inventario con nube</span><span class="settings-card-sub">Envío automático con administrador y empleados</span>';
       button.onclick=()=>InventoryCloud.open();container.querySelector('.settings-grid').prepend(button);
     }
     container.querySelector('#previous-backup').onclick = () => { const raw=AppStorage.getItem('cerveceria_before_restore'); if (!raw) { alert('Todavía no hay restauraciones previas.'); return; } const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([raw],{type:'application/json'})); a.download='antes_de_restaurar.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };

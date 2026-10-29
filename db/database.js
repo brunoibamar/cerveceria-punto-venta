@@ -445,6 +445,7 @@ const Database = {
       });
       const sales = this.getSales(); sales.push(newSale); this.saveSales(sales);
       this.discountInventory(newSale.items);
+      if(typeof TerminalEvents!=='undefined')TerminalEvents.enqueue(newSale);
       DataStore.removeItem('cerveceria_cart');
       if (electronic > 0) PaymentVerification.finish(newSale.paymentVerification.id, 'confirmed', newSale.id);
       return newSale;

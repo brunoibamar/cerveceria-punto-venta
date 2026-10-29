@@ -97,7 +97,7 @@ const Cloud = {
     await this.refresh();
     if (this.channel) await this.client.removeChannel(this.channel);
     this.channel = this.client.channel('business-' + CloudConfig.businessId);
-    for (const table of ['pos_products', 'pos_shifts', 'pos_sales', 'pos_inventory_movements', 'pos_documents']) {
+    for (const table of ['pos_products', 'pos_shifts', 'pos_sales', 'pos_inventory_movements', 'pos_documents','pos_terminal_sales','pos_terminal_items','pos_terminal_shifts']) {
       this.channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: 'business_id=eq.' + CloudConfig.businessId }, () => {
         clearTimeout(this.refreshTimer); this.refreshTimer = setTimeout(() => this.refresh().catch(e => this.notice(e.message)), 250);
       });
@@ -118,6 +118,7 @@ const Cloud = {
       if (!data?.member) throw new Error('No tienes acceso activo al negocio.');
       if (this.supervisor && data.member.role !== 'admin') throw new Error('El acceso de supervisor requiere una cuenta administradora autorizada.');
       this.state = data;
+      this.updateTerminalStatus();
       document.getElementById('cloud-status').textContent = `${data.business.name} · ${data.member.display_name} · Última lectura ${new Date(data.read_at).toLocaleTimeString('es-MX')}`;
       // No reemplazar formularios ni cobros que el usuario esté editando.
       if (!this.host.querySelector('[data-cloud-shell]')) this.render();
@@ -133,6 +134,11 @@ const Cloud = {
   updateReadNotice() {
     const el = document.getElementById('cloud-read-note');
     if (el) el.textContent = 'Datos actualizados. El servidor comprobará existencias y precios al confirmar.';
+  },
+  updateTerminalStatus() {
+    const el=document.getElementById('terminal-delivery-status');if(!el)return;
+    const terminal=this.state?.terminal;
+    el.textContent=!terminal?'Terminal pendiente de activar en Ajustes del POS.':!terminal.active?'El envío de la terminal está desactivado.':terminal.last_sync_at?'Último envío de la terminal: '+new Date(terminal.last_sync_at).toLocaleString('es-MX'):'Terminal autorizada; esperando el primer envío.';
   },
   get admin() { return this.state?.member.role === 'admin'; },
   get shift() { return this.state?.shifts.find(s => !s.closed_at && s.user_id === this.state.member.user_id); },
@@ -176,6 +182,8 @@ const Cloud = {
       }
     }
     if (this.supervisor) this.host.querySelectorAll('[data-view]').forEach(b => { if (!['monitor','products','reports','history'].includes(b.dataset.view)) b.remove(); });
+    const terminalStatus=document.createElement('p');terminalStatus.id='terminal-delivery-status';terminalStatus.className='muted';
+    this.host.querySelector('[data-cloud-shell]').insertBefore(terminalStatus,document.getElementById('cloud-read-note'));this.updateTerminalStatus();
     this.host.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { this.view = b.dataset.view; this.render(); });
     document.getElementById('cloud-logout').onclick = () => this.run(async () => {
       if (sessionStorage.getItem(this.pendingKey)) throw new Error('Resuelve la operación pendiente antes de salir.');
@@ -200,7 +208,7 @@ const Cloud = {
   },
   monitor(view) {
     const today = this.state.today;
-    view.innerHTML = `<h2>Supervisión en vivo</h2><p>Ventas confirmadas de hoy · horario de Ciudad de México.</p><section><p class="amount">${this.money(today.reduce((sum, row) => sum + Number(row.total_cents), 0))}</p><p>${today.reduce((sum, row) => sum + Number(row.tickets), 0)} tickets</p>${today.map(row => `<p>${this.escape(row.cashier_name)}: ${this.money(row.total_cents)} · ${row.tickets} ventas</p>`).join('')}</section><h2>Turnos abiertos</h2>${this.state.shifts.filter(s => !s.closed_at).map(s => `<section><strong>${this.escape(s.register_name)}</strong><p>${this.escape(s.user_id === this.state.member.user_id ? this.state.member.display_name : 'Cajero: ' + s.user_id.slice(0, 8))}</p><p>Apertura: ${new Date(s.opened_at).toLocaleString('es-MX')} · Fondo: ${this.money(s.opening_cents)}</p></section>`).join('') || '<p>No hay turnos abiertos.</p>'}<h2>Últimas ventas</h2><p class="muted">Hasta 500 tickets recientes. El resumen de hoy incluye todas las ventas del día.</p><div class="table-scroll"><table><thead><tr><th>Fecha</th><th>Atendió</th><th>Total</th></tr></thead><tbody>${this.state.sales.map(s => `<tr><td>${new Date(s.created_at).toLocaleString('es-MX')}</td><td>${this.escape(s.cashier_name)}</td><td>${this.money(s.total_cents)}</td></tr>`).join('')}</tbody></table></div><h2>Últimos cortes</h2>${this.state.shifts.filter(s => s.closed_at).slice(0, 20).map(s => `<section><p>${new Date(s.closed_at).toLocaleString('es-MX')}</p><p>Fondo: ${this.money(s.opening_cents)} · Conteo: ${this.money(s.counted_cents)}</p></section>`).join('') || '<p>No hay cortes registrados.</p>'}`;
+    view.innerHTML = `<h2>Supervisión en vivo</h2><p>Ventas confirmadas de hoy · horario de Ciudad de México.</p><section><p class="amount">${this.money(today.reduce((sum, row) => sum + Number(row.total_cents), 0))}</p><p>${today.reduce((sum, row) => sum + Number(row.tickets), 0)} tickets</p>${today.map(row => `<p>${this.escape(row.cashier_name)}: ${this.money(row.total_cents)} · ${row.tickets} ventas</p>`).join('')}</section><h2>Turnos abiertos</h2>${this.state.shifts.filter(s => !s.closed_at).map(s => `<section><strong>${this.escape(s.register_name)}</strong><p>${this.escape(s.cashier_name || (s.user_id === this.state.member.user_id ? this.state.member.display_name : 'Cajero: ' + String(s.user_id || '').slice(0, 8)))}</p><p>Apertura: ${new Date(s.opened_at).toLocaleString('es-MX')} · Fondo: ${this.money(s.opening_cents)}</p></section>`).join('') || '<p>No hay turnos abiertos.</p>'}<h2>Últimas ventas</h2><p class="muted">Hasta 500 tickets recientes. El resumen de hoy incluye todas las ventas del día.</p><div class="table-scroll"><table><thead><tr><th>Fecha</th><th>Atendió</th><th>Total</th></tr></thead><tbody>${this.state.sales.map(s => `<tr><td>${new Date(s.created_at).toLocaleString('es-MX')}</td><td>${this.escape(s.cashier_name)}</td><td>${this.money(s.total_cents)}</td></tr>`).join('')}</tbody></table></div><h2>Últimos cortes</h2>${this.state.shifts.filter(s => s.closed_at).slice(0, 20).map(s => `<section><p>${new Date(s.closed_at).toLocaleString('es-MX')}</p><p>Fondo: ${this.money(s.opening_cents)} · Conteo: ${this.money(s.counted_cents)}</p></section>`).join('') || '<p>No hay cortes registrados.</p>'}`;
   },
   sales(view) {
     if (!this.shift) {
@@ -269,6 +277,8 @@ const Cloud = {
     document.getElementById('grant-employee').onsubmit = e => { e.preventDefault(); this.run(() => this.command('grant_employee', { name: e.target.elements.namedItem('name').value.trim(), email: e.target.email.value.trim() })); };
     document.getElementById('cloud-settings').onsubmit = e => { e.preventDefault(); this.run(() => this.command('save_settings', { data: { ...this.settings, coldCharge: Number(e.target.coldCharge.value) } })); };
     document.getElementById('cloud-seed').onclick = () => this.run(() => this.command('save_product', { id: 'seed-mega-corona', revision: null, stock: 1799, cold_stock: 0, data: { nombre: 'Mega Corona', marca: 'Corona', presentacion: '1L', codigoBarras: '100211', precioVenta: 50, costoPieza: 26, cobroExtraEnvaseFaltantePieza: 10, unidadesPorCarton: 12, costoCarton: 320, precioCarton: 470, cobroExtraEnvaseFaltanteCarton: 10, stockMinimo: 5, activo: true } }));
+    const devicePanel=document.createElement('section');devicePanel.innerHTML='<h2>Terminal vinculada</h2><p>Desactivar detiene nuevos envíos; conserva todas las ventas e inventario ya recibidos.</p><button class="secondary">Desactivar envío de la terminal</button>';
+    devicePanel.querySelector('button').onclick=()=>this.run(async()=>{if(!confirm('¿Detener los envíos de la terminal vinculada?'))return;const {error}=await this.client.rpc('pos_terminal_link',{p_business:CloudConfig.businessId,p_revoke:true});if(error)throw error;await this.refresh();this.notice('Terminal desactivada. Los datos guardados se conservaron.');});view.append(devicePanel);
   }
 };
 Cloud.init().catch(error => Cloud.notice(error.message));

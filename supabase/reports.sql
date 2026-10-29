@@ -5,15 +5,15 @@ begin
   if not public.pos_has_access(p_business,true) then raise exception 'Esta consulta requiere administrador'; end if;
   if p_from is null or p_to is null or p_to<p_from or p_offset<0 then raise exception 'Período inválido'; end if;
   with sales as (
-    select * from public.pos_sales where business_id=p_business
+    select * from public.pos_reporting_sales where business_id=p_business
       and created_at >= (p_from::timestamp at time zone 'America/Mexico_City')
       and created_at < ((p_to+1)::timestamp at time zone 'America/Mexico_City')
   ), items as (
-    select i.*,s.cashier_name,s.user_id from public.pos_sale_items i join sales s on s.business_id=i.business_id and s.id=i.sale_id
+    select i.*,s.cashier_name,s.user_id from public.pos_reporting_items i join sales s on s.business_id=i.business_id and s.id=i.sale_id
   ), item_totals as (
     select coalesce(sum(quantity),0) as units,coalesce(sum(cost_cents),0) as cost_cents,
       count(*) filter(where cost_cents is null) as unknown_costs,
-      coalesce(sum(case when coalesce((snapshot->>'missing_container')::boolean,false) then
+      coalesce(sum(case when snapshot ? 'container_cents' then (snapshot->>'container_cents')::bigint when coalesce((snapshot->>'missing_container')::boolean,false) then
         round(100*(
           case when coalesce((snapshot->>'unidadesPorCarton')::integer,0)>0 and coalesce((snapshot->>'precioCarton')::numeric,0)>0
           then (quantity/(snapshot->>'unidadesPorCarton')::integer)*coalesce((snapshot->>'cobroExtraEnvaseFaltanteCarton')::numeric,0)

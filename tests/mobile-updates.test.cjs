@@ -27,14 +27,15 @@ for(const inverted of [false,true])test('escáner decodifica EAN-13 '+(inverted?
   tick();handle.reset();assert.equal(found,image.code);
 });
 
-test('espejo de inventario conserva la cola y el identificador cuando se pierde una respuesta',async()=>{
+test('envío de terminal conserva cola e identificador aunque opere un empleado y se pierda una respuesta',async()=>{
   const values=new Map();const storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
-  const context={window:{addEventListener(){}},localStorage:storage,DemoMode:false,Auth:{isAdmin:()=>true},navigator:{onLine:true},crypto,
+  const context={window:{addEventListener(){}},localStorage:storage,DemoMode:false,Auth:{isAdmin:()=>false},navigator:{onLine:true},crypto,
+    TerminalEvents:{KEY:'test-outbox',collect:()=>[],shifts:()=>[],acknowledge(){}},
     DataStore:{getItem:()=> '[]'},Database:{getProducts:()=>[{id:'p1',nombre:'Producto',precio:50,stock:1800}],getInventoryCycles:()=>[]},CloudConfig:{businessId:'business'},console};
   vm.runInNewContext(fs.readFileSync('services/inventory-cloud.js','utf8')+'\nglobalThis.bridge=InventoryCloud;',context);
-  const bridge=context.bridge;bridge.status=()=>{};bridge.schedule=()=>{};bridge.authorized=true;
+  const bridge=context.bridge;bridge.status=()=>{};bridge.schedule=()=>{};
   storage.setItem(bridge.KEY,JSON.stringify({installation:crypto.randomUUID(),revisions:{}}));
-  const calls=[];bridge.api=()=>({rpc:async(name,args)=>{calls.push(args);return calls.length===1?{error:{message:'Respuesta perdida'}}:{data:{revisions:{p1:1},synced_at:new Date().toISOString()}};}});
+  const calls=[];bridge.terminal=()=>({auth:{getSession:async()=>({data:{session:{}}})},rpc:async(name,args)=>{calls.push(args);return calls.length===1?{error:{message:'Respuesta perdida'}}:{data:{revisions:{p1:1},synced_at:new Date().toISOString()}};}});
   await assert.rejects(bridge.sync());assert.ok(storage.getItem(bridge.QUEUE));
   await bridge.sync();assert.equal(calls[0].p_request,calls[1].p_request);assert.equal(storage.getItem(bridge.QUEUE),null);
   assert.equal(JSON.parse(storage.getItem(bridge.KEY)).revisions.p1,1);

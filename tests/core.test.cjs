@@ -6,7 +6,7 @@ function environment() {
   const localStorage={ getItem:k=>values.has(k)?values.get(k):null, setItem(k,v){ if(this.failKey===k) throw Error('Sin espacio'); values.set(k,String(v)); }, removeItem:k=>values.delete(k) };
   const document={addEventListener(){}, getElementById(){return null;}, querySelectorAll(){return [];}};
   const context=vm.createContext({crypto:require('node:crypto').webcrypto,TextEncoder,TextDecoder,testPin:String(require('node:crypto').randomInt(100000,1000000)),testStaffPin:'Personal-'+String(require('node:crypto').randomInt(100000,1000000)),console,alert(){},localStorage,AppStorage:localStorage,document,navigator:{},setInterval(){},setTimeout(){},CustomEvent:class{},window:{addEventListener(){},dispatchEvent(){}}});
-  for(const file of ['services/storage.js','services/auth.js','services/operations.js','db/database.js','services/salesBreakdown.js','services/emailService.js','js/login.js','services/salesLog.js','js/pos.js','js/pos-cash-cut.js','js/pos-scanner.js','js/reports.js']) vm.runInContext(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),context,{filename:file});
+  for(const file of ['services/storage.js','services/auth.js','services/operations.js','db/database.js','services/salesBreakdown.js','services/emailService.js','js/login.js','services/salesLog.js','services/terminal-events.js','js/pos.js','js/pos-cash-cut.js','js/pos-scanner.js','js/reports.js']) vm.runInContext(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),context,{filename:file});
   vm.runInContext('WriteGuard.ready=true; DataStore.mirror=async()=>{};',context);
   return {context, values, localStorage, run:code=>vm.runInContext(code,context)};
 }
@@ -17,6 +17,31 @@ async function opened() {
   return env;
 }
 const sale="({items:[{productId:'p1',quantity:2,precio:35}],total:70,paymentBreakdown:{efectivo:70,tarjeta:0,transferencia:0},paymentMethod:'efectivo'})";
+
+test('la venta guarda su envío pendiente junto con stock y lo conserva al cerrar sesión',async()=>{
+  const e=await opened();e.run('Database.registerSale('+sale+')');
+  assert.equal(e.run('Object.values(JSON.parse(DataStore.getItem(TerminalEvents.KEY))).length'),1);
+  assert.equal(e.run('TerminalEvents.collect(false)[0].items[0].quantity'),2);
+  assert.equal(e.run('TerminalEvents.collect(false)[0].payment.cash_cents'),7000);
+  e.run('CashSession.clear()');
+  assert.equal(e.run('CashSession.getActiveSession()'),null);
+  assert.equal(e.run('TerminalEvents.collect(false).length'),1);
+  assert.equal(e.run('Database.getProducts()[0].stock'),98);
+});
+test('el alta de envío falla de forma atómica si no se puede guardar la venta',async()=>{
+  const e=await opened();e.localStorage.failKey=e.run('DataStore.KEY');
+  assert.throws(()=>e.run('Database.registerSale('+sale+')'),/Sin espacio/);
+  assert.equal(e.run('TerminalEvents.collect(false).length'),0);
+  assert.equal(e.run('Database.getProducts()[0].stock'),100);
+});
+test('recupera tickets de cortes antiguos sin duplicar los que siguen en ventas',async()=>{
+  const e=await opened();e.run('const archivedSale=Database.registerSale('+sale+'); Database.recordCut({tipo:"cierre",tickets:[SalesLog.compactTicket(SalesLog.buildTicket(archivedSale))]});DataStore.setItem(TerminalEvents.KEY,"{}")');
+  assert.equal(e.run('TerminalEvents.collect(true).length'),1);
+  e.run('Database.saveSales([]);CashSession.clear()');
+  assert.equal(e.run('TerminalEvents.collect(true).length'),1);
+  assert.equal(e.run('TerminalEvents.collect(true)[0].items[0].quantity'),2);
+  assert.equal(e.run('TerminalEvents.collect(true)[0].cashier_name'),'Administrador');
+});
 test('instalación nueva carga solo Mega Corona y no repone un catálogo eliminado',()=>{ const e=environment(); e.run('Database.init()'); assert.equal(e.run('Database.getProducts().length'),1); assert.equal(e.run('Database.getProducts()[0].nombre'),'Mega Corona'); assert.equal(e.run("DataStore.getItem('fridgeStock')"),'0'); e.run('Database.saveProducts([]); Database.init()'); assert.equal(e.run('Database.getProducts().length'),0); });
 test('migración conserva los productos anteriores',()=>{const e=environment(); e.localStorage.setItem('cerveceria_products','[]'); e.run('Database.init()'); assert.equal(e.run('Database.getProducts().length'),0); assert.equal(e.localStorage.getItem('cerveceria_products'),'[]');});
 test('NIP real y sesión autenticada',async()=>{ const e=await opened(); assert.ok(e.run('CashSession.getActiveSession()')); await assert.rejects(e.run("Auth.verify('Administrador','cualquier-clave','admin')")); assert.ok(e.run("Auth.users()[0].credentialType === 'pin' && !Object.hasOwn(Auth.users()[0], 'pin')")); e.run("let s=CashSession.readRaw(); s.authToken='falso'; CashSession.save(s)"); assert.equal(e.run('CashSession.getActiveSession()'),null); });

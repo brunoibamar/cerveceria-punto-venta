@@ -1,5 +1,36 @@
 # Caja compartida: primera etapa de integración
 
+## Integración vigente: terminal autenticada (3.4)
+
+El POS normal ya puede enviar automáticamente sus ventas, turnos e inventario con cualquier cajero.
+Se activa en Ajustes → Vincular ventas e inventario. Se requiere una autorización inicial explícita
+del administrador para conservar la sesión técnica de esa instalación; no se conserva la sesión humana.
+La terminal no es miembro administrador ni empleado de Supabase. Su identidad autenticada solo puede
+invocar `pos_terminal_sync` para la instalación autorizada. RLS le niega los reportes, la lectura general,
+las escrituras directas y el alta de usuarios. No existe un endpoint anónimo por token de dispositivo.
+
+`enroll-pos-terminal` valida el JWT humano con `auth.getUser` y la membresía administradora antes de
+crear la identidad técnica. Las claves de servicio viven únicamente en el entorno de Edge Functions.
+La comprobación JWT del gateway se sustituye por la verificación explícita en la función para soportar
+las claves de firma actuales. Sin sesión válida devuelve 401; una terminal no puede autorizar otra terminal.
+La función administrativa `pos_register_terminal` solo admite el rol de servicio y comprueba al propietario.
+
+El evento pendiente se guarda en la misma transacción local que la venta y el descuento de stock.
+Se reintenta después del corte, cambio de cajero o reinicio del POS; sin internet permanece pendiente.
+Cada lote guarda atómicamente tickets y saldos absolutos ya descontados. Nunca vuelve a descontar las piezas.
+Los tickets importados llevan origen de terminal y responsable declarado por su sesión local; no se
+presentan como sesiones personales de Supabase de cada cajero. No se transmiten hashes ni NIP locales.
+Al activar se recuperan los tickets de ventas y de cortes guardados, por lotes de hasta 500, sin duplicarlos.
+Las revisiones impiden sobrescribir cambios hechos por otra caja; un conflicto exige revisión del administrador.
+
+Las vistas `pos_reporting_*` respetan RLS (`security_invoker`) e integran las operaciones nativas y de terminal.
+El supervisor muestra la última transmisión recibida y puede revocar el envío desde Ajustes de nube.
+`terminal-verify.sql` prueba aislamiento, falta de privilegios, los tres métodos de pago, dos cajeros,
+reintentos, cierre, saldo sin doble descuento y revocación. Todas sus identidades y datos se revierten.
+
+Las siguientes secciones conservan la descripción de las etapas previas; las limitaciones de envío
+solo con administrador o sin tickets corresponden a versiones anteriores a 3.4.
+
 Proyecto: `cerveceria-toñito`, referencia `qhxsqyyytbxlnfxfhzcb`.
 Entrada independiente: `/nube.html`. La entrada `/` continúa siendo el POS local.
 El login local ofrece «Entrar como supervisor», que abre `/nube.html?mode=supervisor`

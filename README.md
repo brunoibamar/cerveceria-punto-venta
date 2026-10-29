@@ -4,8 +4,10 @@
 
 La entrada `nube.html` conecta con Supabase para inventario compartido, turnos,
 ventas y supervisión. Consulta [supabase/README.md](supabase/README.md) para el alcance y la configuración.
-La entrada principal sigue siendo local: sus datos no se sincronizan ni se migran automáticamente.
-No mezcles operaciones de caja entre ambas entradas. La nube requiere conexión y acceso autorizado.
+La entrada principal conserva su operación local. Desde Ajustes → Vincular ventas e inventario puedes
+autorizar el envío automático de tickets, turnos y stock con cualquier cajero. El alta recupera también
+los tickets guardados en los cortes de esa instalación. La nube requiere conexión para actualizarse;
+sin conexión la terminal conserva una cola pendiente. No mezcles cajas independientes sobre el mismo inventario.
 
 ## Abrir
 
