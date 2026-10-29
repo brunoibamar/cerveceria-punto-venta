@@ -216,6 +216,34 @@
       });
     },
 
+    getCycleSalesEstimates: function (cycle) {
+      const estimates = {};
+      if (!cycle || !cycle.startDate || !cycle.endDate) return estimates;
+
+      const start = Date.parse(cycle.startDate + 'T00:00:00Z');
+      const end = Date.parse(cycle.endDate + 'T00:00:00Z');
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return estimates;
+
+      const sales = Database.getSales();
+      sales.forEach(function (sale) {
+        const status = String(sale.status || '').toLowerCase();
+        if (['cancelada', 'cancelado', 'anulada', 'anulado', 'cancelled', 'canceled', 'void'].indexOf(status) !== -1) return;
+
+        const saleDate = Date.parse(sale.fecha || sale.date || '');
+        if (!Number.isFinite(saleDate) || saleDate < start || saleDate >= end) return;
+
+        (Array.isArray(sale.items) ? sale.items : []).forEach(function (item) {
+          if (!item || item.productId === undefined || item.productId === null) return;
+          const productId = String(item.productId);
+          const quantity = Number(item.quantity !== undefined ? item.quantity : item.cantidad);
+          if (!Number.isFinite(quantity) || quantity <= 0) return;
+          estimates[productId] = (estimates[productId] || 0) + quantity;
+        });
+      });
+
+      return estimates;
+    },
+
     renderInventoryCycle: function () {
       const cycle = this.getOpenInventoryCycle();
       const cycles = Database.getInventoryCycles();
@@ -247,6 +275,7 @@
         return finalStockDraft[id] !== undefined && finalStockDraft[id] !== null;
       }).length;
       const canCloseCycle = ids.length > 0 && savedCount === ids.length;
+      const salesEstimates = this.getCycleSalesEstimates(cycle);
       let html = '<section class="inventory-cycle">';
       html += '<header class="inventory-cycle-header"><div class="inventory-cycle-title"><h3>Ciclo semanal</h3>';
       html += '<span class="inventory-cycle-status">Abierto · ' + this.escapeHtml(this.formatCycleDate(cycle.startDate)) + '</span></div>';
@@ -291,6 +320,7 @@
         html += '<div><span>Inventario inicial</span><strong>' + this.escapeHtml(this.formatStockPresentation(initial, unitsPerPackage)) + '</strong></div>';
         html += '<div><span>Inventario actual</span><strong>' + this.escapeHtml(this.formatStockPresentation(currentStock, unitsPerPackage)) + '</strong></div>';
         html += '<div><span>Surtido</span><strong>' + this.escapeHtml(this.formatStockPresentation(entries, unitsPerPackage)) + '</strong></div>';
+        html += '<div class="inventory-cycle-sales-estimate"><span>Estimado de ventas del ciclo</span><strong>' + (Number(salesEstimates[id]) || 0) + ' piezas</strong></div>';
         html += '<div><span>Conteo físico</span><strong>' + (finalCount === undefined ? 'Pendiente' : this.escapeHtml(this.formatStockPresentation(finalCount, unitsPerPackage))) + '</strong></div>';
         html += '</div>';
         html += '<div class="inventory-cycle-product-actions">';

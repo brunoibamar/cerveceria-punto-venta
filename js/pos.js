@@ -104,6 +104,7 @@ const SalesLog = {
       marca: item.marca || '',
       cantidad: Number(item.cantidad !== undefined ? item.cantidad : item.quantity) || 0,
       precio: Number(item.precio !== undefined ? item.precio : item.price) || 0,
+      precioCarton: Number(item.precioCarton) || 0,
       cold: Boolean(item.cold === true || item.piezaFria === true || item.piezaFria === 'true'),
       cargoFrio: Number(item.cargoFrio) || 0,
       envaseFaltante: Boolean(item.envaseFaltante),
@@ -128,6 +129,7 @@ const SalesLog = {
       subtotal: ticket.subtotal,
       coldCharge: ticket.coldCharge,
       promoDiscount: ticket.promoDiscount,
+      volumePromoDiscount: ticket.volumePromoDiscount,
       total: ticket.total,
       paymentMethod: ticket.paymentMethod,
       paymentLabel: ticket.paymentLabel,
@@ -149,8 +151,23 @@ const SalesLog = {
       const items = rawItems.map(item => {
         const cantidad = Number(item.quantity) || 0;
         const precio = Number(item.precio !== undefined ? item.precio : item.price) || 0;
+        const unidadesPorCarton = Number(item.unidadesPorCarton) || 0;
+        const precioCarton = Number(item.precioCarton) || 0;
         const cold = this.isColdItem(item);
         const cargoFrio = Number(item.cargoFrio) || 0;
+        const promoVolumenAplicada = item.promoVolumenAplicada ? {
+          cantidad: Number(item.promoVolumenAplicada.cantidad) || 0,
+          precio: Number(item.promoVolumenAplicada.precio) || 0
+        } : null;
+        const cartonesCompletos = unidadesPorCarton > 0 && precioCarton > 0
+          ? Math.floor(cantidad / unidadesPorCarton)
+          : 0;
+        const piezasRestantes = cartonesCompletos > 0 ? cantidad % unidadesPorCarton : cantidad;
+        const subtotal = cartonesCompletos > 0
+          ? cartonesCompletos * precioCarton + piezasRestantes * precio
+          : promoVolumenAplicada && promoVolumenAplicada.cantidad === cantidad
+            ? promoVolumenAplicada.precio
+            : precio * cantidad;
         return {
           productId: item.productId || null,
           nombre: item.nombre || item.productName || 'Producto',
@@ -163,12 +180,10 @@ const SalesLog = {
           envaseModalidad: item.envaseModalidad || 'pieza',
           envaseCargo: Number(item.envaseCargo || 0),
           isCarton: Boolean(item.isCarton || item.carton || item.charola),
-          unidadesPorCarton: Number(item.unidadesPorCarton || 0),
-          promoVolumenAplicada: item.promoVolumenAplicada ? {
-            cantidad: Number(item.promoVolumenAplicada.cantidad) || 0,
-            precio: Number(item.promoVolumenAplicada.precio) || 0
-          } : null,
-          subtotal: this.round2(precio * cantidad)
+          unidadesPorCarton,
+          precioCarton,
+          promoVolumenAplicada,
+          subtotal: this.round2(subtotal)
         };
       });
 
@@ -196,6 +211,7 @@ const SalesLog = {
       subtotal: subtotal,
       coldCharge: coldCharge,
       promoDiscount: Number(source.promoDiscount) || 0,
+      volumePromoDiscount: Number(source.volumenPromoDiscount !== undefined ? source.volumenPromoDiscount : source.volumePromoDiscount) || 0,
       total: Number(source.total) || 0,
       paymentMethod: source.paymentMethod || 'efectivo',
       paymentLabel: this.paymentLabel(source),
@@ -739,6 +755,22 @@ const POS = {
     this.changeQuantityFor(item, delta);
   },
 
+  setQuantity(productId, quantity, isCold) {
+    const item = this.findCartItem(productId, isCold) ||
+      this.cart.find(i => i.productId === productId);
+    if (!item) return;
+
+    const next = Number(quantity);
+    if (!Number.isInteger(next) || next < 1) {
+      alert('Ingresa una cantidad entera mayor que cero.');
+      this.renderCart();
+      return;
+    }
+
+    this.changeQuantityFor(item, next - (Number(item.quantity) || 0));
+    if (this.cart.includes(item) && Number(item.quantity) !== next) this.renderCart();
+  },
+
   changeQuantityFor(item, delta) {
     const product = Database.getProducts().find(p => p.id === item.productId);
     const isCold = this.normalizeColdFlag(item.piezaFria);
@@ -1035,7 +1067,7 @@ if (other) {
           : '';
 
         const cartonBadge = isFullCarton
-          ? `<span class="cart-tag cart-tag-carton">📦 ${fullCartons} cartón${fullCartons > 1 ? 'es' : ''} completo · ${this.escapeHtml(currency)}${cartonPrice.toFixed(2)} c/u</span>`
+          ? `<span class="cart-tag cart-tag-carton">📦 ${fullCartons} ${fullCartons === 1 ? 'cartón' : 'cartones'} completo${fullCartons === 1 ? '' : 's'} · ${this.escapeHtml(currency)}${cartonPrice.toFixed(2)} c/u</span>`
           : '';
 
         html += `
@@ -1054,7 +1086,10 @@ if (other) {
               <div class="cart-item-price">${this.escapeHtml(currency)}${isFullCarton ? cartonPrice.toFixed(2) : price.toFixed(2)}</div>
               <div class="cart-item-qty">
                 <button type="button" class="btn-qty" onclick="POS.changeQuantity('${idArg}', -1, ${coldArg})">-</button>
-                <span class="cart-qty-value">${qty}</span>
+                <input type="number" class="cart-qty-value" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" min="1" step="1" value="${qty}"
+                  aria-label="Cantidad de ${this.escapeHtml(item.nombre || 'producto')}"
+                  onfocus="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();POS.setQuantity('${idArg}',this.value,${coldArg});}"
+                  onchange="POS.setQuantity('${idArg}', this.value, ${coldArg})" />
                 <button type="button" class="btn-qty" onclick="POS.changeQuantity('${idArg}', 1, ${coldArg})">+</button>
               </div>
               <div class="cart-item-total">${this.escapeHtml(currency)}${lineTotal.toFixed(2)}</div>
@@ -2090,7 +2125,11 @@ if (other) {
 
   // Inserta el panel de historial en vivo dentro de la vista de ventas
   mountLiveSalesPanel() {
-    if (document.getElementById('pos-live-sales')) return;
+    if (document.getElementById('pos-live-sales')) {
+      this.bindLiveSalesToggle();
+      this.bindLiveTicketDetails();
+      return;
+    }
     const sidebar = document.querySelector('.pos-sidebar');
     const template = document.getElementById('sales-history-template');
     if (!sidebar || !template || !template.content) return;
@@ -2098,6 +2137,7 @@ if (other) {
     sidebar.appendChild(template.content.cloneNode(true));
     this.renderLiveSales();
     this.bindLiveSalesToggle();
+    this.bindLiveTicketDetails();
   },
 
   // Vincula el clic/teclado en la barra resumen para expandir/colapsar el historial
@@ -2125,6 +2165,23 @@ if (other) {
     if (list) list.classList.toggle('expanded', expanded);
     if (header) header.setAttribute('aria-expanded', String(expanded));
     if (arrow) arrow.textContent = expanded ? '▲' : '▼';
+  },
+
+  bindLiveTicketDetails() {
+    const list = document.getElementById('pos-live-sales-list');
+    if (!list || list.dataset.liveTicketDetailsBound === '1') return;
+    list.dataset.liveTicketDetailsBound = '1';
+    list.addEventListener('click', (event) => {
+      const ticketElement = event.target.closest('[data-live-ticket-id]');
+      if (ticketElement) this.openLiveTicketDetail(ticketElement.dataset.liveTicketId);
+    });
+    list.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const ticketElement = event.target.closest('[data-live-ticket-id]');
+      if (!ticketElement) return;
+      event.preventDefault();
+      this.openLiveTicketDetail(ticketElement.dataset.liveTicketId);
+    });
   },
 
   // Pinta el feed con las ventas del turno activo
@@ -2168,6 +2225,7 @@ if (other) {
 
   // Renglón de un ticket dentro del feed en vivo
   renderLiveTicket(ticket) {
+    const canceled = this.isCanceledTicket(ticket.status);
     const cold = ticket.cold && ticket.cold.aplicado
       ? `<span class="sale-tag is-cold" title="Cargo por bebida fría">❄️ ${ticket.cold.unidades} fría${ticket.cold.unidades === 1 ? '' : 's'}${ticket.cold.cargo > 0 ? ' · +' + this.escapeHtml(this.formatMoney(ticket.cold.cargo)) : ''}</span>`
       : '';
@@ -2177,19 +2235,127 @@ if (other) {
       : '';
 
     return `
-      <div class="live-ticket">
+      <article class="live-ticket" role="button" tabindex="0" data-live-ticket-id="${this.escapeHtml(ticket.id)}" aria-label="Ver detalle del ticket ${this.escapeHtml(ticket.hora)}">
         <span class="live-ticket-time">${this.escapeHtml(ticket.hora)}</span>
         <div class="live-ticket-body">
           <div class="live-ticket-items">${this.escapeHtml(ticket.detalle)}</div>
           <div class="live-ticket-tags">
+            <span class="sale-tag ${canceled ? 'is-canceled' : 'is-completed'}">${canceled ? 'Cancelada' : 'Completada'}</span>
             ${cold}
             ${corte}
             <span class="sale-tag">${this.escapeHtml(SalesLog.paymentIcon(ticket.paymentMethod))} ${this.escapeHtml(ticket.paymentLabel)}</span>
           </div>
         </div>
         <span class="live-ticket-total">${this.escapeHtml(this.formatMoney(ticket.total))}</span>
-      </div>
+      </article>
     `;
+  },
+
+  isCanceledTicket(status) {
+    return ['cancelada', 'cancelado', 'anulada', 'anulado', 'cancelled', 'canceled', 'void'].indexOf(String(status || '').toLowerCase()) !== -1;
+  },
+
+  openLiveTicketDetail(ticketId) {
+    const ticket = this.getTurnTickets().find((item) => String(item.id) === String(ticketId));
+    if (!ticket) return;
+
+    const existingModal = document.getElementById('pos-live-ticket-modal');
+    if (existingModal) existingModal.remove();
+
+    const canceled = this.isCanceledTicket(ticket.status);
+    const items = Array.isArray(ticket.items) ? ticket.items : [];
+    const envaseCharge = items.reduce((sum, item) => sum + (Number(item.envaseCargo) || 0), 0);
+    const itemMarkup = items.map((item) => {
+      const quantityLabel = item.cantidad === 1 ? 'pieza' : 'piezas';
+      const tags = [];
+      if (item.cold) tags.push('Fría' + (item.cargoFrio > 0 ? ' · cargo ' + this.formatMoney(item.cargoFrio) : ''));
+      if (item.envaseFaltante) {
+        const envaseLabel = item.envaseModalidad ? ' (' + item.envaseModalidad + ')' : '';
+        tags.push('Envase faltante' + envaseLabel + (item.envaseCargo > 0 ? ' · ' + this.formatMoney(item.envaseCargo) : ''));
+      }
+      if (item.promoVolumenAplicada) {
+        tags.push('Promoción ' + item.promoVolumenAplicada.cantidad + ' × ' + this.formatMoney(item.promoVolumenAplicada.precio));
+      }
+      const cartonCount = item.unidadesPorCarton > 0 ? Math.floor(item.cantidad / item.unidadesPorCarton) : 0;
+      const loosePieces = item.unidadesPorCarton > 0 ? item.cantidad % item.unidadesPorCarton : 0;
+      const carton = item.isCarton && cartonCount > 0
+        ? ' (' + cartonCount + ' cartón' + (cartonCount === 1 ? '' : 'es') +
+          (loosePieces > 0 ? ' + ' + loosePieces + ' pieza' + (loosePieces === 1 ? '' : 's') + ' suelta' + (loosePieces === 1 ? '' : 's') : '') + ')'
+        : '';
+      return `
+        <div class="live-ticket-detail-item">
+          <div class="live-ticket-detail-item-heading">
+            <strong>${this.escapeHtml(item.nombre)}</strong>
+            <span>${item.cantidad} ${quantityLabel}${carton}</span>
+          </div>
+          <div class="live-ticket-detail-item-meta">
+            <span>${this.escapeHtml(this.formatMoney(item.precio))} c/u${item.precioCarton > 0 ? ' · ' + this.formatMoney(item.precioCarton) + ' por cartón' : ''}${item.unidadesPorCarton > 0 ? ' · ' + item.unidadesPorCarton + ' piezas por cartón' : ''}</span>
+            <strong>${this.escapeHtml(this.formatMoney(item.subtotal))}</strong>
+          </div>
+          ${tags.length ? '<div class="live-ticket-detail-tags">' + tags.map((tag) => '<span>' + this.escapeHtml(tag) + '</span>').join('') + '</div>' : ''}
+        </div>`;
+    }).join('');
+    const breakdown = ticket.breakdown || {};
+    const paymentRows = [
+      ['Efectivo', breakdown.efectivo],
+      ['Tarjeta', breakdown.tarjeta],
+      ['Transferencia', breakdown.transferencia]
+    ].filter((row) => Number(row[1]) > 0);
+    const paymentMarkup = paymentRows.length
+      ? paymentRows.map((row) => '<div><span>' + row[0] + '</span><strong>' + this.escapeHtml(this.formatMoney(row[1])) + '</strong></div>').join('')
+      : '<div><span>Método de pago</span><strong>' + this.escapeHtml(ticket.paymentLabel) + '</strong></div>';
+    const modal = document.createElement('div');
+    modal.id = 'pos-live-ticket-modal';
+    modal.className = 'live-ticket-modal-overlay';
+    modal.setAttribute('role', 'presentation');
+    modal.innerHTML = `
+      <section class="live-ticket-modal" role="dialog" aria-modal="true" aria-labelledby="live-ticket-modal-title">
+        <header class="live-ticket-modal-header">
+          <div>
+            <span class="live-ticket-modal-eyebrow">Detalle de venta · ${this.escapeHtml(ticket.hora)}</span>
+            <h2 id="live-ticket-modal-title">Ticket</h2>
+          </div>
+          <button type="button" class="live-ticket-modal-close" data-live-ticket-modal-close aria-label="Cerrar detalle">✕</button>
+        </header>
+        <div class="live-ticket-modal-content">
+          <div class="live-ticket-modal-status ${canceled ? 'is-canceled' : 'is-completed'}">${canceled ? 'Venta cancelada' : 'Venta completada'}</div>
+          <div class="live-ticket-detail-items">${itemMarkup || '<p>Este ticket no contiene productos.</p>'}</div>
+          <div class="live-ticket-modal-summary">
+            <div><span>Subtotal de productos</span><strong>${this.escapeHtml(this.formatMoney(ticket.subtotal))}</strong></div>
+            ${ticket.coldCharge > 0 ? '<div><span>Cargos por piezas frías</span><strong>' + this.escapeHtml(this.formatMoney(ticket.coldCharge)) + '</strong></div>' : ''}
+            ${envaseCharge > 0 ? '<div><span>Cargos por envases</span><strong>' + this.escapeHtml(this.formatMoney(envaseCharge)) + '</strong></div>' : ''}
+            ${ticket.promoDiscount > 0 ? '<div><span>Descuentos / promociones</span><strong>−' + this.escapeHtml(this.formatMoney(ticket.promoDiscount)) + '</strong></div>' : ''}
+            ${ticket.volumePromoDiscount > 0 ? '<div><span>Descuento por volumen</span><strong>−' + this.escapeHtml(this.formatMoney(ticket.volumePromoDiscount)) + '</strong></div>' : ''}
+            <div class="is-total"><span>Total</span><strong>${this.escapeHtml(this.formatMoney(ticket.total))}</strong></div>
+          </div>
+          <button type="button" class="btn secondary live-ticket-detail-toggle" aria-expanded="false">Ver ticket detallado</button>
+          <section class="live-ticket-full-detail" hidden>
+            <h3>Detalle del ticket</h3>
+            <div class="live-ticket-payment-breakdown">${paymentMarkup}</div>
+            ${ticket.paymentDetail && ticket.paymentDetail.label ? '<p class="live-ticket-payment-note">' + this.escapeHtml(ticket.paymentDetail.label) + (ticket.paymentDetail.reference ? ' · Referencia: ' + this.escapeHtml(ticket.paymentDetail.reference) : '') + '</p>' : ''}
+            ${Number(breakdown.recibido) > 0 ? '<div class="live-ticket-payment-breakdown"><div><span>Recibido</span><strong>' + this.escapeHtml(this.formatMoney(breakdown.recibido)) + '</strong></div><div><span>Cambio</span><strong>' + this.escapeHtml(this.formatMoney(breakdown.cambio)) + '</strong></div></div>' : ''}
+            ${ticket.cajero ? '<p class="live-ticket-payment-note">Atendió: ' + this.escapeHtml(ticket.cajero) + '</p>' : ''}
+          </section>
+        </div>
+      </section>`;
+
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal || event.target.closest('[data-live-ticket-modal-close]')) modal.remove();
+      const toggle = event.target.closest('.live-ticket-detail-toggle');
+      if (toggle) {
+        const detail = modal.querySelector('.live-ticket-full-detail');
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        toggle.textContent = expanded ? 'Ver ticket detallado' : 'Ocultar ticket detallado';
+        detail.hidden = expanded;
+        if (!expanded) detail.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+    modal.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') modal.remove();
+    });
+    document.body.appendChild(modal);
+    modal.querySelector('.live-ticket-modal-close').focus();
   },
 
   // ---------- Corte de caja / cierre de turno ----------
