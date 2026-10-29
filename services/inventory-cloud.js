@@ -3,7 +3,7 @@ const InventoryCloud = {
   KEY:'pos_inventory_link_v1', QUEUE:'pos_inventory_outbox_v1', busy:false, timer:null,
   client:null,authorized:false,
   config() { return JSON.parse(localStorage.getItem(this.KEY)||'null'); },
-  api() { return this.client ||= supabase.createClient(CloudConfig.url,CloudConfig.key,{auth:{storageKey:'pos-inventory-auth-v1',persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}); },
+  api() { return this.client ||= supabase.createClient(CloudConfig.url,CloudConfig.key,{auth:{storageKey:'pos-inventory-auth-v1',persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}}); },
   normalized(products) {
     return products.map(p=>({id:String(p.id),stock:Number(p.stock||0),cold_stock:Number(p.coldStock||0),data:{...p,
       precioVenta:Number(p.precioVenta??p.precio??0),costoPieza:Number(p.costoPieza??p.precioCompra??0),
