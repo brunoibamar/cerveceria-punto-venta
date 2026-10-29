@@ -2,10 +2,16 @@
 const Cloud = {
   client: null, state: null, view: 'monitor', cart: [], busy: false, channel: null,
   host: document.getElementById('cloud-main'),
+  supervisor: new URLSearchParams(location.search).get('mode') === 'supervisor',
   money: value => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(value || 0) / 100),
   escape: value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
   notice(message = '') { document.getElementById('cloud-notice').textContent = message; },
   async init() {
+    const callbackError = new URLSearchParams(location.hash.slice(1)).get('error_code');
+    if (callbackError) {
+      history.replaceState(null, '', location.pathname + location.search);
+      this.notice(callbackError === 'otp_expired' ? 'El enlace de confirmación venció o ya fue utilizado. Si ya confirmaste tu cuenta, entra con tu correo y contraseña.' : 'No se pudo completar la confirmación. Intenta entrar con tu correo y contraseña.');
+    }
     let slot = sessionStorage.getItem('pos-cloud-slot');
     if (!slot) { slot = crypto.randomUUID(); sessionStorage.setItem('pos-cloud-slot', slot); }
     this.client = supabase.createClient(CloudConfig.url, CloudConfig.key, {
@@ -21,9 +27,16 @@ const Cloud = {
     if (data?.session) await this.connect(); else this.login();
   },
   login() {
-    document.getElementById('cloud-status').textContent = 'Acceso a la caja compartida';
+    document.getElementById('cloud-status').textContent = this.supervisor ? 'Acceso de supervisor' : 'Acceso a la caja compartida';
     this.host.innerHTML = `<section class="login"><h2>Entrar al negocio</h2><p>Este acceso conecta todos tus dispositivos. Tu cuenta debe estar autorizada por el administrador.</p><form id="cloud-login"><label>Correo<input name="email" type="email" autocomplete="username" required></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label><div class="actions"><button>Entrar</button><button type="button" class="secondary" id="cloud-signup">Crear mi acceso</button></div><p id="auth-message" role="status"></p></form><p class="muted">La contraseña de Supabase no es tu contraseña del punto de venta. Cada persona crea su acceso aquí.</p><a href="./">Volver a la caja local</a></section>`;
     const form = document.getElementById('cloud-login');
+    const signupButton = document.getElementById('cloud-signup');
+    const registration = document.createElement('details');
+    const summary = document.createElement('summary'); summary.textContent = 'Primera vez: crear una cuenta autorizada';
+    const explanation = document.createElement('p'); explanation.textContent = 'Solo al crear la cuenta se confirma el correo. Para los siguientes accesos usa Entrar.';
+    registration.append(summary, explanation, signupButton); form.append(registration);
+    this.host.querySelector('h2').textContent = this.supervisor ? 'Entrar como supervisor' : 'Entrar al negocio';
+    form.querySelector('button').textContent = this.supervisor ? 'Entrar a supervisión' : 'Entrar';
     const auth = async signup => {
       if (!form.reportValidity()) return;
       const buttons = form.querySelectorAll('button'); buttons.forEach(b => b.disabled = true);
@@ -34,11 +47,16 @@ const Cloud = {
         form.password.value = '';
         if (result.data.session) await this.connect();
         else document.getElementById('auth-message').textContent = 'Revisa tu correo y confirma el acceso. Después vuelve aquí para entrar con tu contraseña.';
-      } catch (error) { this.notice(error.message); }
+      } catch (error) { this.notice(this.authMessage(error)); }
       finally { buttons.forEach(b => b.disabled = false); }
     };
     form.onsubmit = e => { e.preventDefault(); auth(false); };
     document.getElementById('cloud-signup').onclick = () => auth(true);
+  },
+  authMessage(error) {
+    if (error.code === 'email_not_confirmed') return 'Falta confirmar tu correo una sola vez. Después podrás entrar directamente con tu contraseña.';
+    if (error.code === 'invalid_credentials') return 'Correo o contraseña incorrectos. Usa la contraseña que creaste para el punto de venta.';
+    return error.message;
   },
   async connect() {
     const claim = await this.client.rpc('pos_claim_access');
@@ -65,6 +83,7 @@ const Cloud = {
       const { data, error } = await this.client.rpc('pos_snapshot', { p_business: CloudConfig.businessId });
       if (error) throw error;
       if (!data?.member) throw new Error('No tienes acceso activo al negocio.');
+      if (this.supervisor && data.member.role !== 'admin') throw new Error('El acceso de supervisor requiere una cuenta administradora autorizada.');
       this.state = data;
       document.getElementById('cloud-status').textContent = `${data.business.name} · ${data.member.display_name} · Última lectura ${new Date(data.read_at).toLocaleTimeString('es-MX')}`;
       // No reemplazar formularios ni cobros que el usuario esté editando.
@@ -85,6 +104,7 @@ const Cloud = {
   get settings() { return this.state?.documents.settings || {}; },
   get pendingKey() { return 'pos-cloud-request-' + CloudConfig.businessId + '-' + this.state.member.user_id; },
   async command(command, payload, retry = false) {
+    if (this.supervisor) throw new Error('La supervisión es de consulta. Usa la caja compartida para operar.');
     if (this.busy) throw new Error('Hay una operación en curso.');
     if (!navigator.onLine) throw new Error('Necesitas internet para confirmar esta operación.');
     const key = this.pendingKey;
@@ -113,6 +133,7 @@ const Cloud = {
   render() {
     if (!this.state) return;
     this.host.innerHTML = `<div data-cloud-shell><nav>${[['monitor', 'Supervisión'], ['sale', 'Ventas y turno'], ...(this.admin ? [['products', 'Inventario'], ['settings', 'Ajustes y accesos']] : [])].map(([id, label]) => `<button class="${this.view === id ? '' : 'secondary'}" data-view="${id}">${label}</button>`).join('')}<button class="secondary" id="cloud-logout">Salir de este dispositivo</button></nav><p id="cloud-read-note" class="muted"></p><div id="cloud-pending"></div><div id="cloud-view"></div></div>`;
+    if (this.supervisor) this.host.querySelectorAll('[data-view]').forEach(b => { if (b.dataset.view !== 'monitor') b.remove(); });
     this.host.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { this.view = b.dataset.view; this.render(); });
     document.getElementById('cloud-logout').onclick = () => this.run(async () => {
       if (sessionStorage.getItem(this.pendingKey)) throw new Error('Resuelve la operación pendiente antes de salir.');

@@ -20,7 +20,7 @@ function cloudHarness() {
   const values = new Map();
   const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
   const host = { querySelectorAll: () => [] };
-  const context = { document: { getElementById: () => host }, sessionStorage: storage, navigator: { onLine: true }, crypto, CloudConfig: { businessId: 'business' }, Intl, console };
+  const context = { document: { getElementById: () => host }, location: { search: '' }, URLSearchParams, sessionStorage: storage, navigator: { onLine: true }, crypto, CloudConfig: { businessId: 'business' }, Intl, console };
   const source = fs.readFileSync(path.join(__dirname, '../js/cloud.js'), 'utf8').replace(/Cloud\.init\(\)\.catch\(error => Cloud\.notice\(error\.message\)\);\s*$/, '');
   vm.runInNewContext(source + '\nglobalThis.subject = Cloud;', context);
   const cloud = context.subject;
@@ -52,4 +52,11 @@ test('rechazo explícito de PostgreSQL libera la solicitud para corregir el tick
   await assert.rejects(cloud.command('sale', {}));
   assert.equal(storage.getItem(cloud.pendingKey), null);
   assert.equal(cloud.busy, false);
+});
+test('el modo supervisor bloquea operaciones y explica los errores de acceso', async () => {
+  const { cloud } = cloudHarness();
+  cloud.supervisor = true;
+  await assert.rejects(cloud.command('open_shift', {}), /consulta/);
+  assert.match(cloud.authMessage({ code: 'invalid_credentials' }), /contraseña incorrectos/);
+  assert.match(cloud.authMessage({ code: 'email_not_confirmed' }), /una sola vez/);
 });

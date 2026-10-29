@@ -2,6 +2,11 @@
 
 Proyecto: `cerveceria-toñito`, referencia `qhxsqyyytbxlnfxfhzcb`.
 Entrada independiente: `/nube.html`. La entrada `/` continúa siendo el POS local.
+El login local ofrece «Entrar como supervisor», que abre `/nube.html?mode=supervisor`
+en otra ventana y no requiere el bloqueo de caja. Este modo muestra únicamente supervisión,
+exige una membresía administradora y bloquea comandos en su interfaz; no crea un rol nuevo
+ni reduce los permisos propios de la cuenta administradora en el servidor.
+Entrar usa contraseña, sin enviar enlaces; crear la cuenta requiere confirmar el correo una vez.
 No existe sincronización automática entre ambos: no alternar entre ellos para una misma operación.
 
 ## Estado
