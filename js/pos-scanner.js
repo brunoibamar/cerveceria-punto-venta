@@ -6,17 +6,20 @@ Object.assign(POS, {
     if (!barcode) return null;
     const code = barcode.toString().trim();
     const products = Database.getProducts();
-    return products.find(p => {
+    const matches = products.filter(p => {
+      if(p.activo===false)return false;
       const b1 = p.codigoBarras && p.codigoBarras.toString().trim();
       const b2 = p.codigo && p.codigo.toString().trim();
       return (b1 && b1 === code) || (b2 && b2 === code);
     });
+    this.scannerBarcodeConflict=matches.length>1;
+    return matches.length===1?matches[0]:null;
   },
 
   addProductByBarcode(barcode) {
     const product = this.findProductByBarcode(barcode);
     if (!product) {
-      this.setScannerStatus('Código no encontrado: ' + barcode);
+      this.setScannerStatus(this.scannerBarcodeConflict?'Ese código pertenece a varios productos. Corrige los códigos en Inventario.':'Código no encontrado: ' + barcode);
       return null;
     }
 
@@ -89,10 +92,13 @@ Object.assign(POS, {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const generation=this.scanner.generation=(this.scanner.generation||0)+1;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: {ideal:'environment'},width:{ideal:1920},height:{ideal:1080} },audio:false });
+      if(this.scanner.generation!==generation){stream.getTracks().forEach(t=>t.stop());return;}
       this.scanner.stream = stream;
       videoElement.srcObject = stream;
       await videoElement.play();
+      if(this.scanner.generation!==generation){stream.getTracks().forEach(t=>t.stop());return;}
 
       this.scanner.isScanning = true;
       this.scanner.lastScanned = '';
@@ -110,6 +116,7 @@ Object.assign(POS, {
   },
 
   stopCameraScanner() {
+    this.scanner.generation=(this.scanner.generation||0)+1;
     this.scanner.isScanning = false;
 
     if (this.scanner.stream) {
@@ -148,9 +155,8 @@ Object.assign(POS, {
       } catch (e) {}
     }
 
-    this.scanner.codeReader = new BrowserMultiFormatReader();
     try {
-      await this.scanner.codeReader.decodeFromVideoDevice(undefined, this.scanner.videoElement, (result, err) => {
+    this.scanner.codeReader = ScannerEngine.scan(this.scanner.videoElement,this.scanner.stream,(result) => {
         if (result) {
           const code = result.getText();
           const now = Date.now();
@@ -167,9 +173,6 @@ Object.assign(POS, {
             this.addProductByBarcode(code);
             this.closeCameraScanner();
           }
-        }
-        if (err && !(err.name === 'NotFoundException' || err.name === 'ChecksumException' || err.name === 'FormatException')) {
-          console.warn(err);
         }
       });
     } catch (error) {

@@ -25,6 +25,7 @@ const DataStore = {
       if (previous) AppStorage.setItem(this.RECOVERY, previous);
       AppStorage.setItem(this.KEY, next);
       this.mirrorQueue = (this.mirrorQueue || Promise.resolve()).then(() => this.mirror(next));
+      if(typeof window!=='undefined' && typeof CustomEvent!=='undefined') window.dispatchEvent(new CustomEvent('pos:data-saved'));
       return result;
     } finally { this.draft = null; }
   },

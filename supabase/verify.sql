@@ -76,6 +76,19 @@ begin
     or (result->'product_employees'->0->>'units')::integer<>13 then raise exception 'FAIL agregados de reportes'; end if;
   result:=public.pos_report(b,(now() at time zone 'America/Mexico_City')::date,(now() at time zone 'America/Mexico_City')::date,50);
   if jsonb_array_length(result->'history')<>0 or (result->'costs'->>'units')::integer<>13 then raise exception 'FAIL paginación altera totales'; end if;
+  select jsonb_build_object('installation',gen_random_uuid(),'cycles','[]'::jsonb,
+    'expected',jsonb_object_agg(p.id,p.revision),
+    'products',jsonb_agg(jsonb_build_object('id',p.id,'stock',p.stock,'cold_stock',p.cold_stock,'data',p.data)))
+    into payload from public.pos_products p where p.business_id=b;
+  request_id:=gen_random_uuid();
+  result:=public.pos_sync_inventory(b,request_id,payload);
+  replay:=public.pos_sync_inventory(b,request_id,payload);
+  if result<>replay then raise exception 'FAIL reintento del espejo de inventario'; end if;
+  perform public.pos_command(b,gen_random_uuid(),'save_product',jsonb_build_object('id','test-product','revision',3,'stock',18,'cold_stock',5,'data',payload->'products'->0->'data'));
+  denied:=false;
+  begin perform public.pos_sync_inventory(b,gen_random_uuid(),payload);
+  exception when raise_exception then denied:=true; end;
+  if not denied or (select p.stock from public.pos_products p where p.business_id=b and id='test-product')<>18 then raise exception 'FAIL conflicto del espejo de inventario'; end if;
 end $$;
 reset role;
 select 'PASS: permisos, aislamiento, venta/cartón, responsable, idempotencia, stock, revisión, reversión y corte' as verification;

@@ -1,5 +1,21 @@
 # Cambios para las pruebas en Android
 
+## Versión 3.3: presentación, inventario vinculado y cámara
+
+- Panel remoto con tarjetas, acentos ámbar, tablas y jerarquía visual adaptada a Android.
+- Ajustes → Vincular inventario con nube permite autorizar un dispositivo como origen del catálogo.
+  La primera publicación requiere iniciar sesión como administrador de nube y aceptar publicar el catálogo local.
+  Las modificaciones posteriores de productos, existencias y ciclos se envían automáticamente con internet.
+  El envío opera durante la sesión local de administrador y requiere autorizar de nuevo tras cerrar o recargar.
+  No se conserva una sesión administradora de nube ni se habilita escritura sin autenticación.
+  Una cola persistente conserva envíos pendientes. Los conflictos con cambios remotos se detienen para revisión.
+- La vinculación no se permite en `?demo=1`. No transfiere contraseñas locales ni tickets de ventas locales.
+  Si no se ha vinculado el teléfono, el supervisor conserva el inventario previo de nube.
+- El lector reutiliza un único stream y prueba luminancia normal e invertida con enfoque continuo cuando se admite.
+  Mantiene el flash de Inventario y avisa si varios productos comparten el mismo código de barras.
+- Pruebas sintéticas verifican EAN-13 normal/invertido y reintentos del espejo; es necesaria prueba física en Android.
+  Validación de esta versión: 66 pruebas locales aprobadas y comprobación SQL de conflictos/reintentos con reversión.
+
 ## Accesos y operación local
 
 - Administrador con NIP táctil y empleados con nombre y contraseña.

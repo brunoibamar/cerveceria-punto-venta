@@ -1399,6 +1399,7 @@
         }
         if (this.scanner.isScanning) return;
         this.scanner.isScanning = true;
+        const generation=this.scanner.generation=(this.scanner.generation||0)+1;
 
         navigator.mediaDevices.getUserMedia({
           video: {
@@ -1408,6 +1409,7 @@
           },
           audio: false
         }).then(function (stream) {
+          if(self.scanner.generation!==generation||!self.scanner.isScanning){stream.getTracks().forEach(t=>t.stop());return;}
           self.scanner.stream = stream;
           video.srcObject = stream;
           video.setAttribute('playsinline', 'true');
@@ -1420,10 +1422,8 @@
           if (self.scanner.codeReader) {
             try { self.scanner.codeReader.reset(); } catch (e) {}
           }
-          self.scanner.codeReader = new BrowserMultiFormatReader();
-          self.scanner.codeReader.decodeFromVideoDevice(undefined, video, function (result) {
-            if (result) self.applyScannedCode(result.getText());
-          });
+          self.scanner.codeReader = ScannerEngine.scan(video, stream, function (result) { if (result) self.applyScannedCode(result.getText()); });
+
         }).catch(function (error) {
           console.error('Inventory scanner camera error:', error);
           self.scanner.isScanning = false;
@@ -1494,6 +1494,7 @@
     closeInventoryScanner: function () {
       try {
         this.scanner.isScanning = false;
+        this.scanner.generation=(this.scanner.generation||0)+1;
         this.scanner.torchEnabled = false;
         if (this.scanner.codeReader) {
           try { this.scanner.codeReader.reset(); } catch (e) {}

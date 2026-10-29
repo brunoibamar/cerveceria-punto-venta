@@ -15,6 +15,22 @@ No se crearon ventas simuladas en el negocio: las pruebas SQL se revierten por c
 Entrar usa contraseña, sin enviar enlaces; crear la cuenta requiere confirmar el correo una vez.
 No existe sincronización automática entre ambos: no alternar entre ellos para una misma operación.
 
+## Vinculación opcional de inventario (3.3)
+
+En el POS local normal, Ajustes → Vincular inventario con nube autoriza una instalación como origen.
+Después de iniciar sesión con una cuenta administradora remota, la primera publicación usa el catálogo local.
+Los cambios posteriores de productos, stock y ciclos se envían automáticamente. No se ejecuta en modo demo.
+El envío se limita a la sesión local de administrador: tras cerrar o recargar se autoriza nuevamente.
+La sesión remota se mantiene solo en memoria y se cierra cuando deja de estar activo el administrador local.
+No se implementó acceso persistente por token anónimo ni se guarda una sesión administradora en el POS.
+El envío requiere conexión; una cola local persistente conserva reintentos con el mismo UUID.
+Se comprueban las revisiones de todos los productos antes de modificar datos. Si otra caja cambia la nube,
+se detiene el envío, sin sobrescribirla; el administrador debe revisar y decidir si vuelve a publicar.
+No hay mezcla automática entre dos instalaciones locales. Una instalación ajena no puede asumir el vínculo.
+La función transaccional queda en `inventory-sync.sql`; las pruebas de conflicto y reintento están en `verify.sql`.
+Esta vinculación publica inventario y ciclos; no convierte ventas locales en ventas normalizadas de nube.
+Los reportes de ventas siguen usando tickets de la caja compartida. El inventario actualizado sí se muestra al supervisor.
+
 ## Estado
 
 Se crearon y aplicaron las tablas, políticas RLS, operaciones transaccionales y consulta en vivo.

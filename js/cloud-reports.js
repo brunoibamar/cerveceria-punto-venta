@@ -3,7 +3,7 @@ const CloudReports = {
   from: '', to: '', offset: 0, data: null, request: 0,
   today() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); },
   inventory(view) {
-    view.innerHTML = '<h2>Inventario en la nube</h2><p>Consulta de existencias actuales. Las piezas frías están incluidas en el stock total.</p><div class="grid">' + Cloud.state.products.map(p => {
+    view.innerHTML = '<h2>Inventario en la nube</h2><p>Consulta de existencias actuales. Las piezas frías están incluidas en el stock total.</p><div class="grid">' + Cloud.state.products.filter(p=>p.data.activo!==false).map(p => {
       const size = Number(p.data.unidadesPorCarton || 0);
       const packages = size > 0 ? `${Math.floor(p.stock / size)} cartones + ${p.stock % size} piezas` : `${p.stock} piezas`;
       return `<section><h3>${Cloud.escape(p.data.nombre)}</h3><p class="amount">${Cloud.escape(packages)}</p><p>Total: ${p.stock} piezas · Frías: ${p.cold_stock} · Al tiempo: ${p.stock - p.cold_stock}</p><p>${p.stock <= Number(p.data.stockMinimo || 0) ? 'Stock bajo' : 'Existencias disponibles'}</p></section>`;
