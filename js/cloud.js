@@ -122,6 +122,8 @@ const Cloud = {
       // No reemplazar formularios ni cobros que el usuario esté editando.
       if (!this.host.querySelector('[data-cloud-shell]')) this.render();
       else if (this.view === 'monitor') this.renderView();
+      else if (this.supervisor && this.view === 'products') CloudReports.inventory(document.getElementById('cloud-view'));
+      else if (['reports','history'].includes(this.view)) this.run(() => CloudReports.load());
       else this.updateReadNotice();
     } catch (error) {
       document.getElementById('cloud-status').textContent = 'No se pudo actualizar. La información puede estar atrasada.';
@@ -166,7 +168,14 @@ const Cloud = {
   render() {
     if (!this.state) return;
     this.host.innerHTML = `<div data-cloud-shell><nav>${[['monitor', 'Supervisión'], ['sale', 'Ventas y turno'], ...(this.admin ? [['products', 'Inventario'], ['settings', 'Ajustes y accesos']] : [])].map(([id, label]) => `<button class="${this.view === id ? '' : 'secondary'}" data-view="${id}">${label}</button>`).join('')}<button class="secondary" id="cloud-logout">Salir de este dispositivo</button></nav><p id="cloud-read-note" class="muted"></p><div id="cloud-pending"></div><div id="cloud-view"></div></div>`;
-    if (this.supervisor) this.host.querySelectorAll('[data-view]').forEach(b => { if (b.dataset.view !== 'monitor') b.remove(); });
+    if (this.admin) {
+      const nav = this.host.querySelector('nav');
+      for (const [id,label] of [['reports','Reportes'],['history','Historial de ventas']]) {
+        const button = document.createElement('button'); button.dataset.view = id; button.textContent = label;
+        button.className = this.view === id ? '' : 'secondary'; nav.insertBefore(button, document.getElementById('cloud-logout'));
+      }
+    }
+    if (this.supervisor) this.host.querySelectorAll('[data-view]').forEach(b => { if (!['monitor','products','reports','history'].includes(b.dataset.view)) b.remove(); });
     this.host.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { this.view = b.dataset.view; this.render(); });
     document.getElementById('cloud-logout').onclick = () => this.run(async () => {
       if (sessionStorage.getItem(this.pendingKey)) throw new Error('Resuelve la operación pendiente antes de salir.');
@@ -185,7 +194,8 @@ const Cloud = {
     const view = document.getElementById('cloud-view'); if (!view) return;
     if (this.view === 'monitor') this.monitor(view);
     else if (this.view === 'sale') this.sales(view);
-    else if (this.view === 'products' && this.admin) this.products(view);
+    else if (this.view === 'products' && this.admin) this.supervisor ? CloudReports.inventory(view) : this.products(view);
+    else if (['reports','history'].includes(this.view) && this.admin) this.run(() => CloudReports.show(view));
     else if (this.view === 'settings' && this.admin) this.access(view);
   },
   monitor(view) {

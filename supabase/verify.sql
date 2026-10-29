@@ -65,6 +65,17 @@ begin
   result:=public.pos_command(b,gen_random_uuid(),'close_shift',jsonb_build_object('id',shift_id,'counted_cents',57000));
   if (result->>'difference_cents')::bigint<>0 then raise exception 'FAIL corte de caja'; end if;
   if public.pos_snapshot(b)->'member'->>'role'<>'employee' then raise exception 'FAIL snapshot autenticado'; end if;
+  denied:=false;
+  begin perform public.pos_report(b,(now() at time zone 'America/Mexico_City')::date,(now() at time zone 'America/Mexico_City')::date);
+  exception when raise_exception then denied:=true; end;
+  if not denied then raise exception 'FAIL reportes restringidos a administrador'; end if;
+  perform set_config('request.jwt.claim.sub',current_setting('pos.test_admin'),true);
+  result:=public.pos_report(b,(now() at time zone 'America/Mexico_City')::date,(now() at time zone 'America/Mexico_City')::date);
+  if (result->'costs'->>'units')::integer<>13 or (result->'totals'->>'total_cents')::bigint<>52000
+    or (result->'costs'->>'cost_cents')::bigint<>34600 or jsonb_array_length(result->'history')<>2
+    or (result->'product_employees'->0->>'units')::integer<>13 then raise exception 'FAIL agregados de reportes'; end if;
+  result:=public.pos_report(b,(now() at time zone 'America/Mexico_City')::date,(now() at time zone 'America/Mexico_City')::date,50);
+  if jsonb_array_length(result->'history')<>0 or (result->'costs'->>'units')::integer<>13 then raise exception 'FAIL paginación altera totales'; end if;
 end $$;
 reset role;
 select 'PASS: permisos, aislamiento, venta/cartón, responsable, idempotencia, stock, revisión, reversión y corte' as verification;

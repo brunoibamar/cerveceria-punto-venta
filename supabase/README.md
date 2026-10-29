@@ -6,6 +6,12 @@ El login local ofrece «Entrar como supervisor», que abre `/nube.html?mode=supe
 en otra ventana y no requiere el bloqueo de caja. Este modo muestra únicamente supervisión,
 exige una membresía administradora y bloquea comandos en su interfaz; no crea un rol nuevo
 ni reduce los permisos propios de la cuenta administradora en el servidor.
+Incluye Inventario de consulta, Reportes por fecha e Historial paginado de 50 tickets.
+Los agregados de reportes se calculan en PostgreSQL sobre todas las ventas del período,
+sin limitarse a los 500 tickets del resumen. Incluyen piezas por producto y empleado,
+formas de pago, costo histórico y utilidad bruta estimada sin cargos de envase.
+La semilla Mega Corona se cargó una vez en el catálogo vacío de nube para esta simulación.
+No se crearon ventas simuladas en el negocio: las pruebas SQL se revierten por completo.
 Entrar usa contraseña, sin enviar enlaces; crear la cuenta requiere confirmar el correo una vez.
 No existe sincronización automática entre ambos: no alternar entre ellos para una misma operación.
 
