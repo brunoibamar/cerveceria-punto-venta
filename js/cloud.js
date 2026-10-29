@@ -7,6 +7,7 @@ const Cloud = {
   escape: value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
   notice(message = '') { document.getElementById('cloud-notice').textContent = message; },
   async init() {
+    this.recovering = new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery' || sessionStorage.getItem('pos-cloud-recovery') === '1';
     const callbackError = new URLSearchParams(location.hash.slice(1)).get('error_code');
     if (callbackError) {
       history.replaceState(null, '', location.pathname + location.search);
@@ -18,6 +19,7 @@ const Cloud = {
       auth: { storage: sessionStorage, storageKey: 'pos-cloud-auth-' + slot, persistSession: true, detectSessionInUrl: true }
     });
     this.client.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') { this.recovering = true; sessionStorage.setItem('pos-cloud-recovery', '1'); this.renderRecovery(); }
       if (event === 'SIGNED_OUT') { this.state = null; this.cart = []; this.login(); }
     });
     window.addEventListener('online', () => this.refresh().catch(e => this.notice(e.message)));
@@ -52,6 +54,36 @@ const Cloud = {
     };
     form.onsubmit = e => { e.preventDefault(); auth(false); };
     document.getElementById('cloud-signup').onclick = () => auth(true);
+    const recovery = document.createElement('button'); recovery.type = 'button'; recovery.className = 'secondary'; recovery.textContent = 'Olvidé mi contraseña';
+    form.append(recovery);
+    recovery.onclick = async () => {
+      if (!form.email.reportValidity()) return;
+      recovery.disabled = true;
+      try {
+        const { error } = await this.client.auth.resetPasswordForEmail(form.email.value.trim(), { redirectTo: new URL('nube.html', location.href).href });
+        if (error) throw error;
+        this.notice('Si el correo tiene una cuenta registrada, recibirás un enlace para elegir una contraseña nueva. Revisa también spam.');
+      } catch (error) { this.notice(this.authMessage(error)); }
+      finally { recovery.disabled = false; }
+    };
+  },
+  renderRecovery() {
+    this.host.innerHTML = '<section class="login"><h2>Elegir una contraseña nueva</h2><form id="cloud-recovery"><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="8" required></label><label>Repetir contraseña<input name="repeat" type="password" autocomplete="new-password" minlength="8" required></label><button>Guardar contraseña y entrar</button></form></section>';
+    document.getElementById('cloud-recovery').onsubmit = event => {
+      event.preventDefault();
+      this.run(async () => {
+        const form = event.target;
+        const password = form.elements.namedItem('password').value;
+        if (password !== form.elements.namedItem('repeat').value) throw new Error('Las contraseñas no coinciden.');
+        const button = form.querySelector('button'); button.disabled = true;
+        try {
+          const { error } = await this.client.auth.updateUser({ password });
+          if (error) throw error;
+          form.reset(); this.recovering = false; sessionStorage.removeItem('pos-cloud-recovery');
+          this.notice('Contraseña actualizada.'); await this.connect();
+        } finally { button.disabled = false; }
+      });
+    };
   },
   authMessage(error) {
     if (error.code === 'email_not_confirmed') return 'Falta confirmar tu correo una sola vez. Después podrás entrar directamente con tu contraseña.';
@@ -59,6 +91,7 @@ const Cloud = {
     return error.message;
   },
   async connect() {
+    if (this.recovering) { this.renderRecovery(); return; }
     const claim = await this.client.rpc('pos_claim_access');
     if (claim.error) { this.login(); throw claim.error; }
     await this.refresh();

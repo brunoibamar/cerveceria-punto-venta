@@ -60,3 +60,12 @@ test('el modo supervisor bloquea operaciones y explica los errores de acceso', a
   assert.match(cloud.authMessage({ code: 'invalid_credentials' }), /contraseña incorrectos/);
   assert.match(cloud.authMessage({ code: 'email_not_confirmed' }), /una sola vez/);
 });
+test('un enlace de recuperación muestra el cambio de contraseña antes de entrar al negocio', async () => {
+  const { cloud } = cloudHarness();
+  cloud.recovering = true;
+  let rendered = false;
+  cloud.renderRecovery = () => { rendered = true; };
+  cloud.client = { rpc: () => { throw new Error('No debe consultar el negocio durante la recuperación'); } };
+  await cloud.connect();
+  assert.equal(rendered, true);
+});
