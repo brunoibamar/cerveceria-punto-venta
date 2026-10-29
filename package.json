@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node serve.cjs",
-    "test": "node --test tests/core.test.cjs tests/inventory-expected.test.cjs"
+    "test": "node --test tests/core.test.cjs tests/inventory-expected.test.cjs tests/cloud-pricing.test.cjs"
   },
   "engines": {
     "node": ">=20"

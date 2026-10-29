@@ -1,0 +1,2 @@
+# Conservar sin reescritura el cliente oficial descargado (incluye plantillas JS).
+vendor/supabase-2.118.0.min.js -text -whitespace

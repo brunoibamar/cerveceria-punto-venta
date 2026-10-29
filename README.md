@@ -1,5 +1,12 @@
 # Cervecería POS · versión 3.2
 
+## Integración de nube en pruebas
+
+La entrada `nube.html` conecta con Supabase para inventario compartido, turnos,
+ventas y supervisión. Consulta [supabase/README.md](supabase/README.md) para el alcance y la configuración.
+La entrada principal sigue siendo local: sus datos no se sincronizan ni se migran automáticamente.
+No mezcles operaciones de caja entre ambas entradas. La nube requiere conexión y acceso autorizado.
+
 ## Abrir
 
 Ejecuta `iniciar.ps1` en PowerShell y abre http://localhost:4173. También puedes usar Node.js 20 o posterior: `npm start`.

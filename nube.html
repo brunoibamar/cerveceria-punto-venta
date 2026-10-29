@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#12100e"><title>Cervecería · Caja compartida</title>
+  <link rel="stylesheet" href="css/cloud.css">
+</head>
+<body>
+  <header><h1>Cervecería · Nube · Pruebas</h1><p id="cloud-status" role="status">Conectando…</p><p class="muted">Entrada compartida de prueba. Los datos de la caja local todavía no se transfieren a esta entrada.</p></header>
+  <main id="cloud-main"></main>
+  <div id="cloud-notice" role="status" aria-live="polite"></div>
+  <script src="vendor/supabase-2.118.0.min.js"></script>
+  <script src="services/cloud-config.js"></script>
+  <script src="services/cloud-pricing.js"></script>
+  <script src="js/cloud.js"></script>
+</body>
+</html>
