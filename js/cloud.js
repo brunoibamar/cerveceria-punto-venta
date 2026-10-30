@@ -7,6 +7,7 @@ const Cloud = {
   escape: value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
   notice(message = '') { document.getElementById('cloud-notice').textContent = message; },
   async init() {
+    if(new URLSearchParams(location.search).get('view')==='settings'&&!this.supervisor)this.view='settings';
     this.recovering = new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery' || sessionStorage.getItem('pos-cloud-recovery') === '1';
     const callbackError = new URLSearchParams(location.hash.slice(1)).get('error_code');
     if (callbackError) {
@@ -16,7 +17,7 @@ const Cloud = {
     let slot = sessionStorage.getItem('pos-cloud-slot');
     if (!slot) { slot = crypto.randomUUID(); sessionStorage.setItem('pos-cloud-slot', slot); }
     this.client = supabase.createClient(CloudConfig.url, CloudConfig.key, {
-      auth: { storage: sessionStorage, storageKey: 'pos-cloud-auth-' + slot, persistSession: true, detectSessionInUrl: true }
+      auth: { storage: sessionStorage, storageKey: 'pos-cloud-auth-' + (CloudConfig.environment==='production'?CloudConfig.businessId+'-':'') + slot, persistSession: true, detectSessionInUrl: true }
     });
     this.client.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') { this.recovering = true; sessionStorage.setItem('pos-cloud-recovery', '1'); this.renderRecovery(); }
@@ -30,7 +31,7 @@ const Cloud = {
   },
   login() {
     document.getElementById('cloud-status').textContent = this.supervisor ? 'Acceso de supervisor' : 'Acceso a la caja compartida';
-    this.host.innerHTML = `<section class="login"><h2>Entrar al negocio</h2><p>Este acceso conecta todos tus dispositivos. Tu cuenta debe estar autorizada por el administrador.</p><form id="cloud-login"><label>Correo<input name="email" type="email" autocomplete="username" required></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label><div class="actions"><button>Entrar</button><button type="button" class="secondary" id="cloud-signup">Crear mi acceso</button></div><p id="auth-message" role="status"></p></form><p class="muted">La contraseña de Supabase no es tu contraseña del punto de venta. Cada persona crea su acceso aquí.</p><a href="./">Volver a la caja local</a></section>`;
+    this.host.innerHTML = `<section class="login"><h2>Entrar al negocio</h2><p>Este acceso conecta todos tus dispositivos. Tu cuenta debe estar autorizada por el administrador.</p><form id="cloud-login"><label>Correo<input name="email" type="email" autocomplete="username" required></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label><div class="actions"><button>Entrar</button><button type="button" class="secondary" id="cloud-signup">Crear mi acceso</button></div><p id="auth-message" role="status"></p></form><p class="muted">La contraseña de Supabase no es tu contraseña del punto de venta. Cada persona crea su acceso aquí.</p><a href="${CloudConfig.link('./')}">Volver a la caja local</a></section>`;
     const form = document.getElementById('cloud-login');
     const signupButton = document.getElementById('cloud-signup');
     const registration = document.createElement('details');
@@ -44,7 +45,7 @@ const Cloud = {
       const buttons = form.querySelectorAll('button'); buttons.forEach(b => b.disabled = true);
       try {
         const credentials = { email: form.email.value.trim(), password: form.password.value };
-        const result = signup ? await this.client.auth.signUp({ ...credentials, options: { emailRedirectTo: new URL('nube.html', location.href).href } }) : await this.client.auth.signInWithPassword(credentials);
+        const result = signup ? await this.client.auth.signUp({ ...credentials, options: { emailRedirectTo: CloudConfig.link('nube.html') } }) : await this.client.auth.signInWithPassword(credentials);
         if (result.error) throw result.error;
         form.password.value = '';
         if (result.data.session) await this.connect();
@@ -60,7 +61,7 @@ const Cloud = {
       if (!form.email.reportValidity()) return;
       recovery.disabled = true;
       try {
-        const { error } = await this.client.auth.resetPasswordForEmail(form.email.value.trim(), { redirectTo: new URL('nube.html', location.href).href });
+        const { error } = await this.client.auth.resetPasswordForEmail(form.email.value.trim(), { redirectTo: CloudConfig.link('nube.html') });
         if (error) throw error;
         this.notice('Si el correo tiene una cuenta registrada, recibirás un enlace para elegir una contraseña nueva. Revisa también spam.');
       } catch (error) { this.notice(this.authMessage(error)); }
@@ -119,7 +120,7 @@ const Cloud = {
       if (this.supervisor && data.member.role !== 'admin') throw new Error('El acceso de supervisor requiere una cuenta administradora autorizada.');
       this.state = data;
       this.updateTerminalStatus();
-      document.getElementById('cloud-status').textContent = `${data.business.name} · ${data.member.display_name} · Última lectura ${new Date(data.read_at).toLocaleTimeString('es-MX')}`;
+      document.getElementById('cloud-status').textContent = `${CloudConfig.environment==='production'?'NEGOCIO REAL':'PRUEBAS'} · ${data.business.name} · ${data.member.display_name} · Última lectura ${new Date(data.read_at).toLocaleTimeString('es-MX')}`;
       // No reemplazar formularios ni cobros que el usuario esté editando.
       if (!this.host.querySelector('[data-cloud-shell]')) this.render();
       else if (this.view === 'monitor') this.renderView();
@@ -173,7 +174,8 @@ const Cloud = {
   run(action) { return Promise.resolve().then(action).catch(e => { this.notice(e.message); }); },
   render() {
     if (!this.state) return;
-    this.host.innerHTML = `<div data-cloud-shell><nav>${[['monitor', 'Supervisión'], ['sale', 'Ventas y turno'], ...(this.admin ? [['products', 'Inventario'], ['settings', 'Ajustes y accesos']] : [])].map(([id, label]) => `<button class="${this.view === id ? '' : 'secondary'}" data-view="${id}">${label}</button>`).join('')}<button class="secondary" id="cloud-logout">Salir de este dispositivo</button></nav><p id="cloud-read-note" class="muted"></p><div id="cloud-pending"></div><div id="cloud-view"></div></div>`;
+    if(!this.admin)this.view='sale';
+    this.host.innerHTML = `<div data-cloud-shell><nav>${[...(this.admin ? [['monitor', 'Supervisión']]:[]), ['sale', 'Ventas y turno'], ...(this.admin ? [['products', 'Inventario'], ['settings', 'Ajustes y accesos']] : [])].map(([id, label]) => `<button class="${this.view === id ? '' : 'secondary'}" data-view="${id}">${label}</button>`).join('')}<button class="secondary" id="cloud-logout">Salir de este dispositivo</button></nav><p id="cloud-read-note" class="muted"></p><div id="cloud-pending"></div><div id="cloud-view"></div></div>`;
     if (this.admin) {
       const nav = this.host.querySelector('nav');
       for (const [id,label] of [['reports','Reportes'],['history','Historial de ventas']]) {
@@ -273,12 +275,15 @@ const Cloud = {
     }); };
   },
   access(view) {
+    if(!this.admin)throw new Error('Requiere administrador.');
     view.innerHTML = `<section><h2>Accesos de empleados</h2><p>Autoriza el correo del empleado. Después, él crea su acceso desde esta misma página y confirma su correo. Su sesión será independiente de la tuya.</p><form id="grant-employee"><label>Nombre de empleado<input name="name" maxlength="100" required></label><label>Correo<input name="email" type="email" required></label><button>Autorizar acceso de empleado</button></form></section><section><h2>Cargo por bebida fría</h2><form id="cloud-settings"><label>Cargo por pieza<input name="coldCharge" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(this.settings.coldCharge || 0)}" required></label><button>Guardar</button></form></section><section><h2>Primera carga</h2><p>La nube empieza vacía. No copia automáticamente los datos de prueba de cada dispositivo.</p><button id="cloud-seed" ${this.state.products.length ? 'disabled' : ''}>Cargar Mega Corona para pruebas</button><p class="muted">La caja local y sus respaldos permanecen separados de esta etapa de conexión.</p></section>`;
     document.getElementById('grant-employee').onsubmit = e => { e.preventDefault(); this.run(() => this.command('grant_employee', { name: e.target.elements.namedItem('name').value.trim(), email: e.target.email.value.trim() })); };
     document.getElementById('cloud-settings').onsubmit = e => { e.preventDefault(); this.run(() => this.command('save_settings', { data: { ...this.settings, coldCharge: Number(e.target.coldCharge.value) } })); };
     document.getElementById('cloud-seed').onclick = () => this.run(() => this.command('save_product', { id: 'seed-mega-corona', revision: null, stock: 1799, cold_stock: 0, data: { nombre: 'Mega Corona', marca: 'Corona', presentacion: '1L', codigoBarras: '100211', precioVenta: 50, costoPieza: 26, cobroExtraEnvaseFaltantePieza: 10, unidadesPorCarton: 12, costoCarton: 320, precioCarton: 470, cobroExtraEnvaseFaltanteCarton: 10, stockMinimo: 5, activo: true } }));
     const devicePanel=document.createElement('section');devicePanel.innerHTML='<h2>Terminal vinculada</h2><p>Desactivar detiene nuevos envíos; conserva todas las ventas e inventario ya recibidos.</p><button class="secondary">Desactivar envío de la terminal</button>';
     devicePanel.querySelector('button').onclick=()=>this.run(async()=>{if(!confirm('¿Detener los envíos de la terminal vinculada?'))return;const {error}=await this.client.rpc('pos_terminal_link',{p_business:CloudConfig.businessId,p_revoke:true});if(error)throw error;await this.refresh();this.notice('Terminal desactivada. Los datos guardados se conservaron.');});view.append(devicePanel);
+    if(CloudConfig.environment==='production')document.getElementById('cloud-seed').closest('section').remove();
+    CloudMaintenance.mount(view);
   }
 };
 Cloud.init().catch(error => Cloud.notice(error.message));

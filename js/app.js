@@ -2,7 +2,7 @@
 // El cierre del turno (y por tanto la salida) se hace unicamente desde "Corte de Caja".
 
 const App = {
-  views: ['pos', 'inventory', 'surtidos', 'reports', 'settings'],
+  views: ['pos', 'fridge', 'inventory', 'surtidos', 'reports', 'settings'],
   currentView: null,
   eventsBound: false,
 
@@ -115,7 +115,7 @@ const App = {
       this.restoreAppChrome(active);
       this.bindEvents();
       this.showView('pos');
-      document.querySelectorAll('.tab-btn').forEach(btn => { btn.hidden = ['inventory','surtidos','settings'].includes(btn.dataset.view) && !Auth.isAdmin(); });
+      document.querySelectorAll('.tab-btn').forEach(btn => { btn.hidden = btn.dataset.view==='fridge' ? Auth.isAdmin() : !Auth.isAdmin() && btn.dataset.view!=='pos'; });
     } catch (error) {
       console.error('[App] Error en enterApp:', error);
       try {
@@ -253,7 +253,7 @@ const App = {
         return;
       }
 
-      if (['inventory','surtidos','settings'].includes(view) && !Auth.isAdmin()) { alert('Esta sección requiere administrador.'); return; }
+      if (!['pos','fridge'].includes(view) && !Auth.isAdmin()) { alert('Esta sección requiere administrador.'); return; }
       this.currentView = view;
 
       // Cierra el modal de cobro si se esta cambiando de vista
@@ -375,6 +375,10 @@ const App = {
           break;
         }
 
+        case 'fridge': {
+          FridgeView.render(main);
+          break;
+        }
         case 'inventory': {
           main.innerHTML = `<div id="inventory-container"></div>`;
           const invContainer = document.getElementById('inventory-container');

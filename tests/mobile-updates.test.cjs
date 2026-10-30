@@ -5,6 +5,25 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const ZXing=require('../vendor/zxing-0.21.3.min.js');
 
+test('negocio real inicia vacío con almacenamiento independiente y conserva pruebas',()=>{
+  const values=new Map([['cerveceria_products','[{"id":"prueba","nombre":"Solo pruebas"}]']]);
+  const storage={getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)};
+  const context=vm.createContext({localStorage:storage,location:{search:'?env=production'},URLSearchParams,document:{querySelector:()=>null},window:{dispatchEvent(){}},CustomEvent:class{},console});
+  for(const file of ['services/runtime.js','services/storage.js','db/database.js'])vm.runInContext(fs.readFileSync(file,'utf8'),context);
+  vm.runInContext('DataStore.mirror=async()=>{}; Database.init()',context);
+  assert.equal(vm.runInContext('Database.getProducts().length',context),0);
+  assert.match(values.get('cerveceria_products'),/Solo pruebas/);
+  assert.ok(values.has('production:cerveceria_state_v2'));
+});
+
+test('aviso de envío correcto se oculta sin detener la sincronización',()=>{
+  let hide;const banner={hidden:true,textContent:''};
+  const context=vm.createContext({window:{addEventListener(){}},document:{getElementById:()=>banner},clearTimeout(){},setTimeout:fn=>{hide=fn;return 1;}});
+  vm.runInContext(fs.readFileSync('services/inventory-cloud.js','utf8')+'\nglobalThis.bridge=InventoryCloud;',context);
+  context.bridge.status('Ventas e inventario enviados · 12:00');assert.equal(banner.hidden,false);hide();assert.equal(banner.hidden,true);
+  context.bridge.status('Sin internet · envío pendiente');assert.equal(banner.hidden,false);
+});
+
 test('credencial interna de terminal respeta el límite de 72 bytes de Supabase Auth',()=>{
   const source=fs.readFileSync('supabase/functions/enroll-pos-terminal/index.ts','utf8');
   const expression=source.match(/const password=(.*);/)[1];

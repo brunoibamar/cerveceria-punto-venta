@@ -70,3 +70,10 @@ serve.cjs es únicamente un servidor estático local de vista previa, accesible 
 Ejecuta `npm test` o `node --test tests/core.test.cjs tests/inventory-expected.test.cjs`. Las pruebas usan almacenamiento simulado, sin tocar datos reales. Cubren autenticación, permisos, stock combinado, costos históricos, importación v1/v2, fallos de escritura, recuperación, corte, pagos e inventario esperado. Las pruebas que simulan fallos muestran mensajes esperados en consola.
 
 La cámara física, impresora, confirmación bancaria y entrega real de correo requieren comprobación en el equipo y servicios del negocio.
+# Espacios de operación (3.5.0)
+
+Abrir `entornos.html` para elegir **Pruebas** o **Negocio real**. El enlace habitual conserva las pruebas existentes; el negocio real se abre con `?env=production` y comienza vacío. Sus administradores deben configurar NIP, empleados y catálogo y autorizar la terminal una sola vez desde sus propios Ajustes. Instalar la aplicación desde ese enlace conserva el destino real.
+
+El empleado opera Ventas y Refri. Las promociones configuradas se cobran automáticamente y no son editables. El refrigerador es un indicador general de llenado; reponerlo no aumenta inventario.
+
+En Ajustes → Historial antiguo en nube, un administrador puede revisar y respaldar el año completo más antiguo y eliminarlo mediante confirmación escrita. El respaldo anual es un archivo de archivo histórico, no un respaldo completo de configuración para restaurar con el importador local. No se borra nada automáticamente.

@@ -229,7 +229,7 @@ const Login = {
           <button id="role-admin" class="login-role-btn is-admin">Administrador</button>
           <button id="role-employee" class="login-role-btn is-employee">Empleado</button>
         </div>
-        <a class="login-back" href="nube.html?mode=supervisor" target="_blank" rel="noopener">Entrar como supervisor</a>
+        <a class="login-back" href="${typeof CloudConfig!=='undefined'?CloudConfig.link('nube.html?mode=supervisor'):'nube.html?mode=supervisor'}" target="_blank" rel="noopener">Entrar como supervisor</a>
         <p class="login-note">Supervisa con tu correo y contraseña, sin abrir ni cerrar la caja.</p>
         <p class="login-note">
           Para operar el punto de venta es obligatorio registrar la apertura de caja con el fondo inicial del turno.

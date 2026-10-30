@@ -107,6 +107,10 @@ const SettingsManager = {
     `;
 
     container.querySelector('#manage-users').onclick = () => Auth.renderUsers();
+    const environmentButton=document.createElement('button');environmentButton.className='settings-card';
+    environmentButton.textContent='Espacios: Pruebas y Negocio real';environmentButton.onclick=()=>window.open('entornos.html','_blank','noopener');container.querySelector('.settings-grid').append(environmentButton);
+    const historyButton=document.createElement('button');historyButton.className='settings-card';historyButton.textContent='Historial antiguo en nube';historyButton.onclick=()=>window.open(CloudConfig.link('nube.html?view=settings'),'_blank','noopener');container.querySelector('.settings-grid').append(historyButton);
+    const syncDetail=document.createElement('p');syncDetail.textContent='Último envío: '+(InventoryCloud.config()?.lastSync?new Date(InventoryCloud.config().lastSync).toLocaleString('es-MX'):'Sin envío confirmado en este dispositivo');container.append(syncDetail);
     if(typeof InventoryCloud!=='undefined') {
       const button=document.createElement('button');button.className='settings-card';
       button.innerHTML='<span class="settings-card-icon">☁️</span><span class="settings-card-title">Vincular ventas e inventario con nube</span><span class="settings-card-sub">Envío automático con administrador y empleados</span>';

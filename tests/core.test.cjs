@@ -46,6 +46,26 @@ test('instalación nueva carga solo Mega Corona y no repone un catálogo elimina
 test('migración conserva los productos anteriores',()=>{const e=environment(); e.localStorage.setItem('cerveceria_products','[]'); e.run('Database.init()'); assert.equal(e.run('Database.getProducts().length'),0); assert.equal(e.localStorage.getItem('cerveceria_products'),'[]');});
 test('NIP real y sesión autenticada',async()=>{ const e=await opened(); assert.ok(e.run('CashSession.getActiveSession()')); await assert.rejects(e.run("Auth.verify('Administrador','cualquier-clave','admin')")); assert.ok(e.run("Auth.users()[0].credentialType === 'pin' && !Object.hasOwn(Auth.users()[0], 'pin')")); e.run("let s=CashSession.readRaw(); s.authToken='falso'; CashSession.save(s)"); assert.equal(e.run('CashSession.getActiveSession()'),null); });
 test('empleado no puede modificar inventario ni importar',async()=>{ const e=await opened(); await e.run("Auth.addUser('Empleado',testStaffPin,'employee')"); await e.run("Auth.verify('Empleado',testStaffPin,'employee').then(user=>CashSession.save({...user,cashOpening:0,openedAt:new Date().toISOString()}))"); assert.throws(()=>e.run("Database.updateProduct('p1',{stock:500})"),/administrador/); assert.throws(()=>e.run('Database.importBackup(Database.exportBackup())'),/administrador/); });
+
+test('empleado cobra promoción guardada pero no edita catálogo, configuración, promociones o reportes',async()=>{
+ const e=await opened();e.run("Database.updateProduct('p1',{promocionesVolumen:[{cantidad:2,precio:90}]})");
+ await e.run("Auth.addUser('Empleado',testStaffPin,'employee')");
+ await e.run("Auth.verify('Empleado',testStaffPin,'employee').then(user=>CashSession.save({...user,cashOpening:0,openedAt:new Date().toISOString()}))");
+ for(const action of ['Database.saveProducts([])','Database.savePromos([])','Database.saveSettings({})','Database.saveInventoryCycles([])','ReportsManager.init()','ReportsManager.render()','Database.exportBackup()'])assert.throws(()=>e.run(action),/administrador/);
+ assert.equal(e.run("POS.getItemSubtotal({productId:'p1',quantity:2,precio:50})"),90);
+ e.run("Database.registerSale({items:[{productId:'p1',quantity:2,precio:50}],total:90,paymentBreakdown:{efectivo:90}})");
+ assert.equal(e.run('Database.getProducts()[0].stock'),98);
+ assert.equal(e.run('TerminalEvents.collect(false)[0].cashier_name'),'Empleado');
+});
+
+test('empleado repone indicador de refri sin cambiar stock ni promociones',async()=>{
+ const e=await opened();await e.run("Auth.addUser('Empleado',testStaffPin,'employee')");await e.run("Auth.verify('Empleado',testStaffPin,'employee').then(user=>CashSession.save({...user,cashOpening:0,openedAt:new Date().toISOString()}))");
+ vm.runInContext(fs.readFileSync('js/fridge.js','utf8'),e.context);
+ e.run("DataStore.setItem('fridgeStock','20');FridgeView.refill(4)");
+ assert.equal(e.run('POS.getFridgeStock()'),24);assert.equal(e.run('Database.getProducts()[0].stock'),100);
+ assert.equal(e.run("JSON.parse(DataStore.getItem('cerveceria_fridge_events'))[0].name"),'Empleado');
+ assert.throws(()=>e.run('FridgeView.refill(1)'),/capacidad/);
+});
 test('venta e inventario se guardan juntos y preservan costos históricos',async()=>{ const e=await opened(); e.run('Database.registerSale('+sale+')'); assert.equal(e.run('Database.getSales().length'),1); assert.equal(e.run('Database.getProducts()[0].stock'),98); assert.equal(e.run('Database.getSales()[0].items[0].costoTotal'),40); assert.equal(e.run('SalesLog.compactTicket(SalesLog.buildTicket(Database.getSales()[0])).items[0].costoTotal'),40); });
 test('falla de guardado no deja venta ni descuento parcial',async()=>{ const e=await opened(); e.localStorage.failKey='cerveceria_state_v2'; assert.throws(()=>e.run('Database.registerSale('+sale+')'),/espacio/); e.localStorage.failKey=null; assert.equal(e.run('Database.getSales().length'),0); assert.equal(e.run('Database.getProducts()[0].stock'),100); });
 test('demanda combinada de líneas frías y naturales no supera stock',async()=>{const e=await opened(); assert.throws(()=>e.run("Database.registerSale({items:[{productId:'p1',quantity:70},{productId:'p1',quantity:40,piezaFria:true}],total:100,paymentBreakdown:{efectivo:100}})"),/Existencias/); assert.equal(e.run('Database.getSales().length'),0);});

@@ -145,6 +145,7 @@ const POS = {
   // ---------- Contador global de la nevera fría ----------
 
   getFridgeStock() {
+    this.FRIDGE_MAX=Math.max(1,Number(Database.getSettings().fridgeCapacity)||24);
     try {
       const raw = DataStore.getItem(this.FRIDGE_KEY);
       if (raw === null || raw === undefined || raw === '') return this.FRIDGE_MAX;
@@ -157,6 +158,7 @@ const POS = {
   },
 
   setFridgeStock(value) {
+    this.FRIDGE_MAX=Math.max(1,Number(Database.getSettings().fridgeCapacity)||24);
     const parsed = parseInt(value, 10);
     const next = isNaN(parsed) ? this.FRIDGE_MAX : Math.max(0, Math.min(this.FRIDGE_MAX, parsed));
     try {
@@ -480,17 +482,6 @@ const POS = {
   // Valida si se pueden agregar piezas frías de un producto
   canAddCold(product, productId, extraQty) {
     const amount = Number(extraQty) || 0;
-    const perProductCold = product ? (Number(product.coldStock) || 0) : 0;
-    const productColdUnits = this.getColdUnitsFor(productId);
-
-    if (perProductCold > 0 && productColdUnits + amount > perProductCold) {
-      return {
-        ok: false,
-        needConfirm: false,
-        reason: 'No hay suficientes piezas frías de ' + ((product && product.nombre) || 'este producto') + ' en la nevera.'
-      };
-    }
-
     const fridge = this.getFridgeStock();
     if (fridge < amount) {
       return {
@@ -635,7 +626,7 @@ if (other) {
   canBeCold(product) {
     if (!product) return false;
     const coldStock = product.coldStock !== undefined ? Number(product.coldStock) : 0;
-    return coldStock > 0 || this.getFridgeStock() > 0;
+    return this.getFridgeStock() > 0;
   },
 
   // ---------- Control de envase faltante ----------

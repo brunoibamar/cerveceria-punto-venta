@@ -107,3 +107,10 @@ Antes de activar esta etapa como entrada principal hay que verificar el correo d
 probar dos dispositivos con identidades reales y completar la migración de las funciones locales necesarias.
 En Supabase Authentication → URL Configuration, establecer como Site URL la URL pública del proyecto
 y agregar `/nube.html` a Redirect URLs para las confirmaciones de correo.
+# Acceso y retención (3.5.0)
+
+Después de `terminal-sync.sql` aplicar `access-retention.sql`, luego `snapshot.sql`. En instalaciones nuevas las referencias PL/pgSQL a retención se resuelven al ejecutar, una vez creada la tabla. Las migraciones remotas registradas incluyen cambios de funciones ya existentes.
+
+`pos_employee_snapshot` devuelve solo catálogo comercial y turnos propios; los costos no se exponen mediante RLS. Los permisos se comprueban con `auth.uid()` y membresía del negocio, sin confiar en metadatos editables.
+
+`pos_history_archive` prepara respaldo del año completo más antiguo. `pos_prune_history` exige administrador, huella del respaldo vigente y `ELIMINAR <año>`; serializa con ventas/sincronización mediante bloqueo del negocio. No altera stock. `pos_private.retention` evita reingreso de datos antiguos al sincronizar. `access-retention-verify.sql` verifica con fixtures y ROLLBACK.

@@ -2,9 +2,9 @@
 const InventoryCloud = {
   KEY:'pos_inventory_link_v1', QUEUE:'pos_terminal_outbox_v2', busy:false, timer:null,
   client:null,
-  config() { return JSON.parse(localStorage.getItem(this.KEY)||'null'); },
+  config() { return JSON.parse((typeof AppStorage==='undefined'?localStorage:AppStorage).getItem(this.KEY)||'null'); },
   api() { return this.client ||= supabase.createClient(CloudConfig.url,CloudConfig.key,{auth:{storageKey:'pos-inventory-auth-v1',persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}}); },
-  terminal() { return this.terminalClient ||= supabase.createClient(CloudConfig.url,CloudConfig.key,{auth:{storageKey:'pos-terminal-session-v2',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}); },
+  terminal() { return this.terminalClient ||= supabase.createClient(CloudConfig.url,CloudConfig.key,{auth:{storageKey:'pos-terminal-session-v2'+(CloudConfig.environment==='production'?'-'+CloudConfig.businessId:''),persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}); },
   normalized(products) {
     return products.map(p=>({id:String(p.id),stock:Number(p.stock||0),cold_stock:Number(p.coldStock||0),data:{...p,
       precioVenta:Number(p.precioVenta??p.precio??0),costoPieza:Number(p.costoPieza??p.precioCompra??0),
@@ -19,9 +19,12 @@ const InventoryCloud = {
     return JSON.stringify({products:this.normalized(Database.getProducts()),cycles:Database.getInventoryCycles(),shifts:TerminalEvents.shifts(),sales});
   },
   status(message) {
+    clearTimeout(this.statusTimer);
     let banner=document.getElementById('inventory-cloud-status');
     if(!banner){banner=document.createElement('div');banner.id='inventory-cloud-status';banner.className='inventory-cloud-status';banner.setAttribute('role','status');document.body.append(banner);}
     banner.textContent=message;
+    banner.hidden=false;
+    if(message.startsWith('Ventas e inventario enviados'))this.statusTimer=setTimeout(()=>{banner.hidden=true;},4000);
   },
   schedule() { clearTimeout(this.timer); this.timer=setTimeout(()=>this.sync().catch(e=>this.status('Envío a nube pendiente: '+e.message)),700); },
   async sync() {
@@ -33,21 +36,21 @@ const InventoryCloud = {
     if(this.busy)return;
     const cfg=this.config();
     const snapshot=this.snapshot();
-    if(snapshot===cfg.lastSnapshot&&!localStorage.getItem(this.QUEUE))return;
+    if(snapshot===cfg.lastSnapshot&&!(typeof AppStorage==='undefined'?localStorage:AppStorage).getItem(this.QUEUE))return;
     this.busy=true; let retryLater=false;
     try {
-      let pending=JSON.parse(localStorage.getItem(this.QUEUE)||'null');
-      if(!pending){pending={id:crypto.randomUUID(),snapshot,payload:{...JSON.parse(snapshot),installation:cfg.installation,expected:cfg.revisions}};localStorage.setItem(this.QUEUE,JSON.stringify(pending));}
+      let pending=JSON.parse((typeof AppStorage==='undefined'?localStorage:AppStorage).getItem(this.QUEUE)||'null');
+      if(!pending){pending={id:crypto.randomUUID(),snapshot,payload:{...JSON.parse(snapshot),installation:cfg.installation,expected:cfg.revisions}};(typeof AppStorage==='undefined'?localStorage:AppStorage).setItem(this.QUEUE,JSON.stringify(pending));}
       this.status('Guardando inventario en la nube…');
       if(pending.rejected)throw new Error(pending.rejected);
       const {data,error}=await this.terminal().rpc('pos_terminal_sync',{p_business:CloudConfig.businessId,p_request:pending.id,p_payload:pending.payload});
-      if(error){if(error.code==='P0001'){pending.rejected=error.message;localStorage.setItem(this.QUEUE,JSON.stringify(pending));}throw error;}
+      if(error){if(error.code==='P0001'){pending.rejected=error.message;(typeof AppStorage==='undefined'?localStorage:AppStorage).setItem(this.QUEUE,JSON.stringify(pending));}throw error;}
       const sent=JSON.parse(pending.snapshot).sales;
       cfg.sentSales||={};for(const sale of sent)cfg.sentSales[sale.id]=true;
       TerminalEvents.acknowledge(sent);
       cfg.importComplete=TerminalEvents.collect(true).every(s=>cfg.sentSales[s.id]);
       cfg.revisions=data.revisions;cfg.lastSnapshot=pending.snapshot;cfg.lastSync=data.synced_at;cfg.terminalVersion=2;
-      localStorage.setItem(this.KEY,JSON.stringify(cfg));localStorage.removeItem(this.QUEUE);
+      (typeof AppStorage==='undefined'?localStorage:AppStorage).setItem(this.KEY,JSON.stringify(cfg));(typeof AppStorage==='undefined'?localStorage:AppStorage).removeItem(this.QUEUE);
       this.status('Ventas e inventario enviados · '+new Date(data.synced_at).toLocaleTimeString('es-MX'));
       retryLater=this.snapshot()!==pending.snapshot;
     } finally {this.busy=false;if(retryLater)this.schedule();}
@@ -62,8 +65,8 @@ const InventoryCloud = {
       e.preventDefault();const form=e.target;const button=form.querySelector('button');button.disabled=true;const status=overlay.querySelector('[role="status"]');
       try {
         Auth.requireAdmin();
-        const pending=JSON.parse(localStorage.getItem(this.QUEUE)||'null');
-        if(pending?.rejected){if(!confirm('La nube cambió o rechazó el envío. ¿Revisaste los datos y quieres volver a publicar el catálogo local sobre las existencias actuales de nube?'))return;localStorage.removeItem(this.QUEUE);}
+        const pending=JSON.parse((typeof AppStorage==='undefined'?localStorage:AppStorage).getItem(this.QUEUE)||'null');
+        if(pending?.rejected){if(!confirm('La nube cambió o rechazó el envío. ¿Revisaste los datos y quieres volver a publicar el catálogo local sobre las existencias actuales de nube?'))return;(typeof AppStorage==='undefined'?localStorage:AppStorage).removeItem(this.QUEUE);}
         const {error}=await this.api().auth.signInWithPassword({email:form.email.value.trim(),password:form.password.value});form.password.value='';if(error)throw error;
         const claim=await this.api().rpc('pos_claim_access');if(claim.error)throw claim.error;
 
@@ -77,9 +80,9 @@ const InventoryCloud = {
         if(enrollment.error)throw new Error('No se pudo autorizar la terminal: '+enrollment.error.message);
         if(enrollment.data.error)throw new Error(enrollment.data.error);
         const installed=await this.terminal().auth.setSession(enrollment.data);if(installed.error)throw installed.error;
-        if(pending&&!pending.rejected){await this.sync();if(localStorage.getItem(this.QUEUE))throw new Error('Revisa el envío pendiente antes de continuar.');current=await this.api().rpc('pos_snapshot',{p_business:CloudConfig.businessId});if(current.error)throw current.error;}
+        if(pending&&!pending.rejected){await this.sync();if((typeof AppStorage==='undefined'?localStorage:AppStorage).getItem(this.QUEUE))throw new Error('Revisa el envío pendiente antes de continuar.');current=await this.api().rpc('pos_snapshot',{p_business:CloudConfig.businessId});if(current.error)throw current.error;}
         const updated=this.config()||previous;
-        localStorage.setItem(this.KEY,JSON.stringify({...updated,installation,lastSnapshot:'',revisions:Object.fromEntries(current.data.products.map(p=>[p.id,p.revision]))}));
+        (typeof AppStorage==='undefined'?localStorage:AppStorage).setItem(this.KEY,JSON.stringify({...updated,installation,lastSnapshot:'',revisions:Object.fromEntries(current.data.products.map(p=>[p.id,p.revision]))}));
         await this.sync();status.textContent='Terminal vinculada. El supervisor recibe ventas, turnos e inventario.';
       } catch(error){status.textContent=error.message;this.status('Envío no completado: '+error.message);}
       finally{await this.api().auth.signOut({scope:'local'}).catch(()=>{});button.disabled=false;}

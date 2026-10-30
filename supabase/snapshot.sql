@@ -1,5 +1,5 @@
 create function public.pos_snapshot(p_business uuid) returns jsonb language sql stable security invoker set search_path='' as $$
-  select jsonb_build_object(
+  select case when not public.pos_has_access(b.id,true) then public.pos_employee_snapshot(b.id) else jsonb_build_object(
     'business',to_jsonb(b),
     'terminal',case when public.pos_has_access(b.id,true) then public.pos_terminal_link(b.id) else null end,
     'member',(select to_jsonb(m) from public.pos_members m where m.business_id=b.id and m.user_id=(select auth.uid()) and m.active),
@@ -11,7 +11,7 @@ create function public.pos_snapshot(p_business uuid) returns jsonb language sql 
       where business_id=b.id and (created_at at time zone 'America/Mexico_City')::date=(now() at time zone 'America/Mexico_City')::date
       group by cashier_name,user_id) t),'[]'::jsonb),
     'read_at',now()
-  ) from public.pos_businesses b where b.id=p_business and public.pos_has_access(b.id);
+  ) end from public.pos_businesses b where b.id=p_business and public.pos_has_access(b.id);
 $$;
 revoke all on function public.pos_snapshot(uuid) from public,anon;
 grant execute on function public.pos_snapshot(uuid) to authenticated;

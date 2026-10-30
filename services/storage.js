@@ -42,7 +42,7 @@ const DataStore = {
   },
   openRecovery() {
     return new Promise((resolve,reject) => {
-      const request = indexedDB.open('cerveceria-recovery', 1);
+      const request = indexedDB.open(typeof ProductionMode!=='undefined' && ProductionMode?'cerveceria-recovery-production':'cerveceria-recovery', 1);
       request.onupgradeneeded = () => request.result.createObjectStore('snapshots', { keyPath: 'id' });
       request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
     });

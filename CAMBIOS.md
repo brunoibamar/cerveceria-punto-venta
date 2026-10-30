@@ -98,3 +98,14 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 - No cambia la contraseña del administrador ni borra ventas o inventario. Reintentar la vinculación desde Ajustes activa el envío pendiente.
 - Prueba de regresión comprueba longitud, formato y generación independiente de 100 credenciales.
 
+# Versión 3.5.0 · Empleado, refri y espacios independientes
+
+- Empleado: navegación Ventas y Refri; Reportes/Inventario/Surtidos/Ajustes y exportación requieren administrador. La venta conserva promociones, frío, envases y medios de pago.
+- Refri: reposición parcial o completa del indicador compartido, con registro local del empleado. No incorpora stock ni asigna frío a marcas. Respeta la capacidad configurada.
+- Aviso de sincronización correcta desaparece en cuatro segundos; errores pendientes permanecen visibles. Último envío consultable en Ajustes.
+- Pruebas conserva el negocio y datos locales existentes. `?env=production` usa un negocio vacío independiente, almacenamiento, recuperación, sesiones de nube y acceso instalado propios. `entornos.html` ofrece los enlaces; no copia catálogo, usuarios locales ni ventas.
+- Administradores de nube existentes quedan preautorizados en el nuevo negocio; no se crean contraseñas ni se envían correos. Autorizar la terminal del negocio real requiere el ingreso habitual desde sus Ajustes.
+- Historial antiguo: solo administrador, selección del año más antiguo completo, respaldo JSON, confirmación escrita y validación de cambios concurrentes. No se ejecuta ninguna limpieza automáticamente. Conserva catálogo, stock, accesos y turnos actuales. Marca de retención impide que dispositivos republiquen los tickets, cortes y ciclos borrados.
+- Consulta de nube para empleado entrega catálogo de venta sin costos y solo turnos propios. Las tablas administrativas y los detalles con costos quedan protegidos mediante RLS.
+- Apertura y corte de caja conservan el funcionamiento anterior; no se agregan permisos de descuentos ni cancelaciones.
+- Límite de seguridad: la aplicación local continúa guardando datos operativos para funcionar sin conexión. Las restricciones de interfaz y acciones no sustituyen el control físico del dispositivo frente a alguien con herramientas de desarrollo; la protección remota se valida en PostgreSQL.

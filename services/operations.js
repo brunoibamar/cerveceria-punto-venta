@@ -5,7 +5,7 @@ const WriteGuard = {
     if (this.started) return; this.started=true;
     const main=document.getElementById('app-main');
     if (!navigator.locks) { main.textContent='Este navegador no permite proteger las operaciones simultáneas. Abre el sistema en una versión reciente de Chrome o Edge mediante localhost o HTTPS.'; return; }
-    navigator.locks.request('cerveceria-single-writer', { ifAvailable:true }, async lock=>{
+    navigator.locks.request('cerveceria-single-writer'+(typeof ProductionMode!=='undefined'&&ProductionMode?'-production':''), { ifAvailable:true }, async lock=>{
       if (!lock) { main.innerHTML='<div class="startup-notice"><h2>La caja está abierta en otra pestaña</h2><p>Cierra la otra pestaña para operar aquí y evitar ventas duplicadas.</p><button class="btn" onclick="location.reload()">Intentar de nuevo</button><p><a href="nube.html?mode=supervisor" target="_blank" rel="noopener">Entrar como supervisor</a></p></div>'; return; }
       this.ready=true; run(); await new Promise(resolve=>{this.release=resolve;});
     }).catch(error=>{ main.textContent=error.message; });

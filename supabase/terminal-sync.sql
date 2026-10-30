@@ -73,13 +73,14 @@ create function pos_private.terminal_sync(p_business uuid,p_request uuid,p_paylo
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare device pos_private.terminals; previous pos_private.pos_requests; product public.pos_products;
   entry jsonb; sale jsonb; item jsonb; revisions jsonb; result jsonb; old public.pos_terminal_sales;
-  qty integer; cold_qty integer; v_price numeric; n integer; line_sum bigint; total bigint;
+  qty integer; cold_qty integer; v_price numeric; n integer; line_sum bigint; total bigint; retained_after timestamptz;
 begin
   if auth.uid() is null then raise exception 'Inicia la sesión de terminal'; end if;
   select * into device from pos_private.terminals where business_id=p_business and auth_user_id=auth.uid() and active;
   if not found or device.installation::text is distinct from p_payload->>'installation' then raise exception 'Terminal no autorizada'; end if;
   if not exists(select 1 from public.pos_members where business_id=p_business and user_id=device.authorized_by and active and role='admin') then raise exception 'Autorización revocada'; end if;
   perform id from public.pos_businesses where id=p_business for update;
+  select before_at into retained_after from pos_private.retention where business_id=p_business;
   select * into previous from pos_private.pos_requests where business_id=p_business and id=p_request;
   if found then
     if previous.command<>'terminal_sync' or previous.payload<>p_payload then raise exception 'Operación ya utilizada'; end if;
@@ -107,6 +108,7 @@ begin
     and not exists(select 1 from jsonb_array_elements(p_payload->'products') x where x->>'id'=p.id);
 
   for sale in select value from jsonb_array_elements(p_payload->'sales') loop
+    if (sale->>'created_at')::timestamptz < retained_after then continue; end if;
     total:=(sale->>'total_cents')::bigint;
     if total is null or total<0 or coalesce(length(sale->>'id'),0) not between 1 and 200 or coalesce(length(sale->>'cashier_name'),0) not between 1 and 100
       or coalesce(length(sale->>'cashier_id'),0) not between 1 and 200 or jsonb_typeof(sale->'items') is distinct from 'array'
@@ -141,13 +143,14 @@ begin
     if line_sum<>total then raise exception 'El detalle no coincide con el total'; end if;
   end loop;
   for entry in select value from jsonb_array_elements(p_payload->'shifts') loop
+    if (entry->>'closed_at')::timestamptz < retained_after then continue; end if;
     insert into public.pos_terminal_shifts values(p_business,device.installation,entry->>'id',entry->>'cashier_name',(entry->>'opening_cents')::bigint,(entry->>'opened_at')::timestamptz,(entry->>'closed_at')::timestamptz,(entry->>'counted_cents')::bigint)
       on conflict(business_id,installation,id) do update set closed_at=coalesce(public.pos_terminal_shifts.closed_at,excluded.closed_at),counted_cents=coalesce(excluded.counted_cents,public.pos_terminal_shifts.counted_cents);
   end loop;
-  insert into public.pos_documents(business_id,kind,data) values(p_business,'inventory_cycles',p_payload->'cycles')
+  insert into public.pos_documents(business_id,kind,data) values(p_business,'inventory_cycles',(select coalesce(jsonb_agg(c),'[]') from jsonb_array_elements(p_payload->'cycles') c where not(coalesce(c->>'status','')='closed' and coalesce((c->>'closedAt')::timestamptz,'infinity')<coalesce(retained_after,'-infinity'))))
     on conflict(business_id,kind) do update set data=excluded.data,revision=public.pos_documents.revision+1;
   select coalesce(jsonb_object_agg(id,revision),'{}'::jsonb) into revisions from public.pos_products where business_id=p_business;
-  result:=jsonb_build_object('revisions',revisions,'accepted_sales',(select coalesce(jsonb_agg(value->>'id'),'[]'::jsonb) from jsonb_array_elements(p_payload->'sales')),'synced_at',now());
+  result:=jsonb_build_object('revisions',revisions,'retained_after',retained_after,'accepted_sales',(select coalesce(jsonb_agg(value->>'id'),'[]'::jsonb) from jsonb_array_elements(p_payload->'sales')),'synced_at',now());
   update pos_private.terminals set last_sync_at=now() where business_id=p_business and auth_user_id=auth.uid();
   insert into pos_private.pos_requests(business_id,id,user_id,command,payload,result) values(p_business,p_request,auth.uid(),'terminal_sync',p_payload,result);
   return result;

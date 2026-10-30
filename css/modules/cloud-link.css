@@ -1,2 +1,5 @@
 .inventory-cloud-status{position:fixed;bottom:88px;left:12px;right:12px;z-index:850;max-width:620px;margin:auto;padding:10px 14px;background:#231c16f5;border:1px solid #be925e;border-radius:12px;color:#eed7b9;font-size:12px;pointer-events:none;box-shadow:0 5px 25px #0007}
 .scanner-modal.active{z-index:10000!important}
+.inventory-cloud-status[hidden], .tab-btn[hidden] { display:none !important; }
+.environment-label { text-align:center; padding:5px 12px; font-size:11px; color:#e9bd83; background:#201a13; letter-spacing:.08em; }
+#refri-refill { display:block; width:100%; min-height:48px; margin:12px 0; font-size:20px; }

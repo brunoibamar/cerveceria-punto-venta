@@ -23,6 +23,7 @@ const ReportsManager = {
 
 
   init(containerId) {
+    Auth.requireAdmin();
     this.containerId = containerId || this.containerId;
     this.chartHours = null;
     this.chartProducts = null;
@@ -1266,6 +1267,7 @@ const ReportsManager = {
   },
 
    render() {
+     Auth.requireAdmin();
      const container = document.getElementById(this.containerId);
      if (!container) return;
 

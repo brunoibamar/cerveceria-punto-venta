@@ -664,6 +664,7 @@
     // ---------- Render ----------
 
     render: function () {
+      Auth.requireAdmin();
       try {
         const container = document.getElementById(this.containerId);
         if (!container) return;
@@ -1079,6 +1080,7 @@
     // ---------- Modal de producto ----------
 
     openNewProductModal: function () {
+      Auth.requireAdmin();
       try {
         const modal = document.getElementById(this.modalId);
         const form = document.getElementById(this.formId);

@@ -48,7 +48,7 @@ const Database = {
     const hashes=products.map(fingerprint);
     const pristine=products.length===originalFingerprints.size && new Set(hashes).size===originalFingerprints.size && hashes.every(hash=>originalFingerprints.has(hash)) && !this.getSales().length && !this.getCuts().length && !this.getInventoryCycles().length && !this.getPromos().length;
     DataStore.atomic(()=>{
-      if (DataStore.getItem(STORAGE_KEYS.PRODUCTS)===null || pristine) this.saveProducts(firstInstall || pristine ? [{...INITIAL_TEST_PRODUCT}] : []);
+      if (DataStore.getItem(STORAGE_KEYS.PRODUCTS)===null || pristine) this.saveProducts((typeof ProductionMode==='undefined'||!ProductionMode) && (firstInstall || pristine) ? [{...INITIAL_TEST_PRODUCT}] : []);
       if(firstInstall || pristine) DataStore.setItem('cerveceria_mega_seed_v1',new Date().toISOString());
       for(const key of [STORAGE_KEYS.SALES,STORAGE_KEYS.CUTS,STORAGE_KEYS.PROMOS,STORAGE_KEYS.INVENTORY_CYCLES]) if(DataStore.getItem(key)===null) DataStore.setItem(key,'[]');
       if(DataStore.getItem(STORAGE_KEYS.SETTINGS)===null) this.saveSettings(DEFAULT_SETTINGS);
@@ -65,6 +65,7 @@ const Database = {
   },
 
   saveProducts(products) {
+    if(typeof CashSession!=='undefined' && CashSession.getActiveSession() && !this.savingSale)Auth.requireAdmin();
     DataStore.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
     return products;
   },
@@ -154,6 +155,7 @@ const Database = {
   },
 
   saveInventoryCycles(cycles) {
+    if(typeof CashSession!=='undefined' && CashSession.getActiveSession())Auth.requireAdmin();
     DataStore.setItem(STORAGE_KEYS.INVENTORY_CYCLES, JSON.stringify(cycles));
     return cycles;
   },
@@ -444,7 +446,8 @@ const Database = {
         return { ...item, costoTotal: known ? Math.round((full * (cartonCost || 0) + loose * (unitCost || 0)) * 100) / 100 : null };
       });
       const sales = this.getSales(); sales.push(newSale); this.saveSales(sales);
-      this.discountInventory(newSale.items);
+      this.savingSale=true;
+      try{this.discountInventory(newSale.items);}finally{this.savingSale=false;}
       if(typeof TerminalEvents!=='undefined')TerminalEvents.enqueue(newSale);
       DataStore.removeItem('cerveceria_cart');
       if (electronic > 0) PaymentVerification.finish(newSale.paymentVerification.id, 'confirmed', newSale.id);
@@ -453,6 +456,7 @@ const Database = {
   },
 
   discountInventory(items) {
+    if(!this.savingSale)Auth.requireAdmin();
     const products = this.getProducts();
     items.forEach(item => {
       const product = products.find(p => p.id === item.productId);
@@ -501,6 +505,7 @@ const Database = {
   },
 
   savePromos(promos) {
+    if(typeof CashSession!=='undefined' && CashSession.getActiveSession())Auth.requireAdmin();
     DataStore.setItem(STORAGE_KEYS.PROMOS, JSON.stringify(promos));
     return promos;
   },
@@ -524,6 +529,7 @@ const Database = {
   },
 
   saveSettings(settings) {
+    if(typeof CashSession!=='undefined' && CashSession.getActiveSession())Auth.requireAdmin();
     DataStore.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
     return settings;
   },
@@ -545,6 +551,7 @@ const Database = {
 
   // ---------- Respaldo y Restauración ----------
   exportBackup() {
+    Auth.requireAdmin();
     return { version: 2, fechaExportacion: new Date().toISOString(), products: this.getProducts(), sales: this.getSales(), cuts: this.getCuts(), promos: this.getPromos(), settings: this.getSettings(), inventoryCycles: this.getInventoryCycles(), mpLink: DataStore.getItem('mp_link') || '', fridgeStock: Number(DataStore.getItem('fridgeStock') ?? 24), paymentAttempts: PaymentVerification.getAll(), users: Auth.users(), pinVaultKey: DataStore.getItem(Auth.VAULT) };
   },
 
