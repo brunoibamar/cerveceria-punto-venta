@@ -5,6 +5,19 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const ZXing=require('../vendor/zxing-0.21.3.min.js');
 
+test('credencial interna de terminal respeta el límite de 72 bytes de Supabase Auth',()=>{
+  const source=fs.readFileSync('supabase/functions/enroll-pos-terminal/index.ts','utf8');
+  const expression=source.match(/const password=(.*);/)[1];
+  const passwords=new Set();
+  for(let i=0;i<100;i++){
+    const password=vm.runInNewContext(expression,{crypto});
+    assert.equal(Buffer.byteLength(password,'utf8'),69);
+    assert.match(password,/^T!a9-[a-f0-9]{64}$/);
+    passwords.add(password);
+  }
+  assert.equal(passwords.size,100);
+});
+
 function barcode(inverted){
   const a=['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
   const b=['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];

@@ -22,7 +22,8 @@ Deno.serve(async req => {
   if(access.error||access.data!==true)return reply(403,{error:'Requiere administrador del negocio'});
   // Solo el servidor conoce la clave de servicio. La cuenta técnica no pertenece a pos_members.
   const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}});
-  const password='T!a9-'+crypto.randomUUID()+crypto.randomUUID();
+  // bcrypt acepta hasta 72 bytes: 5 de prefijo + 64 hexadecimales = 69 ASCII.
+  const password='T!a9-'+(crypto.randomUUID()+crypto.randomUUID()).replaceAll('-','');
   const email='terminal-'+crypto.randomUUID()+'@pos.example.invalid';
   const account=await service.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{kind:'pos_terminal'}});
   if(account.error||!account.data.user)return reply(500,{error:'No se pudo preparar la identidad de terminal'});

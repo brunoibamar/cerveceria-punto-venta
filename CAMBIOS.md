@@ -92,3 +92,9 @@ En `?demo=1`, las pruebas son solo memoria y se reinician al recargar; no actual
 63 pruebas locales aprobadas. Las pruebas SQL con reversión verificaron permisos, aislamiento por
 negocio, precios por cartón, responsable, reintentos, existencias, revisiones, cortes y reportes paginados.
 La comprobación física de Android y de dos dispositivos con cuentas reales queda a cargo de la prueba operativa.
+# Corrección de activación de terminal
+
+- Corregida la credencial interna aleatoria de la terminal: ahora usa 69 bytes, dentro del límite de 72 de Supabase Auth. Antes la creación era rechazada y ninguna venta llegaba a la nube, aunque el administrador ingresara correctamente.
+- No cambia la contraseña del administrador ni borra ventas o inventario. Reintentar la vinculación desde Ajustes activa el envío pendiente.
+- Prueba de regresión comprueba longitud, formato y generación independiente de 100 credenciales.
+
