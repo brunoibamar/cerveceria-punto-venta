@@ -139,3 +139,9 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 # Versión 3.6.3 · Visibilidad en simulación móvil
 
 - La franja de pruebas deja espacio al acceso superior de actualización y a su alerta, evitando que los cubra en pantallas de teléfono.
+# Versión 3.6.4 · Alerta exclusiva para versiones nuevas
+
+- Eliminado el botón permanente y la barra superior en caja y supervisión. No se reserva espacio de pantalla para actualizaciones.
+- La alerta automática solo aparece cuando la versión publicada es más reciente que la instalada. Un worker en espera con la misma versión no produce un aviso falso.
+- Se conserva la búsqueda manual en Ajustes, sin ofrecer una recarga cuando ya está al día. La actualización real mantiene las protecciones del carrito y las operaciones en curso.
+- 89 pruebas aprobadas, incluyendo ausencia de aviso y de recarga cuando no hay una versión nueva.

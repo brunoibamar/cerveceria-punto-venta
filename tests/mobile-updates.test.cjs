@@ -11,7 +11,7 @@ function updateFixture(){
  const registration={waiting:worker,installing:null,update:async()=>{},addEventListener(){}};
  const context=vm.createContext({navigator:{onLine:true,serviceWorker:{controller:{},addEventListener:(event,cb)=>listeners[event]=cb,register:async()=>registration}},
    document:{hidden:false,getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},setInterval(){},setTimeout(){},clearTimeout(){},URL,
-   fetch:async()=>({ok:true,json:async()=>({version:'3.6.2'})}),
+   fetch:async()=>({ok:true,json:async()=>({version:'3.7.0'})}),
    location:{href:'https://example.test/pos/?env=production',search:'?env=production',reload:()=>reloads++},POS:{cart:[{productId:'p1',quantity:12,piezaFria:true}],CART_KEY:'cart',payment:{isOpen:false},cut:{isOpen:false}},
    App:{currentView:'pos'},CashSession:{getActiveSession:()=>({role:'employee'})},DataStore:{setItem:(key,value)=>stored.set(key,value)}});
  vm.runInContext(fs.readFileSync('services/app-updates.js','utf8')+'\nglobalThis.updates=AppUpdates;',context);
@@ -49,19 +49,26 @@ test('formulario oculto no bloquea actualizaciones; formulario visible sin guard
  f.context.document.querySelectorAll=()=>[{getClientRects:()=>[{}]}];assert.match(f.updates.blockedReason(),/formulario/);
 });
 
-test('avisa con versión publicada nueva aunque no exista worker en espera y permite recargar manualmente',async()=>{
+test('avisa con versión publicada nueva aunque no exista worker en espera',async()=>{
  const f=updateFixture();f.registration.waiting=null;f.context.fetch=async()=>({ok:true,json:async()=>({version:'3.7.0'})});
  await f.updates.check(true);assert.equal(f.updates.available,true);assert.equal(f.reloads(),0);assert.ok(f.messages.includes('available'));
  assert.equal(f.updates.latestVersion,'3.7.0');
- f.updates.available=false;f.updates.canRefresh=true;await f.updates.apply();assert.equal(f.reloads(),1);
 });
 
-test('la simulación también detecta novedades y el acceso superior conserva el entorno real',async()=>{
+test('la simulación también detecta novedades y conserva la dirección del entorno real',async()=>{
  const f=updateFixture();f.context.DemoMode=true;f.context.fetch=async()=>({ok:true,json:async()=>({version:'4.0.0'})});
  await f.updates.check(true);assert.equal(f.updates.available,true);assert.equal(f.reloads(),0);
- const shortcut={};f.context.document.getElementById=()=>shortcut;f.updates.init();
- assert.equal(new URL(shortcut.href).searchParams.get('env'),'production');assert.equal(new URL(shortcut.href).pathname,'/pos/actualizar.html');
- assert.equal(typeof shortcut.onclick,'function');
+ assert.equal(new URL(f.context.location.href).searchParams.get('env'),'production');
+});
+
+test('si la versión ya está al día no muestra alerta aunque haya un worker en espera',async()=>{
+ const f=updateFixture();f.context.fetch=async()=>({ok:true,json:async()=>({version:f.updates.version})});
+ await f.updates.check();assert.equal(f.messages.length,0);assert.equal(f.updates.pending,null);assert.equal(f.updates.available,false);assert.equal(f.reloads(),0);
+});
+
+test('sin actualización disponible el botón de aplicar no recarga la aplicación',async()=>{
+ const f=updateFixture();f.registration.waiting=null;f.context.fetch=async()=>({ok:true,json:async()=>({version:f.updates.version})});
+ await f.updates.apply();assert.equal(f.reloads(),0);assert.equal(f.sent.length,0);assert.equal(f.updates.pending,null);
 });
 
 test('no recarga con un worker activo anterior si la nueva descarga no quedó lista',async()=>{
