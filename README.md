@@ -77,3 +77,6 @@ Abrir `entornos.html` para elegir **Pruebas** o **Negocio real**. El enlace habi
 El empleado opera Ventas y Refri. Las promociones configuradas se cobran automáticamente y no son editables. El refrigerador es un indicador general de llenado; reponerlo no aumenta inventario.
 
 En Ajustes → Historial antiguo en nube, un administrador puede revisar y respaldar el año completo más antiguo y eliminarlo mediante confirmación escrita. El respaldo anual es un archivo de archivo histórico, no un respaldo completo de configuración para restaurar con el importador local. No se borra nada automáticamente.
+# Actualizaciones desde la aplicación (3.6.0)
+
+Al haber una versión nueva descargada se muestra «Nueva versión disponible». El usuario puede actualizar o elegir Después. Ajustes incluye una búsqueda manual. La actualización conserva la dirección del negocio y los datos locales; se pide terminar cobros o cerrar formularios antes de recargar. La primera incorporación de este aviso se instala desde `actualizar.html` (conservar `?env=production` si se usa el negocio real).

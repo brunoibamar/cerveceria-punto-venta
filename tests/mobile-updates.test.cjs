@@ -5,6 +5,49 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const ZXing=require('../vendor/zxing-0.21.3.min.js');
 
+function updateFixture(){
+ const listeners={},workerListeners={},messages=[],sent=[],stored=new Map();let reloads=0;
+ const worker={state:'installed',addEventListener:(event,cb)=>workerListeners[event]=cb,postMessage:message=>sent.push(message)};
+ const registration={waiting:worker,installing:null,update:async()=>{},addEventListener(){}};
+ const context=vm.createContext({navigator:{onLine:true,serviceWorker:{controller:{},addEventListener:(event,cb)=>listeners[event]=cb,register:async()=>registration}},
+   document:{hidden:false,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},setInterval(){},setTimeout(){},
+   location:{search:'?env=production',reload:()=>reloads++},POS:{cart:[{productId:'p1',quantity:12,piezaFria:true}],CART_KEY:'cart',payment:{isOpen:false},cut:{isOpen:false}},
+   App:{currentView:'pos'},CashSession:{getActiveSession:()=>({role:'employee'})},DataStore:{setItem:(key,value)=>stored.set(key,value)}});
+ vm.runInContext(fs.readFileSync('services/app-updates.js','utf8')+'\nglobalThis.updates=AppUpdates;',context);
+ const updates=context.updates;updates.registration=registration;updates.render=message=>messages.push(message||'available');
+ return {context,updates,worker,registration,listeners,workerListeners,messages,sent,stored,reloads:()=>reloads};
+}
+
+test('detecta actualización pendiente sin recargar y conserva carrito frío al aceptarla',async()=>{
+ const f=updateFixture();await f.updates.check(true);assert.equal(f.updates.pending,f.worker);assert.equal(f.reloads(),0);
+ await f.updates.apply();assert.equal(f.sent[0].type,'ACTIVATE_UPDATE');assert.equal(JSON.parse(f.stored.get('cart'))[0].quantity,12);
+ assert.equal(JSON.parse(f.stored.get('cart'))[0].piezaFria,true);assert.equal(f.reloads(),0);
+ f.worker.state='activated';f.workerListeners.statechange();f.updates.finish();assert.equal(f.reloads(),1);
+ assert.equal(f.context.location.search,'?env=production');
+});
+
+test('no interrumpe un cobro, corte, sincronización o formulario ni recarga por otra pestaña',async()=>{
+ const f=updateFixture();f.updates.pending=f.worker;
+ f.context.POS.payment.isOpen=true;await f.updates.apply();assert.equal(f.sent.length,0);
+ f.context.POS.payment.isOpen=false;f.context.POS.cut.busy=true;await f.updates.apply();assert.equal(f.sent.length,0);
+ f.context.POS.cut.busy=false;f.context.InventoryCloud={busy:true};await f.updates.apply();assert.equal(f.sent.length,0);
+ f.context.InventoryCloud.busy=false;f.context.document.querySelector=()=>({});await f.updates.apply();assert.equal(f.sent.length,0);
+ f.context.document.querySelector=()=>null;f.updates.init();f.listeners.controllerchange();assert.equal(f.reloads(),0);
+});
+
+test('si no se guarda el carrito no activa la actualización y puede reintentar',async()=>{
+ const f=updateFixture();f.updates.pending=f.worker;
+ f.context.DataStore.setItem=()=>{throw Error('Sin espacio');};await f.updates.apply();
+ assert.equal(f.sent.length,0);assert.equal(f.reloads(),0);assert.equal(f.updates.reloadRequested,false);
+ assert.match(f.messages.at(-1),/Sin espacio/);
+ f.context.DataStore.setItem=()=>{};await f.updates.apply();assert.equal(f.sent.length,1);
+});
+
+test('formulario oculto no bloquea actualizaciones; formulario visible sin guardar sí',()=>{
+ const f=updateFixture();f.context.document.querySelectorAll=()=>[{getClientRects:()=>[]}];assert.equal(f.updates.blockedReason(),'');
+ f.context.document.querySelectorAll=()=>[{getClientRects:()=>[{}]}];assert.match(f.updates.blockedReason(),/formulario/);
+});
+
 test('actualización descarga recursos versionados y conserva las rutas para uso sin conexión',async()=>{
  const listeners={},requests=[],saved=[];let install;
  const context={URL,Request,Response,self:{registration:{scope:'https://example.test/pos/'},addEventListener:(name,handler)=>listeners[name]=handler},

@@ -118,3 +118,10 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 # Versión 3.5.2 · Renovación coherente de recursos
 
 - La instalación de la caché obtiene cada recurso con identificador de versión y recarga de red, guardándolo bajo su ruta habitual. Evita reutilizar archivos de la versión anterior al actualizar en Android. Los datos operativos no se borran.
+# Versión 3.6.0 · Aviso y actualización desde la aplicación
+
+- Detecta nuevas versiones al abrir, recuperar conexión, volver a la aplicación y cada cinco minutos mientras está visible. Usa el ciclo de instalación del service worker; una descarga incompleta no ofrece actualización.
+- Aviso «Nueva versión disponible», «Actualizar ahora» y «Después»; opción «Buscar actualizaciones» en Ajustes. Disponible en la caja normal y la entrada de nube; el simulador en memoria no se recarga para actualizar.
+- La recarga es voluntaria por pestaña y conserva su dirección (incluido `env=production`), sesión y carrito guardado. Detiene la actualización si hay un cobro/corte, escáner, sincronización, ticket de nube o formulario abierto con cambios pendientes. No elimina almacenamiento.
+- Verificado con 82 pruebas, incluyendo detección sin recarga, preservación del carrito frío, bloqueo durante operaciones y reintento tras error al guardar.
+- La instalación inicial de esta función requiere abrir `actualizar.html` una vez en dispositivos que todavía ejecutan una versión anterior.

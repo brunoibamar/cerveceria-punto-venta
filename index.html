@@ -25,6 +25,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/modules/security.css">
+  <link rel="stylesheet" href="css/modules/app-updates.css">
 </head>
 <body>
   <!--
@@ -227,7 +228,7 @@
   <script src="services/inventory-cloud.js"></script>
   <script src="services/terminal-events.js"></script>
   <script src="js/app.js"></script>
-  <script>if('serviceWorker'in navigator && !DemoMode){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
+  <script src="services/app-updates.js"></script>
   <script>
     /*
       Teclado numérico en celular: publica en --kb-inset la altura tapada por

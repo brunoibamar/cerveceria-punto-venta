@@ -107,6 +107,7 @@ const SettingsManager = {
     `;
 
     container.querySelector('#manage-users').onclick = () => Auth.renderUsers();
+    const updateButton=document.createElement('button');updateButton.className='settings-card';updateButton.textContent='↻ Buscar actualizaciones · v'+AppUpdates.version;updateButton.onclick=()=>AppUpdates.check(true);container.querySelector('.settings-grid').prepend(updateButton);
     const environmentButton=document.createElement('button');environmentButton.className='settings-card';
     environmentButton.textContent='Espacios: Pruebas y Negocio real';environmentButton.onclick=()=>window.open('entornos.html','_blank','noopener');container.querySelector('.settings-grid').append(environmentButton);
     const historyButton=document.createElement('button');historyButton.className='settings-card';historyButton.textContent='Historial antiguo en nube';historyButton.onclick=()=>window.open(CloudConfig.link('nube.html?view=settings'),'_blank','noopener');container.querySelector('.settings-grid').append(historyButton);
