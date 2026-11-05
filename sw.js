@@ -1,5 +1,5 @@
 // Caché completa, acotada al proyecto y con actualizaciones coherentes por versión.
-const CACHE_NAME = 'cerveceria-pos-v3.6.1';
+const CACHE_NAME = 'cerveceria-pos-v3.6.2';
 const SYNC_ASSETS=['./services/app-updates.js','./css/modules/app-updates.css','./manifest-production.json','./js/fridge.js','./js/cloud-maintenance.js','./entornos.html','./css/modules/cloud-link.css','./services/scanner-engine.js','./services/inventory-cloud.js','./services/terminal-events.js','./services/cloud-config.js','./vendor/supabase-2.118.0.min.js'];
 // Activación solicitada desde la página de actualización; no recarga cajas abiertas.
 self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_UPDATE')self.skipWaiting();});
@@ -17,6 +17,7 @@ self.addEventListener('activate',event=>{ event.waitUntil((async()=>{ for(const 
 self.addEventListener('fetch',event=>{
   const request=event.request; const url=new URL(request.url);
   if(request.method!=='GET' || url.origin!==self.location.origin || !url.pathname.startsWith(new URL(self.registration.scope).pathname)) return;
+  if(url.pathname===new URL('version.json',self.registration.scope).pathname){event.respondWith(fetch(request,{cache:'no-store'}));return;}
   event.respondWith((async()=>{
     const cache=await caches.open(CACHE_NAME);
     const cached=await cache.match(request, {ignoreSearch:request.mode==='navigate'});

@@ -10,8 +10,9 @@ function updateFixture(){
  const worker={state:'installed',addEventListener:(event,cb)=>workerListeners[event]=cb,postMessage:message=>sent.push(message)};
  const registration={waiting:worker,installing:null,update:async()=>{},addEventListener(){}};
  const context=vm.createContext({navigator:{onLine:true,serviceWorker:{controller:{},addEventListener:(event,cb)=>listeners[event]=cb,register:async()=>registration}},
-   document:{hidden:false,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},setInterval(){},setTimeout(){},
-   location:{search:'?env=production',reload:()=>reloads++},POS:{cart:[{productId:'p1',quantity:12,piezaFria:true}],CART_KEY:'cart',payment:{isOpen:false},cut:{isOpen:false}},
+   document:{hidden:false,getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},setInterval(){},setTimeout(){},clearTimeout(){},URL,
+   fetch:async()=>({ok:true,json:async()=>({version:'3.6.2'})}),
+   location:{href:'https://example.test/pos/?env=production',search:'?env=production',reload:()=>reloads++},POS:{cart:[{productId:'p1',quantity:12,piezaFria:true}],CART_KEY:'cart',payment:{isOpen:false},cut:{isOpen:false}},
    App:{currentView:'pos'},CashSession:{getActiveSession:()=>({role:'employee'})},DataStore:{setItem:(key,value)=>stored.set(key,value)}});
  vm.runInContext(fs.readFileSync('services/app-updates.js','utf8')+'\nglobalThis.updates=AppUpdates;',context);
  const updates=context.updates;updates.registration=registration;updates.render=message=>messages.push(message||'available');
@@ -46,6 +47,28 @@ test('si no se guarda el carrito no activa la actualización y puede reintentar'
 test('formulario oculto no bloquea actualizaciones; formulario visible sin guardar sí',()=>{
  const f=updateFixture();f.context.document.querySelectorAll=()=>[{getClientRects:()=>[]}];assert.equal(f.updates.blockedReason(),'');
  f.context.document.querySelectorAll=()=>[{getClientRects:()=>[{}]}];assert.match(f.updates.blockedReason(),/formulario/);
+});
+
+test('avisa con versión publicada nueva aunque no exista worker en espera y permite recargar manualmente',async()=>{
+ const f=updateFixture();f.registration.waiting=null;f.context.fetch=async()=>({ok:true,json:async()=>({version:'3.7.0'})});
+ await f.updates.check(true);assert.equal(f.updates.available,true);assert.equal(f.reloads(),0);assert.ok(f.messages.includes('available'));
+ assert.equal(f.updates.latestVersion,'3.7.0');
+ f.updates.available=false;f.updates.canRefresh=true;await f.updates.apply();assert.equal(f.reloads(),1);
+});
+
+test('la simulación también detecta novedades y el acceso superior conserva el entorno real',async()=>{
+ const f=updateFixture();f.context.DemoMode=true;f.context.fetch=async()=>({ok:true,json:async()=>({version:'4.0.0'})});
+ await f.updates.check(true);assert.equal(f.updates.available,true);assert.equal(f.reloads(),0);
+ const shortcut={};f.context.document.getElementById=()=>shortcut;f.updates.init();
+ assert.equal(new URL(shortcut.href).searchParams.get('env'),'production');assert.equal(new URL(shortcut.href).pathname,'/pos/actualizar.html');
+ assert.equal(typeof shortcut.onclick,'function');
+});
+
+test('no recarga con un worker activo anterior si la nueva descarga no quedó lista',async()=>{
+ const f=updateFixture();f.registration.waiting=null;f.registration.active={state:'activated',scriptURL:'https://example.test/pos/sw.js?release=3.6.2'};
+ f.updates.available=true;f.updates.latestVersion='3.7.0';await f.updates.apply();
+ assert.equal(f.reloads(),0);assert.equal(f.updates.reloadRequested,false);assert.equal(f.updates.preparing,false);
+ assert.match(f.messages.at(-1),/todavía no está lista/);
 });
 
 test('actualización descarga recursos versionados y conserva las rutas para uso sin conexión',async()=>{

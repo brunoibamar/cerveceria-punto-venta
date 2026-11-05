@@ -130,3 +130,9 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 - El selector de envase faltante se muestra según el cargo aplicable a la cantidad del ticket, incluso cuando solo existe tarifa por cartón y la línea se creó con modalidad pieza.
 - La etiqueta muestra el importe total del renglón (cartones y piezas sueltas); permite desmarcar una selección previa aunque su cargo actual sea cero.
 - 84 pruebas aprobadas, incluyendo tarifa solo por cartón, varios cartones, renglones fríos/al tiempo y cantidades mixtas.
+# Versión 3.6.2 · Actualización visible en la parte superior
+
+- Acceso «↻ Actualizar» siempre visible sobre la cabecera de la caja y de supervisión, para todos los roles y también antes de iniciar sesión.
+- Consulta independiente de `version.json`, con petición sin caché e identificador nuevo. Una versión publicada más reciente muestra la alerta superior incluso sin service worker pendiente. La instalación se registra con identificador de versión.
+- El botón ofrece actualizar a la nueva versión o recargar la aplicación actual. Conserva las protecciones de cobros, formularios y datos guardados; mantiene la dirección y entorno. La simulación permite buscar novedades y avisa que sus datos temporales se reinician al recargar.
+- Se mantienen los datos persistentes. Los dispositivos que aún ejecutan código anterior a este acceso necesitan una carga inicial desde `actualizar.html`.

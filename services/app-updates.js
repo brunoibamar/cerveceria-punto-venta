@@ -1,6 +1,7 @@
 /* Actualización voluntaria por pestaña. Conserva almacenamiento y dirección del negocio. */
 const AppUpdates = {
-  version:'3.6.1', registration:null, pending:null, dismissed:false,
+  version:'3.6.2', registration:null, pending:null, dismissed:false,
+  latestVersion:null, available:false, canRefresh:false, preparing:false,
   checking:false, lastCheck:0, reloadRequested:false, reloading:false,
   render(message) {
     let banner=document.getElementById('app-update-banner');
@@ -12,11 +13,13 @@ const AppUpdates = {
       banner.querySelector('[data-update-dismiss]').onclick=()=>{this.dismissed=true;banner.hidden=true;};
     }
     banner.hidden=false;
-    banner.querySelector('[data-update-title]').textContent=this.pending?'Nueva versión disponible':'Actualizaciones';
-    banner.querySelector('[data-update-message]').textContent=message||(this.pending?'Actualiza tu punto de venta desde aquí. Tus ventas y el carrito se conservan.':'');
-    const button=banner.querySelector('[data-update-apply]');button.hidden=!this.pending;button.disabled=this.reloadRequested;
-    button.textContent=this.reloadRequested?'Actualizando…':'Actualizar ahora';
-    banner.querySelector('[data-update-dismiss]').textContent=this.pending?'Después':'Cerrar';
+    const newer=this.available||!!this.pending;
+    banner.querySelector('[data-update-title]').textContent=newer?'Hay una actualización para tu punto de venta':'Actualizaciones';
+    const demo=typeof DemoMode!=='undefined'&&DemoMode;
+    banner.querySelector('[data-update-message]').textContent=message||(newer?(demo?'Actualiza la aplicación. La simulación temporal se reiniciará.':'Actualiza la aplicación para cargar las mejoras. Tus ventas y el carrito se conservan.'):'');
+    const button=banner.querySelector('[data-update-apply]');button.hidden=!(newer||this.canRefresh);button.disabled=this.reloadRequested||this.preparing;
+    button.textContent=this.reloadRequested||this.preparing?'Actualizando…':newer?'Actualizar aplicación':'Recargar aplicación';
+    banner.querySelector('[data-update-dismiss]').textContent=newer?'Después':'Cerrar';
   },
   offer(worker) {
     if(this.pending!==worker)this.dismissed=false;
@@ -48,41 +51,88 @@ const AppUpdates = {
     location.reload();
   },
   async apply() {
-    if(this.reloadRequested||this.reloading)return;
+    if(this.reloadRequested||this.reloading||this.preparing)return;
     const blocked=this.blockedReason();if(blocked){this.render(blocked);return;}
-    const worker=this.registration?.waiting||this.pending;
-    if(!worker){await this.check(true);return;}
     try {
+      let worker=this.registration?.waiting||this.pending;
+      if(this.available&&(!worker||this.registrationRelease!==this.latestVersion)){
+        this.preparing=true;this.render('Descargando la actualización. Espera un momento…');
+        await this.connectRegistration();await this.registration.update();
+        worker=this.registration.waiting||this.registration.installing;
+        if(!worker&&this.registration.active?.scriptURL&&new URL(this.registration.active.scriptURL,location.href).searchParams.get('release')===this.latestVersion)worker=this.registration.active;
+        if(!worker)throw new Error('La actualización todavía no está lista. Intenta nuevamente.');
+        await this.waitUntilReady(worker);
+      }
+      const changed=this.blockedReason();if(changed){this.preparing=false;this.render(changed);return;}
+      if(!worker&&!this.canRefresh){await this.check(true);return;}
       // Escritura directa: un error de almacenamiento debe detener la recarga.
       if(typeof App!=='undefined'&&App.currentView&&typeof POS!=='undefined'&&typeof CashSession!=='undefined'&&CashSession.getActiveSession())DataStore.setItem(POS.CART_KEY,JSON.stringify(POS.cart));
+      this.preparing=false;
       this.reloadRequested=true;this.render('Preparando la versión nueva…');
+      if(!worker){this.finish();return;}
       if(worker.state==='activated'){this.finish();return;}
       worker.addEventListener('statechange',()=>{if(worker.state==='activated')this.finish();});
       worker.postMessage({type:'ACTIVATE_UPDATE'});
       setTimeout(()=>{if(this.reloadRequested&&!this.reloading){this.reloadRequested=false;this.render('La actualización sigue pendiente. Toca Actualizar ahora para reintentar.');}},20000);
-    }catch(error){this.reloadRequested=false;this.render('No se pudo actualizar: '+error.message);}
+    }catch(error){this.reloadRequested=false;this.preparing=false;this.render('No se pudo actualizar: '+error.message);}
+    finally{this.preparing=false;}
+  },
+  waitUntilReady(worker) {
+    if(['installed','activated'].includes(worker.state))return Promise.resolve();
+    return new Promise((resolve,reject)=>{
+      const timeout=setTimeout(()=>reject(new Error('La descarga sigue pendiente. Revisa tu conexión y reintenta.')),30000);
+      worker.addEventListener('statechange',()=>{
+        if(['installed','activated'].includes(worker.state)){clearTimeout(timeout);resolve();}
+        else if(worker.state==='redundant'){clearTimeout(timeout);reject(new Error('No se completó la descarga.'));}
+      });
+    });
+  },
+  async connectRegistration() {
+    const release=this.latestVersion||this.version;
+    if(this.registration&&(!this.available||this.registrationRelease===release))return;
+    if(!('serviceWorker' in navigator))throw new Error('Este navegador no permite instalar la actualización desde aquí.');
+    this.registration=await navigator.serviceWorker.register('./sw.js?release='+encodeURIComponent(release),{updateViaCache:'none'});
+    this.registrationRelease=release;
+    this.registration.addEventListener('updatefound',()=>this.observe(this.registration.installing));
+    this.observe(this.registration.installing);
+  },
+  isNewer(version) {
+    if(!/^\d+\.\d+\.\d+$/.test(version||''))return false;
+    const next=version.split('.').map(Number),current=this.version.split('.').map(Number);
+    for(let n=0;n<3;n++){if(next[n]!==current[n])return next[n]>current[n];}
+    return false;
   },
   async check(manual=false) {
     if(this.checking)return;
-    if(typeof DemoMode!=='undefined'&&DemoMode){if(manual)this.render('La simulación temporal se renueva al abrirla de nuevo. El aviso automático funciona en la aplicación normal.');return;}
-    if(!('serviceWorker' in navigator)){if(manual)this.render('Este navegador no admite actualizaciones desde la aplicación.');return;}
-    if(!navigator.onLine){if(manual)this.render('Necesitas internet para buscar una versión nueva.');return;}
+    if(manual)this.canRefresh=true;
+    if(!navigator.onLine){if(manual)this.render('Sin internet para buscar novedades. Puedes recargar la versión guardada.');return;}
     if(!manual&&Date.now()-this.lastCheck<60000)return;
     this.checking=true;this.lastCheck=Date.now();
     if(manual){this.dismissed=false;this.render('Buscando una versión nueva…');}
     try{
-      if(!this.registration){
-        this.registration=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
-        this.registration.addEventListener('updatefound',()=>this.observe(this.registration.installing));
-        this.observe(this.registration.installing);
+      let knownVersion=false;
+      try{
+        const url=new URL('./version.json',location.href);url.searchParams.set('check',String(Date.now()));
+        const response=await fetch(url.href,{cache:'no-store'});if(!response.ok)throw new Error('Versión no disponible');
+        const info=await response.json();if(!/^\d+\.\d+\.\d+$/.test(info.version||''))throw new Error('Versión inválida');
+        this.latestVersion=info.version;this.available=this.isNewer(info.version);knownVersion=true;
+        if(this.available&&!this.dismissed)this.render();
+      }catch(error){/* La detección del navegador sigue disponible si falla la consulta de versión. */}
+      if(typeof DemoMode!=='undefined'&&DemoMode){
+        if(manual&&!this.available)this.render('Versión '+this.version+'. Puedes recargar la aplicación; la simulación temporal se reiniciará.');
+        return;
       }
+      if(!('serviceWorker' in navigator)){if(manual&&!this.available)this.render('Puedes recargar la aplicación desde aquí.');return;}
+      await this.connectRegistration();
       await this.registration.update();
       if(this.registration.waiting)this.offer(this.registration.waiting);
-      else if(manual&&!this.registration.installing&&!this.pending)this.render('Tu punto de venta está actualizado · versión '+this.version+'.');
+      else if(manual&&!this.registration.installing&&!this.pending&&!this.available)this.render(knownVersion?'Tu punto de venta está actualizado · versión '+this.version+'. Puedes recargarlo desde aquí.':'No se pudo comprobar la versión publicada. Puedes recargar la versión guardada.');
     }catch(error){if(manual)this.render('No se pudo buscar la actualización. Revisa tu conexión e intenta nuevamente.');}
     finally{this.checking=false;}
   },
   init() {
+    const shortcut=document.getElementById('app-update-shortcut');
+    if(shortcut){const url=new URL('./actualizar.html',location.href);url.search=location.search;shortcut.href=url.href;shortcut.onclick=event=>{event.preventDefault();this.check(true);};}
     if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>this.finish());
     document.addEventListener('input',event=>{const form=event.target.closest?.('form');if(form)form.dataset.updateDirty='true';});
     window.addEventListener('online',()=>this.check());

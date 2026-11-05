@@ -80,3 +80,8 @@ En Ajustes → Historial antiguo en nube, un administrador puede revisar y respa
 # Actualizaciones desde la aplicación (3.6.0)
 
 Al haber una versión nueva descargada se muestra «Nueva versión disponible». El usuario puede actualizar o elegir Después. Ajustes incluye una búsqueda manual. La actualización conserva la dirección del negocio y los datos locales; se pide terminar cobros o cerrar formularios antes de recargar. La primera incorporación de este aviso se instala desde `actualizar.html` (conservar `?env=production` si se usa el negocio real).
+# Acceso superior a actualizaciones (3.6.2)
+
+La cabecera incluye «↻ Actualizar» para cualquier rol. Consulta `version.json` directamente en red y muestra una alerta superior al detectar una versión nueva, sin depender de un worker en espera. También permite recargar cuando ya está al día. En la simulación, la recarga reinicia los datos temporales; en operación normal preserva el carrito y la sesión guardados.
+
+Cada publicación debe mantener la misma versión en `package.json`, `version.json`, `services/app-updates.js` y la caché de `sw.js`. El archivo de versión no se incluye en la caché para uso sin conexión.
