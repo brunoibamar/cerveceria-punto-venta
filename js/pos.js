@@ -823,10 +823,10 @@ if (other) {
         const lineTotal = productSubtotal + lineCharge + envaseLineCharge;
 
         let envaseHtml = '';
-        const envaseUnitLabel = item.envaseModalidad === 'carton'
-          ? Number(item.envaseCargoCarton || 0)
-          : Number(item.envaseCargoPieza || 0);
-        const hasEnvaseCargo = envaseUnitLabel > 0;
+        // La disponibilidad sigue el cargo real de la cantidad actual, aunque la
+        // línea se haya creado por pieza y solo tenga tarifa de envase por cartón.
+        const availableEnvaseCharge = this.getItemEnvaseCharge({...item,envaseFaltante:true});
+        const hasEnvaseCargo = availableEnvaseCharge > 0 || envaseChecked;
 
         if (hasEnvaseCargo) {
           envaseHtml = `
@@ -834,7 +834,7 @@ if (other) {
               <input type="checkbox" class="cart-envase-checkbox" ${envaseChecked ? 'checked' : ''}
                 onchange="POS.toggleEnvaseFaltante('${idArg}', ${coldArg})"
                 title="Marcar si el cliente no devuelve el envase" />
-              <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">Falta envase (+${this.escapeHtml(currency)}${envaseUnitLabel.toFixed(2)})</span>
+              <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">Falta envase${availableEnvaseCharge>0?` (+${this.escapeHtml(currency)}${availableEnvaseCharge.toFixed(2)})`:''}</span>
             </label>`;
         }
 

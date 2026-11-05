@@ -1,6 +1,6 @@
 /* Actualización voluntaria por pestaña. Conserva almacenamiento y dirección del negocio. */
 const AppUpdates = {
-  version:'3.6.0', registration:null, pending:null, dismissed:false,
+  version:'3.6.1', registration:null, pending:null, dismissed:false,
   checking:false, lastCheck:0, reloadRequested:false, reloading:false,
   render(message) {
     let banner=document.getElementById('app-update-banner');

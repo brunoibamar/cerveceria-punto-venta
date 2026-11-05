@@ -18,6 +18,25 @@ async function opened() {
 }
 const sale="({items:[{productId:'p1',quantity:2,precio:35}],total:70,paymentBreakdown:{efectivo:70,tarjeta:0,transferencia:0},paymentMethod:'efectivo'})";
 
+test('envase faltante aparece con tarifa solo por cartón y cobra el total del renglón frío o al tiempo',async()=>{
+ const e=await opened();const container={innerHTML:''};e.context.document.getElementById=id=>id==='pos-cart'?container:null;
+ e.run("POS.escapeHtml=value=>String(value??'');POS.renderSummaryTotals=()=>{};POS.renderCartPromos=()=>'';POS.cart=[{productId:'p1',nombre:'Sol',quantity:24,precio:0,unidadesPorCarton:24,precioCarton:360,piezaFria:false,envaseModalidad:'pieza',envaseCargoPieza:0,envaseCargoCarton:10,envaseFaltante:false}];POS.renderCart()");
+ assert.match(container.innerHTML,/Falta envase \(\+\$10\.00\)/);
+ e.run("POS.toggleEnvaseFaltante('p1',false)");assert.equal(e.run('POS.getEnvaseChargeTotal()'),10);
+ e.run('POS.cart[0].quantity=48;POS.cart[0].piezaFria=true;POS.renderCart()');
+ assert.match(container.innerHTML,/Falta envase \(\+\$20\.00\)/);assert.equal(e.run('POS.getEnvaseChargeTotal()'),20);
+ e.run("POS.toggleEnvaseFaltante('p1',true)");assert.equal(e.run('POS.getEnvaseChargeTotal()'),0);
+});
+
+test('envases mixtos muestran importe exacto y permiten quitar una selección sin cargo actual',async()=>{
+ const e=await opened();const container={innerHTML:''};e.context.document.getElementById=id=>id==='pos-cart'?container:null;
+ e.run("POS.escapeHtml=value=>String(value??'');POS.renderSummaryTotals=()=>{};POS.renderCartPromos=()=>'';POS.cart=[{productId:'p1',nombre:'Corona',quantity:13,precio:50,unidadesPorCarton:12,precioCarton:470,envaseCargoPieza:2,envaseCargoCarton:10,envaseFaltante:false}];POS.renderCart()");
+ assert.match(container.innerHTML,/Falta envase \(\+\$12\.00\)/);
+ e.run('POS.cart[0].quantity=1;POS.cart[0].envaseCargoPieza=0;POS.cart[0].envaseFaltante=true;POS.renderCart()');
+ assert.match(container.innerHTML,/cart-envase-checkbox/);assert.equal(e.run('POS.getEnvaseChargeTotal()'),0);
+ e.run("POS.toggleEnvaseFaltante('p1',false)");assert.ok(!container.innerHTML.includes('cart-envase-checkbox'));
+});
+
 test('botón de cartón completa 1→12→24 y conserva controles por pieza',async()=>{
  const e=await opened();e.run("Database.updateProduct('p1',{unidadesPorCarton:12,precioCarton:360});POS.renderCart=()=>{};POS.renderProductList=()=>{};POS.cart=[];POS.addToCart('p1');POS.completeCarton('p1',false)");
  assert.equal(e.run('POS.cart[0].quantity'),12);assert.equal(e.run('POS.getItemSubtotal(POS.cart[0])'),360);

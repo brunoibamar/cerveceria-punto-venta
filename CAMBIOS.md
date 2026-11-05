@@ -125,3 +125,8 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 - La recarga es voluntaria por pestaña y conserva su dirección (incluido `env=production`), sesión y carrito guardado. Detiene la actualización si hay un cobro/corte, escáner, sincronización, ticket de nube o formulario abierto con cambios pendientes. No elimina almacenamiento.
 - Verificado con 82 pruebas, incluyendo detección sin recarga, preservación del carrito frío, bloqueo durante operaciones y reintento tras error al guardar.
 - La instalación inicial de esta función requiere abrir `actualizar.html` una vez en dispositivos que todavía ejecutan una versión anterior.
+# Versión 3.6.1 · Envase faltante en cartones
+
+- El selector de envase faltante se muestra según el cargo aplicable a la cantidad del ticket, incluso cuando solo existe tarifa por cartón y la línea se creó con modalidad pieza.
+- La etiqueta muestra el importe total del renglón (cartones y piezas sueltas); permite desmarcar una selección previa aunque su cargo actual sea cero.
+- 84 pruebas aprobadas, incluyendo tarifa solo por cartón, varios cartones, renglones fríos/al tiempo y cantidades mixtas.
