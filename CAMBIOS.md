@@ -136,3 +136,6 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 - Consulta independiente de `version.json`, con petición sin caché e identificador nuevo. Una versión publicada más reciente muestra la alerta superior incluso sin service worker pendiente. La instalación se registra con identificador de versión.
 - El botón ofrece actualizar a la nueva versión o recargar la aplicación actual. Conserva las protecciones de cobros, formularios y datos guardados; mantiene la dirección y entorno. La simulación permite buscar novedades y avisa que sus datos temporales se reinician al recargar.
 - Se mantienen los datos persistentes. Los dispositivos que aún ejecutan código anterior a este acceso necesitan una carga inicial desde `actualizar.html`.
+# Versión 3.6.3 · Visibilidad en simulación móvil
+
+- La franja de pruebas deja espacio al acceso superior de actualización y a su alerta, evitando que los cubra en pantallas de teléfono.
