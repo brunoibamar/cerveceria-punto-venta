@@ -5,6 +5,18 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const ZXing=require('../vendor/zxing-0.21.3.min.js');
 
+test('actualización descarga recursos versionados y conserva las rutas para uso sin conexión',async()=>{
+ const listeners={},requests=[],saved=[];let install;
+ const context={URL,Request,Response,self:{registration:{scope:'https://example.test/pos/'},addEventListener:(name,handler)=>listeners[name]=handler},
+   caches:{open:async()=>({put:async(path,response)=>saved.push([path,await response.text()])})},
+   fetch:async request=>{requests.push(request);return new Response('archivo nuevo');}};
+ vm.runInNewContext(fs.readFileSync('sw.js','utf8'),context);
+ listeners.install({waitUntil:promise=>install=promise});await install;
+ assert.ok(requests.some(r=>new URL(r.url).pathname==='/pos/js/pos.js'));
+ assert.ok(requests.every(r=>r.cache==='reload'&&new URL(r.url).searchParams.has('pos_release')));
+ assert.ok(saved.some(([path,body])=>path==='./js/pos.js'&&body==='archivo nuevo'));
+});
+
 test('negocio real inicia vacío con almacenamiento independiente y conserva pruebas',()=>{
   const values=new Map([['cerveceria_products','[{"id":"prueba","nombre":"Solo pruebas"}]']]);
   const storage={getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)};
