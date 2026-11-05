@@ -903,8 +903,8 @@
           var stock = (product.stock === undefined || product.stock === null) ? 0 : product.stock;
           var stockMin = (product.stockMinimo === undefined || product.stockMinimo === null) ? 5 : product.stockMinimo;
           var lowStock = stock <= stockMin;
-          var precioVenta = (product.precioVenta !== undefined && product.precioVenta !== null) ? product.precioVenta : ((product.precio !== undefined && product.precio !== null) ? product.precio : 0);
-          var precioCompra = (product.costoPieza !== undefined && product.costoPieza !== null) ? Number(product.costoPieza) : (product.precioCompra || 0);
+          var saleDisplay=POS.pricePresentation(product);
+          var purchaseDisplay=POS.pricePresentation(product,true);
           var codigo = product.codigoBarras || product.codigo || '';
           var imagen = product.imagen || product.imagenUrl || product.foto || '';
 
@@ -919,7 +919,7 @@
           if (product.marca || product.presentacion) {
             html += '  <div class="inv-brand">' + this.escapeHtml([product.marca, product.presentacion].filter(Boolean).join(' · ')) + '</div>';
           }
-          html += '  <div class="inv-prices"><div><span>Compra</span>' + currencySymbol + parseFloat(precioCompra).toFixed(2) + '</div><div><span>Venta</span>' + currencySymbol + parseFloat(precioVenta).toFixed(2) + '</div></div>';
+          html += '  <div class="inv-prices"><div><span>Compra / '+this.escapeHtml(purchaseDisplay.label)+'</span>' + currencySymbol + purchaseDisplay.amount.toFixed(2) + '</div><div><span>Venta / '+this.escapeHtml(saleDisplay.label)+'</span>' + currencySymbol + saleDisplay.amount.toFixed(2) + '</div></div>';
           if (codigo) html += '  <div class="inv-code"><span>Código</span> ' + this.escapeHtml(codigo) + '</div>';
           html += '  <div class="inv-stock ' + (lowStock ? 'low-stock' : '') + '">Stock: ' + this.escapeHtml(this.formatStockPresentation(stock, product.unidadesPorCarton)) + (lowStock ? ' ⚠️ Rellenar' : '') + ' <span class="inv-stock-min">(mín. ' + stockMin + ' piezas)</span></div>';
           html += '  <div class="inv-actions">';

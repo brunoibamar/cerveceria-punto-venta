@@ -109,3 +109,9 @@ La comprobación física de Android y de dos dispositivos con cuentas reales que
 - Consulta de nube para empleado entrega catálogo de venta sin costos y solo turnos propios. Las tablas administrativas y los detalles con costos quedan protegidos mediante RLS.
 - Apertura y corte de caja conservan el funcionamiento anterior; no se agregan permisos de descuentos ni cancelaciones.
 - Límite de seguridad: la aplicación local continúa guardando datos operativos para funcionar sin conexión. Las restricciones de interfaz y acciones no sustituyen el control físico del dispositivo frente a alguien con herramientas de desarrollo; la protección remota se valida en PostgreSQL.
+# Versión 3.5.1 · Selección rápida de cartones y precios por presentación
+
+- Ticket: botón «Completar cartón» lleva la línea al siguiente múltiplo del paquete (1→12→24, por ejemplo). Conserva +/− y captura numérica; aplica a renglones fríos y al tiempo de forma independiente, con validación de stock combinado antes de reservar frío.
+- Fichas de venta: muestran precio por pieza cuando está configurado; en caso contrario, muestran el precio por cartón y sus unidades. Inventario aplica el mismo criterio a precios de compra y venta.
+- Productos sin precio unitario y con cartón configurado se agregan por cartón desde la ficha. El cobro de un cartón incompleto exige completar el paquete o configurar el precio unitario, evitando piezas cobradas a cero por falta de ese precio.
+- 77 pruebas aprobadas, incluyendo paquetes de 12/24, contador de frío, existencias compartidas, controles de piezas y promociones existentes.

@@ -384,6 +384,14 @@ const POS = {
     });
   },
 
+  pricePresentation(product, purchase=false) {
+    const unit=Number(purchase ? (product.costoPieza ?? product.precioCompra ?? 0) : (product.precioVenta ?? product.precio ?? 0));
+    const pack=Number(product.unidadesPorCarton)||0;
+    const carton=Number(purchase?product.costoCarton:product.precioCarton)||0;
+    const packOnly=!(unit>0)&&Number.isInteger(pack)&&pack>1&&carton>0;
+    return {amount:packOnly?carton:unit||0,label:packOnly?'cartón ('+pack+' piezas)':'pieza',packOnly,pack};
+  },
+
   renderProductList() {
     const container = document.getElementById('pos-product-list');
     if (!container) return;
@@ -401,11 +409,12 @@ const POS = {
     }
     products.forEach(product => {
       const stock = Number(product.stock) || 0;
+      const displayPrice=this.pricePresentation(product);
       const coldStock = product.coldStock !== undefined ? Number(product.coldStock) : 0;
       html += `
         <div class="product-card" onclick="POS.addToCart('${this.jsArg(product.id)}')">
           <div class="product-name">${this.escapeHtml(product.nombre || '')}${coldBadge}</div>
-          <div class="product-price">${this.escapeHtml(currency)}${Number(product.precio || 0).toFixed(2)}</div>
+          <div class="product-price">${this.escapeHtml(currency)}${displayPrice.amount.toFixed(2)}<small class="product-price-unit"> / ${this.escapeHtml(displayPrice.label)}</small></div>
           <div class="product-stock">Stock: ${stock}${coldStock > 0 ? ` • ❄️ ${coldStock}` : ''}</div>
         </div>
       `;
@@ -419,7 +428,6 @@ const POS = {
   addToCart(productId, forcedCold) {
     const product = Database.getProducts().find(p => p.id === productId);
     if (!product) return;
-    if (this.cart.filter(i => i.productId === productId).reduce((s,i)=>s+Number(i.quantity || 0),0) + 1 > Number(product.stock)) { alert('No hay suficiente stock disponible.'); return; }
 
     const isCold = forcedCold !== undefined
       ? this.normalizeColdFlag(forcedCold)
@@ -428,9 +436,12 @@ const POS = {
     const existing = this.cart.find(item =>
       item.productId === productId && this.normalizeColdFlag(item.piezaFria) === isCold
     );
+    const displayPrice=this.pricePresentation(product);
+    const addAmount=displayPrice.packOnly?displayPrice.pack-((Number(existing?.quantity)||0)%displayPrice.pack):1;
+    if (this.cart.filter(i => i.productId === productId).reduce((s,i)=>s+Number(i.quantity || 0),0) + addAmount > Number(product.stock)) { alert('No hay suficiente stock disponible.'); return; }
 
     if (isCold) {
-      const check = this.canAddCold(product, productId, 1);
+      const check = this.canAddCold(product, productId, addAmount);
       if (!check.ok) {
         if (check.needConfirm) {
           const accept = window.confirm(check.reason + ' ¿Deseas agregarlo de todas formas?');
@@ -440,11 +451,11 @@ const POS = {
           return;
         }
       } else {
-        this.reserveColdUnit();
+        this.adjustFridgeStock(-addAmount);
       }
     } else {
       const stock = Math.max(0, Number(product.stock) || 0);
-      const nextQty = (existing ? (Number(existing.quantity) || 0) : 0) + 1;
+      const nextQty = (existing ? (Number(existing.quantity) || 0) : 0) + addAmount;
       if (nextQty > stock) {
         alert('No hay suficiente stock disponible.');
         return;
@@ -452,7 +463,7 @@ const POS = {
     }
 
     if (existing) {
-      existing.quantity = (Number(existing.quantity) || 0) + 1;
+      existing.quantity = (Number(existing.quantity) || 0) + addAmount;
       const cartonQty = Number(existing.unidadesPorCarton || 0);
       existing.isCarton = cartonQty > 0 && existing.quantity >= cartonQty;
     } else {
@@ -461,11 +472,11 @@ const POS = {
         productId: product.id,
         nombre: product.nombre,
         marca: product.marca,
-        precio: Number(product.precio) || 0,
+        precio: Number(product.precioVenta ?? product.precio) || 0,
         precioCarton: Number(product.precioCarton || 0),
         unidadesPorCarton: cartonQty,
-        quantity: 1,
-        isCarton: cartonQty > 0 && 1 >= cartonQty,
+        quantity: addAmount,
+        isCarton: cartonQty > 0 && addAmount >= cartonQty,
         piezaFria: isCold,
         envaseFaltante: false,
         envaseModalidad: 'pieza',
@@ -534,12 +545,22 @@ const POS = {
     if (this.cart.includes(item) && Number(item.quantity) !== next) this.renderCart();
   },
 
+  completeCarton(productId, isCold) {
+    const item=this.findCartItem(productId,isCold);
+    if(!item)return;
+    const pack=Number(item.unidadesPorCarton);
+    if(!Number.isInteger(pack)||pack<2)return;
+    this.changeQuantityFor(item,pack-((Number(item.quantity)||0)%pack));
+  },
+
   changeQuantityFor(item, delta) {
     const product = Database.getProducts().find(p => p.id === item.productId);
     const isCold = this.normalizeColdFlag(item.piezaFria);
     const step = Number(delta) || 0;
     const current = Number(item.quantity) || 0;
     const next = current + step;
+    const otherUnits=this.cart.filter(i=>i!==item && i.productId===item.productId).reduce((sum,i)=>sum+Number(i.quantity||0),0);
+    if(next>0 && (!product || next+otherUnits>Number(product.stock))){alert('No hay suficiente stock disponible.');return;}
 
     if (next < 1) {
       this.removeCartItem(item);
@@ -855,6 +876,7 @@ if (other) {
                   onchange="POS.setQuantity('${idArg}', this.value, ${coldArg})" />
                 <button type="button" class="btn-qty" onclick="POS.changeQuantity('${idArg}', 1, ${coldArg})">+</button>
               </div>
+              ${Number.isInteger(cartonQty)&&cartonQty>1?`<button type="button" class="btn-carton" onclick="POS.completeCarton('${idArg}', ${coldArg})" title="Completar el siguiente cartón de ${cartonQty} piezas">📦 ${qty%cartonQty===0?'+1 cartón':'Completar cartón'} · ${cartonQty} pzas</button>`:''}
               <div class="cart-item-total">${this.escapeHtml(currency)}${lineTotal.toFixed(2)}</div>
             </div>
             <button type="button" class="btn-delete" onclick="POS.removeFromCart('${idArg}', ${coldArg})" title="Eliminar producto">×</button>
@@ -1307,6 +1329,8 @@ if (other) {
       alert('Agrega productos al ticket antes de cobrar.');
       return;
     }
+    const pricingError=this.cartPricingError();
+    if(pricingError){alert(pricingError);return;}
 
     const modal = this.ensurePaymentModal();
     if (!modal) {
@@ -1754,10 +1778,20 @@ if (other) {
   },
 
   // Registra la venta, descuenta inventario (incluye piezas frías) y limpia el ticket
+  cartPricingError() {
+    for(const item of this.cart){
+      const product=Database.getProducts().find(p=>p.id===item.productId);
+      if(product && this.pricePresentation(product).packOnly && Number(item.quantity)%Number(product.unidadesPorCarton)!==0)
+        return (product.nombre||'Este producto')+' solo tiene precio por cartón. Completa el cartón o configura un precio por pieza.';
+    }
+    return '';
+  },
+
   completeSale(details) {
     let committed = null;
     try {
       if (!this.cart.length) throw new Error('El ticket está vacío.');
+      const pricingError=this.cartPricingError();if(pricingError)throw new Error(pricingError);
       if (!CashSession.getActiveSession()) throw new Error('Abre caja para vender.');
       if (ShiftGuard.overdue()) { ShiftGuard.check(); throw new Error('Cierra el turno pendiente antes de vender.'); }
       const chargeRate = this.getColdChargeRate();

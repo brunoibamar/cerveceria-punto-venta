@@ -18,6 +18,32 @@ async function opened() {
 }
 const sale="({items:[{productId:'p1',quantity:2,precio:35}],total:70,paymentBreakdown:{efectivo:70,tarjeta:0,transferencia:0},paymentMethod:'efectivo'})";
 
+test('botón de cartón completa 1→12→24 y conserva controles por pieza',async()=>{
+ const e=await opened();e.run("Database.updateProduct('p1',{unidadesPorCarton:12,precioCarton:360});POS.renderCart=()=>{};POS.renderProductList=()=>{};POS.cart=[];POS.addToCart('p1');POS.completeCarton('p1',false)");
+ assert.equal(e.run('POS.cart[0].quantity'),12);assert.equal(e.run('POS.getItemSubtotal(POS.cart[0])'),360);
+ e.run("POS.completeCarton('p1',false)");assert.equal(e.run('POS.cart[0].quantity'),24);
+ e.run("POS.changeQuantity('p1',-1,false)");assert.equal(e.run('POS.cart[0].quantity'),23);
+ e.run("POS.changeQuantity('p1',1,false)");assert.equal(e.run('POS.cart[0].quantity'),24);
+});
+
+test('cartón frío respeta línea independiente, indicador y stock combinado',async()=>{
+ const e=await opened();e.run("Database.updateProduct('p1',{unidadesPorCarton:12,precioCarton:360,stock:25});DataStore.setItem('fridgeStock','24');POS.renderCart=()=>{};POS.renderProductList=()=>{};POS.cart=[];POS.addToCart('p1',false);POS.addToCart('p1',true);POS.completeCarton('p1',true)");
+ assert.equal(e.run('POS.cart[0].quantity'),1);assert.equal(e.run('POS.cart[1].quantity'),12);assert.equal(e.run('POS.getFridgeStock()'),12);
+ e.run("POS.completeCarton('p1',true)");assert.equal(e.run('POS.cart[1].quantity'),24);assert.equal(e.run('POS.getFridgeStock()'),0);
+ e.run("POS.completeCarton('p1',false)");assert.equal(e.run('POS.cart[0].quantity'),1);assert.equal(e.run('POS.getFridgeStock()'),0);
+});
+
+test('precio por caja se muestra y agrega cartón cuando no hay precio unitario',async()=>{
+ const e=await opened();e.run("Database.updateProduct('p1',{precio:0,precioVenta:0,unidadesPorCarton:24,precioCarton:360,costoPieza:0,costoCarton:240});POS.renderCart=()=>{};POS.renderProductList=()=>{};POS.cart=[];POS.addToCart('p1')");
+ assert.equal(e.run("POS.pricePresentation(Database.getProducts()[0]).amount"),360);
+ assert.equal(e.run("POS.pricePresentation(Database.getProducts()[0]).label"),'cartón (24 piezas)');
+ assert.equal(e.run("POS.pricePresentation(Database.getProducts()[0],true).amount"),240);
+ assert.equal(e.run('POS.cart[0].quantity'),24);assert.equal(e.run('POS.getItemSubtotal(POS.cart[0])'),360);
+ e.run("POS.setQuantity('p1',23,false)");assert.match(e.run('POS.cartPricingError()'),/solo tiene precio por cartón/);
+ e.run("POS.completeCarton('p1',false)");assert.equal(e.run('POS.cartPricingError()'),'');
+ e.run("Database.updateProduct('p1',{precioVenta:28});");assert.equal(e.run('POS.pricePresentation(Database.getProducts()[0]).amount'),28);
+});
+
 test('la venta guarda su envío pendiente junto con stock y lo conserva al cerrar sesión',async()=>{
   const e=await opened();e.run('Database.registerSale('+sale+')');
   assert.equal(e.run('Object.values(JSON.parse(DataStore.getItem(TerminalEvents.KEY))).length'),1);
