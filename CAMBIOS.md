@@ -1,5 +1,15 @@
 # Cambios para las pruebas en Android
 
+## Versión 3.6.5: lector de cámara compartido
+
+- Ventas y alta de productos solicitan la misma cámara trasera y resolución preferida de 1920 × 1080; el teléfono puede negociar una resolución menor.
+- Lectura normal e invertida, compensación de sombras y contraste local por canales de color para etiquetas sobre vidrio. Alterna encuadre completo y central, y orientación horizontal/vertical.
+- Busca formatos comerciales 1D (EAN, UPC, Code 128/39/93, ITF y Codabar), sin gastar cada cuadro en búsquedas de QR. Procesa los cuadros en serie y conserva las validaciones del decodificador.
+- Ventas incluye un control de luz, como inventario, cuando el teléfono y navegador lo permiten. Enfoque continuo opcional sin bloquear teléfonos incompatibles.
+- Evita aperturas simultáneas y libera la cámara al cerrar o fallar la reproducción. Mantiene modo continuo y su intervalo contra lecturas repetidas.
+- No migra, borra ni modifica datos guardados, credenciales ni sincronización. Las imágenes se procesan localmente y no se almacenan ni envían.
+- Pruebas con EAN-13 generado: normal, invertido, vertical, bajo contraste y fondo ámbar con sombras. La lectura de botellas físicas aún requiere validación en el Android del cliente; reflejos, desenfoque o códigos dañados pueden impedirla.
+
 ## Versión 3.4: venta local y supervisor unidos
 
 - Ajustes → Vincular ventas e inventario autoriza la terminal una vez con una sesión técnica de Supabase Auth.

@@ -351,6 +351,7 @@ const App = {
                     </div>
                   </div>
                   <div class="scanner-mode">
+                    <button type="button" id="pos-scan-flash" class="scanner-flash-btn" disabled aria-pressed="false" onclick="POS.toggleScannerLight()">🔦 Encender luz</button>
                     <label style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px;">
                       <input type="checkbox" id="pos-scanner-continuous" />
                       Modo continuo

@@ -1,6 +1,6 @@
 /* Actualización voluntaria por pestaña. Conserva almacenamiento y dirección del negocio. */
 const AppUpdates = {
-  version:'3.6.4', registration:null, pending:null, dismissed:false,
+  version:'3.6.5', registration:null, pending:null, dismissed:false,
   latestVersion:null, available:false, preparing:false,
   checking:false, lastCheck:0, reloadRequested:false, reloading:false,
   render(message) {

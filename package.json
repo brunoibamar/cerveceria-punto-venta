@@ -1,10 +1,10 @@
 {
   "name": "cerveceria-pos",
-  "version": "3.6.4",
+  "version": "3.6.5",
   "private": true,
   "scripts": {
     "start": "node serve.cjs",
-    "test": "node --test tests/core.test.cjs tests/inventory-expected.test.cjs tests/cloud-pricing.test.cjs tests/mobile-updates.test.cjs"
+    "test": "node --test tests/core.test.cjs tests/inventory-expected.test.cjs tests/cloud-pricing.test.cjs tests/mobile-updates.test.cjs tests/scanner.test.cjs"
   },
   "engines": {
     "node": ">=20"

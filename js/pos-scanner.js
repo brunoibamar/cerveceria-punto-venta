@@ -49,7 +49,7 @@ Object.assign(POS, {
     }
 
     setTimeout(() => {
-      this.startCameraScanner();
+      if(modal.classList.contains('active'))this.startCameraScanner();
     }, 50);
   },
 
@@ -77,7 +77,7 @@ Object.assign(POS, {
   },
 
   async startCameraScanner() {
-    if (this.scanner.isScanning) return;
+    if (this.scanner.isScanning || this.scanner.starting) return;
 
     const videoElement = document.getElementById('pos-scanner-video');
     if (!videoElement) {
@@ -91,9 +91,10 @@ Object.assign(POS, {
       toggleBtn.textContent = 'Detener';
     }
 
+    this.scanner.starting = true;
+    const generation=this.scanner.generation=(this.scanner.generation||0)+1;
     try {
-      const generation=this.scanner.generation=(this.scanner.generation||0)+1;
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: {ideal:'environment'},width:{ideal:1920},height:{ideal:1080} },audio:false });
+      const stream = await navigator.mediaDevices.getUserMedia(ScannerEngine.cameraConstraints());
       if(this.scanner.generation!==generation){stream.getTracks().forEach(t=>t.stop());return;}
       this.scanner.stream = stream;
       videoElement.srcObject = stream;
@@ -101,23 +102,50 @@ Object.assign(POS, {
       if(this.scanner.generation!==generation){stream.getTracks().forEach(t=>t.stop());return;}
 
       this.scanner.isScanning = true;
+      this.scanner.torchEnabled = false;
+      this.updateScannerLight();
       this.scanner.lastScanned = '';
       this.scanner.lastScannedTime = 0;
       this.setScannerStatus('Cámara activa. Apunta al código de barras...');
 
       await this.initCodeReader();
     } catch (error) {
+      if(this.scanner.generation!==generation)return;
+      this.stopCameraScanner();
       console.error('Error al iniciar cámara:', error);
       this.setScannerStatus('Error al acceder a la cámara: ' + error.message);
       if (toggleBtn) {
         toggleBtn.textContent = 'Iniciar';
       }
+    } finally {
+      if(this.scanner.generation===generation)this.scanner.starting=false;
     }
+  },
+
+  updateScannerLight() {
+    const button=document.getElementById('pos-scan-flash');
+    if(!button)return;
+    button.disabled=!ScannerEngine.capabilities(this.scanner.stream?.getVideoTracks()[0]).torch;
+    button.textContent=this.scanner.torchEnabled?'🔦 Apagar luz':'🔦 Encender luz';
+    button.setAttribute('aria-pressed',String(Boolean(this.scanner.torchEnabled)));
+  },
+
+  async toggleScannerLight() {
+    const stream=this.scanner.stream;
+    const enabled=!this.scanner.torchEnabled;
+    try {
+      await ScannerEngine.torch(stream,enabled);
+      if(this.scanner.stream!==stream)return;
+      this.scanner.torchEnabled=enabled;
+      this.updateScannerLight();
+    } catch(error) { this.setScannerStatus(error.message); }
   },
 
   stopCameraScanner() {
     this.scanner.generation=(this.scanner.generation||0)+1;
     this.scanner.isScanning = false;
+    this.scanner.starting = false;
+    this.scanner.torchEnabled = false;
 
     if (this.scanner.stream) {
       this.scanner.stream.getTracks().forEach(track => track.stop());
@@ -127,6 +155,7 @@ Object.assign(POS, {
     if (this.scanner.videoElement) {
       this.scanner.videoElement.srcObject = null;
     }
+    this.updateScannerLight();
 
     if (this.scanner.codeReader) {
       try {
@@ -176,6 +205,7 @@ Object.assign(POS, {
         }
       });
     } catch (error) {
+      this.stopCameraScanner();
       console.error(error);
       this.setScannerStatus('Error al iniciar lector de códigos: ' + error.message);
     }

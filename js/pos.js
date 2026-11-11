@@ -364,6 +364,8 @@ const POS = {
     const continuousCheckbox = document.getElementById('pos-scanner-continuous');
     if (continuousCheckbox) {
       continuousCheckbox.checked = this.scanner.isContinuous;
+      if(continuousCheckbox.dataset.scannerBound==='true')return;
+      continuousCheckbox.dataset.scannerBound='true';
       continuousCheckbox.addEventListener('change', (e) => {
         this.scanner.isContinuous = e.target.checked;
       });

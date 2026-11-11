@@ -1403,22 +1403,13 @@
         this.scanner.isScanning = true;
         const generation=this.scanner.generation=(this.scanner.generation||0)+1;
 
-        navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        }).then(function (stream) {
+        navigator.mediaDevices.getUserMedia(ScannerEngine.cameraConstraints()).then(async function (stream) {
           if(self.scanner.generation!==generation||!self.scanner.isScanning){stream.getTracks().forEach(t=>t.stop());return;}
           self.scanner.stream = stream;
           video.srcObject = stream;
           video.setAttribute('playsinline', 'true');
-          if (video.play) {
-            const played = video.play();
-            if (played && typeof played.catch === 'function') played.catch(function () {});
-          }
+          if (video.play) await video.play();
+          if(self.scanner.generation!==generation||!self.scanner.isScanning){stream.getTracks().forEach(t=>t.stop());return;}
           self.updateFlashButton();
 
           if (self.scanner.codeReader) {
@@ -1427,8 +1418,14 @@
           self.scanner.codeReader = ScannerEngine.scan(video, stream, function (result) { if (result) self.applyScannedCode(result.getText()); });
 
         }).catch(function (error) {
+          if(self.scanner.generation!==generation)return;
           console.error('Inventory scanner camera error:', error);
-          self.scanner.isScanning = false;
+          self.scanner.isScanning=false;
+          self.scanner.stream?.getTracks().forEach(track=>track.stop());
+          self.scanner.stream=null;
+          video.srcObject=null;
+          self.scanner.torchEnabled=false;
+          self.updateFlashButton();
           self.setScannerStatus('Error al acceder a la cámara: ' + (error && error.message ? error.message : error));
         });
       } catch (e) {
@@ -1460,15 +1457,15 @@
         }
         const track = stream.getVideoTracks()[0];
         if (!track) return;
-        const caps = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {};
+        const caps = ScannerEngine.capabilities(track);
         if (!caps.torch) {
           this.setScannerStatus('Este dispositivo no tiene flash disponible.');
           return;
         }
         const next = !this.scanner.torchEnabled;
-        const constraints = { advanced: [{ torch: next }] };
         if (typeof track.applyConstraints === 'function') {
-          track.applyConstraints(constraints).then(() => {
+          ScannerEngine.torch(stream,next).then(() => {
+            if(this.scanner.stream!==stream)return;
             this.scanner.torchEnabled = next;
             this.updateFlashButton();
             this.setScannerStatus(next ? 'Flash activado.' : 'Flash desactivado.');
@@ -1486,6 +1483,8 @@
       if (!btn) return;
       btn.textContent = this.scanner.torchEnabled ? '🔦 Desactivar Flash' : '🔦 Activar Flash';
       btn.classList.toggle('is-on', !!this.scanner.torchEnabled);
+      btn.disabled=!ScannerEngine.capabilities(this.scanner.stream?.getVideoTracks()[0]).torch;
+      btn.setAttribute('aria-pressed',String(Boolean(this.scanner.torchEnabled)));
     },
 
     setScannerStatus: function (text) {
